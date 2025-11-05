@@ -1,0 +1,15 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "aop": {"value": "http://aopwiki.org/aops/123"},
+        "title": {"value": "Estrogen leads to reproductive failure"},
+        "shortName": {"value": "AOP123"}
+      },
+      {
+        "aop": {"value": "http://aopwiki.org/aops/456"},
+        "title": {"value": "Oxidative stress"}
+      }
+    ]
+  }
+}

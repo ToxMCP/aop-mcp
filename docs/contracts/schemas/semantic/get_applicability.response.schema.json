@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "get_applicability.response",
+  "type": "object",
+  "required": ["species", "life_stage", "sex"],
+  "properties": {
+    "species": {"type": ["string", "null"]},
+    "life_stage": {"type": ["string", "null"]},
+    "sex": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

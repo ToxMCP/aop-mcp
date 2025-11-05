@@ -1,0 +1,13 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "ker": {"value": "http://aopwiki.org/relationships/888"},
+        "upstream": {"value": "http://aopwiki.org/events/100"},
+        "downstream": {"value": "http://aopwiki.org/events/200"},
+        "plausibility": {"value": "strong"},
+        "status": {"value": "KC-curated"}
+      }
+    ]
+  }
+}

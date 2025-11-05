@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "search_aops.response",
+  "type": "object",
+  "required": ["results"],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "iri", "title"],
+        "properties": {
+          "id": {"type": "string"},
+          "iri": {"type": "string", "format": "uri"},
+          "title": {"type": "string"},
+          "short_name": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

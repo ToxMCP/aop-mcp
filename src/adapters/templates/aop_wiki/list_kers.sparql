@@ -1,0 +1,13 @@
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop-ontology#>
+
+SELECT ?ker ?upstream ?downstream ?plausibility ?status
+WHERE {{
+  BIND(<{aop_iri}> AS ?aop)
+  ?aop aopo:has_key_event_relationship ?ker .
+  ?ker aopo:has_upstream_key_event ?upstream ;
+       aopo:has_downstream_key_event ?downstream .
+  OPTIONAL {{ ?ker aopo:has_biological_plausibility ?plausibility }}
+  OPTIONAL {{ ?ker aopo:has_status ?status }}
+}}
+ORDER BY LCASE(STR(?ker))

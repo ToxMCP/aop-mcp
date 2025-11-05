@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "update_draft.response",
+  "type": "object",
+  "required": ["draft_id", "version_id"],
+  "properties": {
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"}
+  },
+  "additionalProperties": false
+}

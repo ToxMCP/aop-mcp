@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "get_aop.response",
+  "type": "object",
+  "required": ["id", "iri"],
+  "properties": {
+    "id": {"type": "string"},
+    "iri": {"type": "string", "format": "uri"},
+    "title": {"type": ["string", "null"]},
+    "short_name": {"type": ["string", "null"]},
+    "status": {"type": ["string", "null"]},
+    "abstract": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

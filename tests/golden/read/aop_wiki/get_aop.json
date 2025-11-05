@@ -1,0 +1,12 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "title": {"value": "Estrogen leads to reproductive failure"},
+        "shortName": {"value": "AOP123"},
+        "status": {"value": "OECD:Approved"},
+        "abstract": {"value": "Mechanistic overview"}
+      }
+    ]
+  }
+}

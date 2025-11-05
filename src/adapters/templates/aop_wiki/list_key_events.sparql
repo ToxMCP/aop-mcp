@@ -1,0 +1,11 @@
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop-ontology#>
+
+SELECT ?ke ?label ?eventType
+WHERE {{
+  BIND(<{aop_iri}> AS ?aop)
+  ?aop aopo:has_key_event ?ke .
+  ?ke dcterms:title ?label .
+  OPTIONAL {{ ?ke aopo:has_event_type ?eventType }}
+}}
+ORDER BY LCASE(?label)

@@ -1,0 +1,13 @@
+PREFIX aopo: <http://aopkb.org/aop-ontology#>
+PREFIX cheminf: <http://semanticscience.org/resource/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?aop ?title ?stressId
+WHERE {{
+  VALUES ?identifier {{ "{inchikey}" "{cas}" "{name}" }}
+  ?stressor aopo:has_identifier_value ?identifier ;
+            aopo:maps_to_aop ?aop .
+  OPTIONAL {{ ?stressor dcterms:identifier ?stressId }}
+  ?aop dcterms:title ?title .
+}}
+ORDER BY LCASE(?title)
