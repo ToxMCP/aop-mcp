@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "map_chemical_to_aops.response",
+  "type": "object",
+  "required": ["results"],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["aop"],
+        "properties": {
+          "aop": {
+            "type": "object",
+            "required": ["id", "iri", "title"],
+            "properties": {
+              "id": {"type": "string"},
+              "iri": {"type": "string", "format": "uri"},
+              "title": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          },
+          "stressor_id": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

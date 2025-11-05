@@ -1,0 +1,13 @@
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop-ontology#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?title ?shortName ?status ?abstract
+WHERE {{
+  BIND(<{aop_iri}> AS ?aop)
+  ?aop dcterms:title ?title .
+  OPTIONAL {{ ?aop aopo:has_short_name ?shortName }}
+  OPTIONAL {{ ?aop aopo:has_status ?status }}
+  OPTIONAL {{ ?aop dcterms:abstract ?abstract }}
+}}
+LIMIT 1

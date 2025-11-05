@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "get_evidence_matrix.response",
+  "type": "object",
+  "required": ["matrix"],
+  "properties": {
+    "matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "biological_plausibility": {"type": ["string", "null"]},
+          "temporal_concordance": {"type": ["string", "null"]},
+          "dose_response": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

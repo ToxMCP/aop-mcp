@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "list_kers.response",
+  "type": "object",
+  "required": ["results"],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "iri", "upstream", "downstream"],
+        "properties": {
+          "id": {"type": "string"},
+          "iri": {"type": "string", "format": "uri"},
+          "upstream": {
+            "type": "object",
+            "required": ["id", "iri"],
+            "properties": {
+              "id": {"type": "string"},
+              "iri": {"type": "string", "format": "uri"}
+            },
+            "additionalProperties": false
+          },
+          "downstream": {
+            "type": "object",
+            "required": ["id", "iri"],
+            "properties": {
+              "id": {"type": "string"},
+              "iri": {"type": "string", "format": "uri"}
+            },
+            "additionalProperties": false
+          },
+          "plausibility": {"type": ["string", "null"]},
+          "status": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

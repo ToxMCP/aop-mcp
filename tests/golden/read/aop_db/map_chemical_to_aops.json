@@ -1,0 +1,11 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "aop": {"value": "http://aopwiki.org/aops/25"},
+        "title": {"value": "Neurotoxicity"},
+        "stressId": {"value": "DSS:123"}
+      }
+    ]
+  }
+}

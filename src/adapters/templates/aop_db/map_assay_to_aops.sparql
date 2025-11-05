@@ -1,0 +1,12 @@
+PREFIX aopo: <http://aopkb.org/aop-ontology#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+
+SELECT ?aop ?title ?assay
+WHERE {{
+  BIND("{assay_id}" AS ?assayId)
+  ?assay aopo:has_identifier_value ?assayId ;
+         aopo:maps_to_aop ?aop .
+  ?aop dcterms:title ?title .
+}}
+ORDER BY LCASE(?title)
