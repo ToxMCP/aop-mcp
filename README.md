@@ -1,7 +1,7 @@
 # AOP MCP Server
 
 **Model Context Protocol endpoint for Adverse Outcome Pathway discovery, semantics, and draft authoring.**  
-Use the same Taskmaster components we developed (read adapters, semantic services, write-path tooling, publish planners, async jobs) through any MCP-aware agent—Codex CLI, Claude Code, Gemini CLI, etc.
+Use the components in this repository (read adapters, semantic services, write-path tooling, publish planners, async jobs) through any MCP-aware agent—Codex CLI, Claude Code, Gemini CLI, etc.
 
 ## Why this project exists
 
@@ -141,7 +141,7 @@ Because the server exposes the standard `initialize`, `tools/list`, `tools/call`
 
 - Tests: `pytest`
 - Benchmark stubs: `python scripts/benchmarks.py` (extend with real endpoints).
-- Keep MCP tools in sync with the Taskmaster services—update JSON Schemas and docs (`docs/contracts/`, `docs/quickstarts/`) when payloads change.
+- Keep MCP tools in sync with the underlying services—update JSON Schemas and docs (`docs/contracts/`, `docs/quickstarts/`) when payloads change.
 
 ---
 
@@ -156,5 +156,4 @@ Because the server exposes the standard `initialize`, `tools/list`, `tools/call`
 
 ## License
 
-MIT (same as the Taskmaster MCP project).
-
+Apache-2.0
