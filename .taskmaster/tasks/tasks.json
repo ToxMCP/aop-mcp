@@ -13,13 +13,16 @@
           "Threat model update documents write-path controls and audit hashing."
         ],
         "testStrategy": "Architecture peer review plus tabletop threat-model session validating mitigations and residual risks.",
-        "tags": ["architecture", "phase-a"],
+        "tags": [
+          "architecture",
+          "phase-a"
+        ],
         "priority": "high",
         "status": "done",
         "dependencies": [],
         "subtasks": [
           {
-            "id": "AOP-001.1",
+            "id": 1,
             "title": "Consolidate architecture drivers",
             "description": "Extract functional, data, security, and reuse requirements for the AOP MCP from information.md and existing PBPK patterns.",
             "details": "Compile `docs/adr/architecture-drivers.md` summarizing drivers, constraints, and reuse mandates. Highlight deltas from PBPK MCP baseline.",
@@ -28,39 +31,49 @@
             "testStrategy": "Peer review checklist confirming all key drivers and assumptions are captured."
           },
           {
-            "id": "AOP-001.2",
+            "id": 2,
             "title": "Author system context & component ADR",
             "description": "Draft ADR describing FastAPI service layout, adapters, semantic services, job service, and provenance/audit layers.",
             "details": "Produce ADR-001 with diagrams covering tool layer, resource layer, job service, adapters, semantic services, and audit pipeline.",
             "status": "done",
-            "dependencies": ["AOP-001.1"],
+            "dependencies": [
+              "AOP-001.1"
+            ],
             "testStrategy": "Architecture walkthrough verifying component interactions match drivers."
           },
           {
-            "id": "AOP-001.3",
+            "id": 3,
             "title": "Catalog external endpoints & failover policies",
             "description": "Document SPARQL, MediaWiki, CompTox, and AOPOntology endpoints with credentials placeholders, SLAs, and failover plans.",
             "details": "Create `docs/contracts/endpoint-matrix.md` capturing primary/backup URLs, auth modes, rate limits, and retry/backoff guidance.",
             "status": "done",
-            "dependencies": ["AOP-001.1"],
+            "dependencies": [
+              "AOP-001.1"
+            ],
             "testStrategy": "Run validation by resolving hostnames and cross-checking with information.md references."
           },
           {
-            "id": "AOP-001.4",
+            "id": 4,
             "title": "Extend threat model for write paths",
             "description": "Update PBPK threat model to cover draft store, publish planner, and MediaWiki/OWL write operations.",
             "details": "Publish STRIDE table in `docs/adr/threat-model-write-path.md` with mitigations, logging, and RBAC requirements.",
             "status": "done",
-            "dependencies": ["AOP-001.2"],
+            "dependencies": [
+              "AOP-001.2"
+            ],
             "testStrategy": "Facilitate tabletop review focusing on tamper evidence and RBAC enforcement."
           },
           {
-            "id": "AOP-001.5",
+            "id": 5,
             "title": "Record decision log & rollout plan",
             "description": "Finalize ADR package with decision rationale, open questions, and transition plan into implementation phases.",
             "details": "Store ADR index in `docs/adr/README.md` linking all architecture artifacts and outlining follow-on work for Tasks AOP-002..005.",
             "status": "done",
-            "dependencies": ["AOP-001.2", "AOP-001.3", "AOP-001.4"],
+            "dependencies": [
+              "AOP-001.2",
+              "AOP-001.3",
+              "AOP-001.4"
+            ],
             "testStrategy": "Review ensures ADRs resolve all identified drivers and call out residual risks."
           }
         ]
@@ -77,54 +90,72 @@
           "Tests cover success and representative error mapping per info.md Section 8."
         ],
         "testStrategy": "Automated suite with SPARQL fixture replay plus schema validation in CI.",
-        "tags": ["adapters", "schemas", "phase-b"],
+        "tags": [
+          "adapters",
+          "schemas",
+          "phase-b"
+        ],
         "priority": "high",
         "status": "in-progress",
-        "dependencies": ["AOP-001"],
+        "dependencies": [
+          "AOP-001"
+        ],
         "subtasks": [
           {
-            "id": "AOP-002.1",
+            "id": 1,
             "title": "Stand up SPARQL client core",
             "description": "Create reusable SPARQL client with templating, retries, caching hooks, and failover support for AOP-Wiki/AOP-DB endpoints.",
             "details": "Deliver `src/adapters/sparql_client.py` with connection pooling, query templates, exponential backoff, and metrics instrumentation.",
             "status": "done",
-            "dependencies": ["AOP-001.3"],
+            "dependencies": [
+              "AOP-001.3"
+            ],
             "testStrategy": "Unit tests mocking HTTP responses and verifying retry/failover logic."
           },
           {
-            "id": "AOP-002.2",
+            "id": 2,
             "title": "Implement AOP-Wiki read adapters",
             "description": "Expose search/list/get operations backed by SPARQL templates for AOPs, key events, and relationships.",
             "details": "Create `src/adapters/aop_wiki.py` with functions for `search_aops`, `get_aop`, `list_key_events`, and `list_kers` with normalization helpers.",
             "status": "done",
-            "dependencies": ["AOP-002.1"],
+            "dependencies": [
+              "AOP-002.1"
+            ],
             "testStrategy": "Snapshot tests against golden SPARQL responses ensuring schema alignment."
           },
           {
-            "id": "AOP-002.3",
+            "id": 3,
             "title": "Wire AOP-DB and CompTox mappers",
             "description": "Implement adapters for chemical and assay mapping queries spanning AOP-DB and CompTox APIs.",
             "details": "Develop `src/adapters/aop_db.py` and `src/adapters/comp_tox.py` covering map_chemical_to_aops and map_assay_to_aops with provenance metadata.",
             "status": "done",
-            "dependencies": ["AOP-002.1"],
+            "dependencies": [
+              "AOP-002.1"
+            ],
             "testStrategy": "Integration tests using recorded fixtures for representative chemicals and assays."
           },
           {
-            "id": "AOP-002.4",
+            "id": 4,
             "title": "Define MCP read schemas",
             "description": "Author JSON Schemas for all read tool inputs/outputs and register them with MCP tooling.",
             "details": "Store schemas in `docs/contracts/schemas/read/` and add validation harness ensuring responses from adapters conform.",
             "status": "done",
-            "dependencies": ["AOP-002.2", "AOP-002.3"],
+            "dependencies": [
+              "AOP-002.2",
+              "AOP-002.3"
+            ],
             "testStrategy": "Schema validation tests using `jsonschema` against golden payloads."
           },
           {
-            "id": "AOP-002.5",
+            "id": 5,
             "title": "Create golden fixtures & regression tests",
             "description": "Capture representative SPARQL/API responses and wire snapshot tests for core adapters.",
             "details": "Populate `tests/golden/read/` with fixtures and implement regression tests verifying adapters handle success and error taxonomy cases.",
             "status": "done",
-            "dependencies": ["AOP-002.2", "AOP-002.4"],
+            "dependencies": [
+              "AOP-002.2",
+              "AOP-002.4"
+            ],
             "testStrategy": "CI job executing tests with recorded fixtures and verifying error mappings."
           }
         ]
@@ -141,54 +172,71 @@
           "Tests cover success plus semantic violation scenarios (info.md Section 8)."
         ],
         "testStrategy": "Unit + integration suite covering CURIE normalization, applicability mapping, and evidence aggregation edge cases.",
-        "tags": ["semantics", "phase-c"],
+        "tags": [
+          "semantics",
+          "phase-c"
+        ],
         "priority": "medium",
         "status": "in-progress",
-        "dependencies": ["AOP-002"],
+        "dependencies": [
+          "AOP-002"
+        ],
         "subtasks": [
           {
-            "id": "AOP-003.1",
+            "id": 1,
             "title": "Design ontology alignment plan",
             "description": "Define mapping strategy between AOPOntology, Biolink, GO, CHEBI, and other required vocabularies.",
             "details": "Document plan in `docs/semantic/ontology-alignment.md` including CURIE policies, fallback resolution, and validation rules.",
             "status": "done",
-            "dependencies": ["AOP-001.2"],
+            "dependencies": [
+              "AOP-001.2"
+            ],
             "testStrategy": "Review mapping coverage against priority entities listed in information.md."
           },
           {
-            "id": "AOP-003.2",
+            "id": 2,
             "title": "Implement CURIE normalization service",
             "description": "Build core semantic module for CURIE validation, normalization, and ID minting for drafts.",
             "details": "Create `src/semantic/curie_service.py` with allow-list checks, resolvers, and minting strategy for temporary IDs.",
             "status": "done",
-            "dependencies": ["AOP-003.1"],
+            "dependencies": [
+              "AOP-003.1"
+            ],
             "testStrategy": "Unit tests covering valid/invalid CURIE paths and minting collision handling."
           },
           {
-            "id": "AOP-003.3",
+            "id": 3,
             "title": "Deliver applicability normalization helper",
             "description": "Expose helper translating species, sex, and life stage inputs into canonical ontology identifiers.",
             "details": "Implement `src/semantic/applicability.py` with mapping tables, heuristics, and normalization errors for unsupported values.",
             "status": "done",
-            "dependencies": ["AOP-003.2"],
+            "dependencies": [
+              "AOP-003.2"
+            ],
             "testStrategy": "Data-driven tests validating expected CURIE outputs for representative inputs."
           },
           {
-            "id": "AOP-003.4",
+            "id": 4,
             "title": "Assemble evidence matrix utilities",
             "description": "Create utilities to collate KER evidence facets (plausibility, temporal, dose) and structure outputs for MCP tools.",
             "details": "Add `src/semantic/evidence_matrix.py` aggregating data from adapters and providing normalized evidence summaries.",
             "status": "done",
-            "dependencies": ["AOP-002.2", "AOP-003.2"],
+            "dependencies": [
+              "AOP-002.2",
+              "AOP-003.2"
+            ],
             "testStrategy": "Fixture-based tests comparing generated matrices with golden expectations."
           },
           {
-            "id": "AOP-003.5",
+            "id": 5,
             "title": "Expose semantic MCP tools & schemas",
             "description": "Implement get_applicability and get_evidence_matrix tools with JSON Schemas and documentation.",
             "details": "Create tool handlers under `src/tools/semantic/` and schemas in `docs/contracts/schemas/semantic/`, updating MCP manifest accordingly.",
             "status": "done",
-            "dependencies": ["AOP-003.3", "AOP-003.4"],
+            "dependencies": [
+              "AOP-003.3",
+              "AOP-003.4"
+            ],
             "testStrategy": "End-to-end tests invoking tools via MCP harness with positive and negative cases."
           }
         ]
@@ -205,54 +253,71 @@
           "Publish planner outputs MediaWiki plan JSON and OWL delta preview without executing live writes."
         ],
         "testStrategy": "Integration tests for write tools plus planner dry-run validations with snapshot comparison.",
-        "tags": ["write", "phase-d"],
+        "tags": [
+          "write",
+          "phase-d"
+        ],
         "priority": "high",
         "status": "in-progress",
-        "dependencies": ["AOP-003"],
+        "dependencies": [
+          "AOP-003"
+        ],
         "subtasks": [
           {
-            "id": "AOP-004.1",
+            "id": 1,
             "title": "Design draft store data model",
             "description": "Specify storage schema capturing drafts, versioning, provenance, and diff metadata.",
             "details": "Produce data model doc and initialize ORM/graph schema in `src/services/draft_store/model.py`.",
             "status": "done",
-            "dependencies": ["AOP-001.2"],
+            "dependencies": [
+              "AOP-001.2"
+            ],
             "testStrategy": "Schema migration and serialization tests ensuring provenance fields present."
           },
           {
-            "id": "AOP-004.2",
+            "id": 2,
             "title": "Implement draft persistence & diff engine",
             "description": "Build draft store service with CRUD operations, version comparisons, and PROV-O capture.",
             "details": "Create `src/services/draft_store/service.py` supporting version diffs, hash chaining, and audit emission.",
             "status": "done",
-            "dependencies": ["AOP-004.1"],
+            "dependencies": [
+              "AOP-004.1"
+            ],
             "testStrategy": "Unit tests covering create/update flows and diff output snapshots."
           },
           {
-            "id": "AOP-004.3",
+            "id": 3,
             "title": "Expose write MCP tools",
             "description": "Implement create_draft_aop, add_or_update_ke, add_or_update_ker, link_stressor, and validate_draft handlers with RBAC hooks.",
             "details": "Add handlers under `src/tools/write/` integrating draft store and semantic services with structured error taxonomy.",
             "status": "done",
-            "dependencies": ["AOP-004.2", "AOP-003.2"],
+            "dependencies": [
+              "AOP-004.2",
+              "AOP-003.2"
+            ],
             "testStrategy": "Integration tests simulating author and reviewer roles exercising successful edits and validation failures."
           },
           {
-            "id": "AOP-004.4",
+            "id": 4,
             "title": "Build MediaWiki + OWL publish planners",
             "description": "Construct planners that generate MediaWiki edit plans and AOPOntology OWL deltas without executing writes.",
             "details": "Implement `src/services/publish/mediawiki_planner.py` and `src/services/publish/owl_planner.py` with dry-run output artifacts.",
             "status": "done",
-            "dependencies": ["AOP-004.2", "AOP-004.3"],
+            "dependencies": [
+              "AOP-004.2",
+              "AOP-004.3"
+            ],
             "testStrategy": "Fixture-driven tests comparing planned operations against expected wiki/OWL deltas."
           },
           {
-            "id": "AOP-004.5",
+            "id": 5,
             "title": "Document publish workflow & RBAC",
             "description": "Author quickstart documenting draft-to-publish workflow, roles, and audit expectations.",
             "details": "Write `docs/quickstarts/publish.md` covering staging review, approval flow, dry-run usage, and rollback guidance.",
             "status": "done",
-            "dependencies": ["AOP-004.4"],
+            "dependencies": [
+              "AOP-004.4"
+            ],
             "testStrategy": "Run doc dry-run by walking through plan generation verifying all steps documented."
           }
         ]
@@ -269,62 +334,158 @@
           "Caching/compliance/perf suites documented with passing automated checks."
         ],
         "testStrategy": "Golden dialogue suite, async job integration tests, and benchmark scripts establishing performance baselines.",
-        "tags": ["agent", "async", "phase-e", "phase-f"],
+        "tags": [
+          "agent",
+          "async",
+          "phase-e",
+          "phase-f"
+        ],
         "priority": "medium",
         "status": "done",
-        "dependencies": ["AOP-004"],
+        "dependencies": [
+          "AOP-004"
+        ],
         "subtasks": [
           {
-            "id": "AOP-005.1",
+            "id": 1,
             "title": "Integrate LangGraph planner/executor",
             "description": "Port PBPK LangGraph patterns and tailor tool invocation graph for AOP read/write flows with confirmation steps.",
             "details": "Implement `src/agent/workflows.py` defining task graphs, guardrails, and explanation traces for critical operations.",
             "status": "done",
-            "dependencies": ["AOP-002", "AOP-004.3"],
+            "dependencies": [
+              "AOP-002",
+              "AOP-004.3"
+            ],
             "testStrategy": "Golden dialogue tests verifying agent selects correct tools and issues publish confirmations."
           },
           {
-            "id": "AOP-005.2",
+            "id": 2,
             "title": "Implement async job service",
             "description": "Add async job orchestration for long-running SPARQL queries, ingest, and export tasks with status polling.",
             "details": "Create `src/services/jobs/` with queue abstraction, persistence, and MCP-compatible status endpoints.",
             "status": "done",
-            "dependencies": ["AOP-001.2", "AOP-005.1"],
+            "dependencies": [
+              "AOP-001.2",
+              "AOP-005.1"
+            ],
             "testStrategy": "Integration tests simulating queued SPARQL jobs and verifying status transitions plus audit hooks."
           },
           {
-            "id": "AOP-005.3",
+            "id": 3,
             "title": "Add caching & telemetry hardening",
             "description": "Implement result caching, SPARQL cost tracking, structured logging, and alerts for adapter errors.",
             "details": "Wire caching layer (Redis or in-memory) with invalidation policies, plus metrics/log exports consistent with audit chain.",
             "status": "done",
-            "dependencies": ["AOP-002.1", "AOP-005.2"],
+            "dependencies": [
+              "AOP-002.1",
+              "AOP-005.2"
+            ],
             "testStrategy": "Benchmark harness verifying cache hit improvements and alert triggers for forced failures."
           },
           {
-            "id": "AOP-005.4",
+            "id": 4,
             "title": "Establish compliance & audit harness",
             "description": "Extend audit logging and compliance scripts to cover write operations, job service, and agent actions.",
             "details": "Add checks in `docs/contracts/compliance.md` and scripts verifying hash chain integrity, RBAC enforcement, and retention policies.",
             "status": "done",
-            "dependencies": ["AOP-004.2", "AOP-005.2"],
+            "dependencies": [
+              "AOP-004.2",
+              "AOP-005.2"
+            ],
             "testStrategy": "Automated compliance suite ensuring audit hashes remain consistent under load tests."
           },
           {
-            "id": "AOP-005.5",
+            "id": 5,
             "title": "Run performance & resilience benchmarks",
             "description": "Execute benchmarks for SPARQL cost, job latency, and agent workflows; document tuning recommendations.",
             "details": "Produce `docs/reports/performance.md` summarizing benchmark results, cache effectiveness, and mitigation playbooks.",
             "status": "done",
-            "dependencies": ["AOP-005.3", "AOP-005.4"],
+            "dependencies": [
+              "AOP-005.3",
+              "AOP-005.4"
+            ],
             "testStrategy": "Benchmark harness with repeatable scripts capturing metrics and regression thresholds."
+          }
+        ]
+      },
+      {
+        "id": "AOP-006",
+        "title": "Validate MCP end-to-end behavior",
+        "description": "Establish comprehensive testing and validation to prove the AOP MCP server works against live dependencies and survives regressions.",
+        "details": "Scope:\n- Exercise the deployed MCP server against real AOP-Wiki and AOP-DB endpoints, capturing reproducible scripts.\n- Expand automated coverage so every registered tool has happy-path and failure-path tests (unit, contract, and integration tiers).\n- Run JSON-RPC smoke tests that mimic Codex CLI interactions to prove MCP compliance.\n- Capture a test matrix and document execution steps/results for future regression runs.\nDeliverables:\n- Integration notebooks or scripts under `tests/integration/` that hit live services and record fixtures.\n- Contract tests validating payloads for all 12 tools using docs/contracts schemas.\n- JSON-RPC smoke test suite verifying initialize, tools/list, tools/call for representative tool calls.\n- Testing report appended to `docs/reports/` summarizing coverage, pass/fail state, and open issues.",
+        "testStrategy": "Automated pipeline covering unit, contract, integration, and live smoke tiers with CI-friendly entrypoints plus manual verification checklist for external dependencies.",
+        "status": "pending",
+        "dependencies": [
+          "AOP-002",
+          "AOP-003",
+          "AOP-004"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Verify live data connectivity",
+            "description": "Confirm AOP-Wiki and AOP-DB SPARQL endpoints are reachable and produce expected payloads for representative queries.",
+            "details": "Tasks:\n- Implement `scripts/check_endpoints.py` to ping configured SPARQL endpoints with lightweight ASK queries.\n- Capture sample responses for `search_aops` and `get_aop` using live IDs like AOP:296.\n- Document troubleshooting guidance for auth/network failures in docs/contracts/endpoint-matrix.md.",
+            "status": "in-progress",
+            "dependencies": [
+              "AOP-002"
+            ],
+            "testStrategy": "Run connectivity script in CI and manually against staging; fail build on endpoint or schema regressions."
+          },
+          {
+            "id": 2,
+            "title": "Expand automated tool coverage",
+            "description": "Create contract and integration tests so all 12 MCP tools have success and failure-path assertions tied to JSON Schemas.",
+            "details": "Tasks:\n- Parameterize adapter tests to iterate across tool catalog inputs/outputs using golden fixtures.\n- Add schema assertions to ensure responses align with docs/contracts definitions.\n- Backfill edge-case tests for empty results, invalid IDs, and upstream 4xx/5xx conditions.",
+            "status": "in-progress",
+            "dependencies": [
+              "AOP-002",
+              "AOP-003"
+            ],
+            "testStrategy": "pytest suite combining recorded fixtures and synthetic failures; enforce coverage thresholds via CI reports."
+          },
+          {
+            "id": 3,
+            "title": "Implement JSON-RPC smoke suite",
+            "description": "Exercise initialize, tools/list, and representative tools/call interactions through the FastAPI endpoint using httpx AsyncClient.",
+            "details": "Tasks:\n- Spin up app via TestClient fixture and issue JSON-RPC requests covering read and write tool categories.\n- Assert MCP responses include expected content envelopes and error handling.\n- Capture reusable payloads for CLI-based regression checks.",
+            "status": "in-progress",
+            "dependencies": [
+              "AOP-006.1"
+            ],
+            "testStrategy": "Integration suite executed in CI plus manual verification with curl scripts from README."
+          },
+          {
+            "id": 4,
+            "title": "Wire CI entrypoints and observability",
+            "description": "Integrate new integration suites into CI pipelines with coverage reporting, flaky detection, and telemetry capture.",
+            "details": "Tasks:\n- Add tox/Make targets for connectivity, contract, smoke, and regression suites.\n- Configure CI workflow to run tiers conditionally (e.g., nightly live checks).\n- Emit metrics/log summaries to aid incident triage when tests fail.",
+            "status": "in-progress",
+            "dependencies": [
+              "AOP-006.2",
+              "AOP-006.3"
+            ],
+            "testStrategy": "CI pipeline dry-run verifying new stages, coverage artifacts, and failure notifications."
+          },
+          {
+            "id": 5,
+            "title": "Publish validation report",
+            "description": "Summarize test coverage, live endpoint status, and remaining gaps in docs/reports for stakeholders.",
+            "details": "Tasks:\n- Update testing matrix capturing unit/contract/integration/live tiers with ownership.\n- Document known limitations, flaky scenarios, and remediation plan.\n- Link scripts and CI jobs to enable reproducibility for future releases.",
+            "status": "in-progress",
+            "dependencies": [
+              "AOP-006.4"
+            ],
+            "testStrategy": "Peer review of report ensuring accuracy and actionable follow-ups; sign-off by QA lead."
           }
         ]
       }
     ],
     "metadata": {
       "description": "Tasks for master context",
-      "created": "2025-11-05T16:10:30.825Z"
+      "created": "2025-11-05T16:10:30.825Z",
+      "updated": "2025-11-05T23:06:47.451Z"
     }
   }
 }

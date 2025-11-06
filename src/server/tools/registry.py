@@ -24,8 +24,9 @@ class RegisteredTool:
         self.description = description
         self.handler = handler
         self.input_model = input_model
-        self.output_schema = output_schema
-        self.input_schema = input_model.model_json_schema()
+        self.output_schema = output_schema or {"type": "object"}
+        # Ensure input_schema is always a dictionary, even if the model has no fields
+        self.input_schema = input_model.model_json_schema() or {}
 
 
 class ToolRegistry:
@@ -85,7 +86,6 @@ tool_registry.register(
     handler=aop.search_aops,
     input_model=aop.SearchAopsInput,
 )
-
 tool_registry.register(
     name="get_aop",
     description="Fetch a single AOP with metadata.",

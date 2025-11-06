@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aop-taskmaster-mcp"
+name = "aop-mcp-server"
 version = "0.1.0"
-description = "Taskmaster MCP service for Adverse Outcome Pathway tooling."
+description = "Model Context Protocol server for Adverse Outcome Pathway tooling."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
-  {name = "Taskmaster Team"}
+  {name = "AOP MCP Team"}
 ]
 dependencies = [
   "fastapi>=0.110,<1.0",

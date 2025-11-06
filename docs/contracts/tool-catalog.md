@@ -1,4 +1,4 @@
-# Taskmaster MCP Tool Catalog
+# AOP MCP Tool Catalog
 
 Planned tool surface extracted from `information.md`:
 

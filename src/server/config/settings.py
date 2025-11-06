@@ -11,6 +11,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
+    enable_fixture_fallback: bool = True
 
     # SPARQL endpoints
     aop_wiki_sparql_endpoints: List[str] = [

@@ -13,6 +13,7 @@ from src.adapters import (
     SparqlUpstreamError,
     TemplateCatalog,
 )
+from src.instrumentation.cache import InMemoryCache
 
 
 class MemoryCache(CacheProtocol):
@@ -107,6 +108,29 @@ async def test_query_uses_cache_when_available() -> None:
     transport = httpx.MockTransport(handler)
 
     async with SparqlClient(["https://primary.example/sparql"], transport=transport, cache=cache) as client:
+        await client.query("SELECT * WHERE {?s ?p ?o}")
+        await client.query("SELECT * WHERE {?s ?p ?o}")
+
+    assert call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_query_supports_sync_cache_implementation() -> None:
+    cache = InMemoryCache()
+    call_count = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal call_count
+        call_count += 1
+        return httpx.Response(200, json={"results": {"bindings": []}})
+
+    transport = httpx.MockTransport(handler)
+
+    async with SparqlClient(
+        ["https://primary.example/sparql"],
+        transport=transport,
+        cache=cache,
+    ) as client:
         await client.query("SELECT * WHERE {?s ?p ?o}")
         await client.query("SELECT * WHERE {?s ?p ?o}")
 

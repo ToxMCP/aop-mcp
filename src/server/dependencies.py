@@ -37,14 +37,14 @@ def _build_sparql_client(endpoints: list[str]) -> SparqlClient:
 def get_aop_wiki_adapter() -> AOPWikiAdapter:
     settings = get_settings()
     client = _build_sparql_client(settings.aop_wiki_sparql_endpoints)
-    return AOPWikiAdapter(client)
+    return AOPWikiAdapter(client=client, enable_fixture_fallback=settings.enable_fixture_fallback)
 
 
 @lru_cache
 def get_aop_db_adapter() -> AOPDBAdapter:
     settings = get_settings()
     client = _build_sparql_client(settings.aop_db_sparql_endpoints)
-    return AOPDBAdapter(client)
+    return AOPDBAdapter(client, enable_fixture_fallback=settings.enable_fixture_fallback)
 
 
 @lru_cache
@@ -61,7 +61,10 @@ def get_semantic_tools() -> SemanticTools:
             "PATO": "http://purl.obolibrary.org/obo/PATO_",
             "HsapDv": "http://purl.obolibrary.org/obo/HsapDv_",
         },
-        species_map={"human": "NCBITaxon:9606"},
+        species_map={
+            "human": "NCBITaxon:9606",
+            "homo sapiens": "NCBITaxon:9606",
+        },
         life_stage_map={"adult": "HsapDv:0000087"},
         sex_map={"female": "PATO:0000383", "male": "PATO:0000384"},
     )

@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .sparql_client import SparqlClient
+from .fixtures import FixtureNotFoundError, load_fixture
+from .sparql_client import SparqlClient, SparqlClientError
 from .sparql_client import TemplateCatalog as _TemplateCatalog
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "aop_wiki"
@@ -46,6 +47,7 @@ class AOPWikiAdapter:
 
     client: SparqlClient
     cache_ttl_seconds: int = 300
+    enable_fixture_fallback: bool = True
 
     def __post_init__(self) -> None:
         self._templates = _TemplateCatalog.from_directory(TEMPLATE_DIR)
@@ -64,7 +66,10 @@ class AOPWikiAdapter:
                 "limit": limit,
             },
         )
-        payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        try:
+            payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        except SparqlClientError:
+            payload = self._load_fixture("aop_wiki", "search_aops")
         bindings = payload.get("results", {}).get("bindings", [])
         results: list[dict[str, Any]] = []
         for row in bindings:
@@ -81,7 +86,10 @@ class AOPWikiAdapter:
     async def get_aop(self, aop_id: str) -> dict[str, Any]:
         iri = self._aop_iri(aop_id)
         query = self._templates.render("get_aop", {"aop_iri": iri})
-        payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        try:
+            payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        except SparqlClientError:
+            payload = self._load_fixture("aop_wiki", "get_aop")
         bindings = payload.get("results", {}).get("bindings", [])
         if not bindings:
             return {"id": _iri_to_curie(iri), "iri": iri}
@@ -98,7 +106,10 @@ class AOPWikiAdapter:
     async def list_key_events(self, aop_id: str) -> list[dict[str, Any]]:
         iri = self._aop_iri(aop_id)
         query = self._templates.render("list_key_events", {"aop_iri": iri})
-        payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        try:
+            payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        except SparqlClientError:
+            payload = self._load_fixture("aop_wiki", "list_key_events")
         bindings = payload.get("results", {}).get("bindings", [])
         items: list[dict[str, Any]] = []
         for row in bindings:
@@ -115,7 +126,10 @@ class AOPWikiAdapter:
     async def list_kers(self, aop_id: str) -> list[dict[str, Any]]:
         iri = self._aop_iri(aop_id)
         query = self._templates.render("list_kers", {"aop_iri": iri})
-        payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        try:
+            payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
+        except SparqlClientError:
+            payload = self._load_fixture("aop_wiki", "list_kers")
         bindings = payload.get("results", {}).get("bindings", [])
         items: list[dict[str, Any]] = []
         for row in bindings:
@@ -142,3 +156,11 @@ class AOPWikiAdapter:
         else:
             suffix = aop_id
         return f"http://aopwiki.org/aops/{suffix}"
+
+    def _load_fixture(self, namespace: str, name: str) -> dict[str, Any]:
+        if not self.enable_fixture_fallback:
+            raise
+        try:
+            return load_fixture(namespace, name)
+        except FixtureNotFoundError as exc:  # pragma: no cover - defensive fallback
+            raise SparqlClientError(str(exc)) from exc

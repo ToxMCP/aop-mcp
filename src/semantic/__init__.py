@@ -1,4 +1,4 @@
-"""Semantic utilities exposed for the Taskmaster MCP."""
+"""Semantic utilities exposed for the AOP MCP server."""
 
 from .curie_service import CurieService  # noqa: F401
 from .applicability import ApplicabilityNormalizer, ApplicabilityInput, ApplicabilityResult  # noqa: F401

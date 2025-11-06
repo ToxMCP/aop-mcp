@@ -4,7 +4,7 @@
 Accepted (drafted 2025-11-05, pending review)
 
 ## Context
-Taskmaster MCP must expose read/write tooling over AOP knowledge bases. The
+The AOP MCP server must expose read/write tooling over AOP knowledge bases. The
 programme in `information.md` spans discovery tooling (search, map, evidence)
 and authoring tooling (draft, validate, publish) with strong reuse of PBPK MCP
 infrastructure. We need an architecture that:
