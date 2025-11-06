@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, MutableMapping
@@ -11,6 +12,14 @@ import httpx
 
 from src.instrumentation.cache import Cache
 from src.instrumentation.metrics import MetricsRecorder
+
+
+async def _resolve_maybe_awaitable(value: Any) -> Any:
+    """Return awaited value when the input is awaitable, otherwise pass through."""
+
+    if inspect.isawaitable(value):
+        return await value
+    return value
 
 class SparqlClientError(Exception):
     """Base exception for SPARQL client errors."""
@@ -130,7 +139,7 @@ class SparqlClient:
     ) -> dict[str, Any]:
         key = cache_key or self._hash_query(query)
         if use_cache and self._cache is not None:
-            cached = await self._cache.get(key)
+            cached = await _resolve_maybe_awaitable(self._cache.get(key))
             if cached is not None:
                 if self._metrics:
                     self._metrics.increment("sparql.cache_hit")
@@ -143,7 +152,9 @@ class SparqlClient:
             response = await self._dispatch(query, timeout=timeout)
 
         if use_cache and self._cache is not None:
-            await self._cache.set(key, response, ttl_seconds=cache_ttl_seconds)
+            await _resolve_maybe_awaitable(
+                self._cache.set(key, response, ttl_seconds=cache_ttl_seconds)
+            )
         if self._metrics:
             self._metrics.increment("sparql.cache_miss")
 

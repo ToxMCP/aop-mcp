@@ -1,17 +1,19 @@
 # AOP MCP Server
 
-**Model Context Protocol endpoint for Adverse Outcome Pathway discovery, semantics, and draft authoring.**  
-Use the components in this repository (read adapters, semantic services, write-path tooling, publish planners, async jobs) through any MCP-aware agent—Codex CLI, Claude Code, Gemini CLI, etc.
+**Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, semantics, and draft authoring.**  
+Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
 
 ## Why this project exists
 
-AOP knowledge work spans multiple heterogeneous sources (AOP-Wiki, AOP-DB, CompTox, MediaWiki, AOPOntology) and requires curated semantics plus draft/publish tooling. The AOP MCP server turns the full stack we built in this repository into an **open, programmable interface** so agents can:
+AOP research depends on stitching together heterogeneous sources (AOP-Wiki, AOP-DB, CompTox, AOPOntology, MediaWiki drafts) while enforcing ontology, provenance, and publication rules. Traditional pipelines are bespoke notebooks or scripts that agents cannot safely reuse.  
 
-- Query AOPs, key events, and KERs directly through MCP tools.
-- Normalize applicability/evidence, manage drafts, and generate publish plans.
-- Leverage async job orchestration, compliance harness, and structured logging for hardening.
+The AOP MCP server wraps those workflows in a **secure, programmable interface**:
 
-The goal is to replicate the experience of the O-QT MCP server but for the AOP domain.
+- **Unified MCP surface** – discovery, semantics, authoring, and job utilities share a single tool catalog exposed over JSON-RPC.
+- **Semantic guardrails** – applicability/evidence helpers normalize identifiers and validate responses against JSON Schema.
+- **Draft-to-publish path** – create drafts, edit key events and KERs, attach stressors, and feed publish planners without leaving MCP.
+
+> Already using the O-QT MCP server? This project mirrors that experience with domain adapters tuned for AOP evidence and authoring.
 
 ---
 
@@ -19,138 +21,153 @@ The goal is to replicate the experience of the O-QT MCP server but for the AOP d
 
 | Capability | Description |
 | --- | --- |
-| 🧬 **AOP discovery adapters** | Read tooling for AOP-Wiki, AOP-DB, CompTox with schema-validated responses. |
-| 🧭 **Semantic services** | CURIE normalization, applicability helper, evidence matrix utilities exposed as tools. |
-| ✍️ **Draft authoring** | Write-path tools using the draft store (create/update KE/KER, link stressors) with provenance and diffing. |
-| 📄 **Publish planners** | MediaWiki and AOPOntology OWL dry-run planners ready for reviewer/publisher workflows. |
-| 🧾 **Compliance & audit** | Hash-chain verification, structured logging, metrics, benchmark targets. |
-| 🤖 **Agent-friendly MCP** | JSON-RPC 2.0 server adhering to MCP spec, tested with Codex CLI, Claude Code, Gemini CLI. |
+| 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation (search AOPs, list KEs/KERs, map chemicals/assays). |
+| 🧭 **Semantic services** | CURIE normalization, applicability helper, and evidence matrix builder; enforced via JSON Schema responses. |
+| ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support. |
+| 📦 **Artifacts & audit** | Structured logging, audit bundles, and metrics for SPARQL/cache, draft edits, and job orchestration. |
+| ⚙️ **Configurable transports** | FastAPI JSON-RPC service with configurable endpoints, retries, and observability hooks. |
+| 🤖 **Agent friendly** | Verified with Codex CLI, Gemini CLI, and Claude Code; includes quick-start snippets and smoke scripts. |
 
 ---
 
-## Repository layout
+## Table of contents
 
-```
-AOP_MCP/
-├── src/
-│   ├── adapters/         # AOP-Wiki, AOP-DB, CompTox clients + schemas
-│   ├── services/         # Draft store, publish planners, jobs, instrumentation
-│   ├── tools/            # Semantic + write-path utilities (schema backed)
-│   └── server/           # FastAPI MCP server (JSON-RPC, tool registry)
-├── docs/
-│   ├── adr/              # Architecture decision records
-│   ├── contracts/        # JSON Schemas, endpoint matrix, compliance checklist
-│   ├── quickstarts/      # How to use read/write/publish tools + MCP integration
-│   └── reports/          # Performance benchmarks, hardening notes
-├── tests/                # Unit tests, golden fixtures, MCP smoke tests
-└── scripts/benchmarks.py # Placeholder benchmark runner
-```
+1. [Quick start](#quick-start)
+2. [Configuration](#configuration)
+3. [Tool catalog](#tool-catalog)
+4. [Running the server](#running-the-server)
+5. [Integrating with coding agents](#integrating-with-coding-agents)
+6. [Output artifacts](#output-artifacts)
+7. [Security checklist](#security-checklist)
+8. [Development notes](#development-notes)
+9. [Roadmap](#roadmap)
+10. [License](#license)
 
 ---
 
 ## Quick start
 
 ```bash
+git clone https://github.com/your-org/AOP_MCP.git
+cd AOP_MCP
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
-uvicorn src.server.api.server:app --host 0.0.0.0 --port 8000
+uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
 ```
 
-Visit `http://127.0.0.1:8000/health` for a liveness check. MCP tools are exposed at `http://127.0.0.1:8000/mcp`.
+> **Heads-up:** Federated SPARQL queries benefit from internet access. When offline, enable fixture fallbacks in `.env` (see [Configuration](#configuration)).
 
-### MCP smoke test
+Once the server is running:
 
-```bash
-curl -X POST http://127.0.0.1:8000/mcp \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/list"
-  }'
-```
-
-You should see the AOP tool catalog (e.g., `search_aops`, `map_chemical_to_aops`, `create_draft_aop`).
+- HTTP MCP endpoint: `http://127.0.0.1:8003/mcp`
+- Health check: `http://127.0.0.1:8003/health`
 
 ---
 
 ## Configuration
 
-Environment variables use the `AOP_MCP_` prefix. Key settings:
+Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/settings/) with `.env`/`.env.local` support. Key environment variables:
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `AOP_MCP_ENVIRONMENT` | `development` | Included in `/health` and logs. |
-| `AOP_MCP_LOG_LEVEL` | `INFO` | Log verbosity. |
-| `AOP_MCP_AOP_WIKI_SPARQL_ENDPOINTS` | `https://sparql.aopwiki.org/sparql` | Comma-separated SPARQL endpoints. |
-| `AOP_MCP_AOP_DB_SPARQL_ENDPOINTS` | `https://sparql.aopdb.org/sparql` | Comma-separated SPARQL endpoints. |
-| `AOP_MCP_COMPTOX_BASE_URL` | `https://comptox.epa.gov/dashboard/api/` | CompTox API base URL. |
-| `AOP_MCP_COMPTOX_API_KEY` | – | Optional CompTox API key. |
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `AOP_MCP_ENVIRONMENT` | Optional | `development` | Controls defaults like permissive CORS and logging detail. |
+| `AOP_MCP_LOG_LEVEL` | Optional | `INFO` | Application log level. |
+| `AOP_MCP_AOP_WIKI_SPARQL_ENDPOINTS` | Optional | `https://sparql.aopwiki.org/sparql` | Comma-separated list of AOP-Wiki SPARQL endpoints. |
+| `AOP_MCP_AOP_DB_SPARQL_ENDPOINTS` | Optional | `https://sparql.aopdb.org/sparql` | Comma-separated list of AOP-DB SPARQL endpoints. |
+| `AOP_MCP_COMPTOX_BASE_URL` | Optional | `https://comptox.epa.gov/dashboard/api/` | Base URL for CompTox enrichment calls. |
+| `AOP_MCP_COMPTOX_API_KEY` | Optional | – | API key for CompTox (recommended for higher quota). |
+| `AOP_MCP_ENABLE_FIXTURE_FALLBACK` | Optional | `0` | Set to `1` to serve fixture data when remote SPARQL endpoints are unavailable. |
+| `AOP_MCP_METRICS_ENABLED` | Optional | `1` | Expose `/metrics` (Prometheus). |
 
-Extend the settings module (`src/server/config/settings.py`) if you need additional configuration (auth, job backend, etc.).
+See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for the extended configuration surface (auth, retries, cache sizing, job service knobs).
 
 ---
 
-## Tool catalog (summary)
+## Tool catalog
 
-| Tool | Description |
-| --- | --- |
-| `search_aops` | Text search over AOP-Wiki. |
-| `get_aop` | Retrieve metadata for a single AOP. |
-| `list_key_events` / `list_kers` | Enumerate KEs/KERs for an AOP. |
-| `map_chemical_to_aops` / `map_assay_to_aops` | Cross-map chemicals or assays via AOP-DB + CompTox. |
-| `get_applicability` / `get_evidence_matrix` | Semantic normalization helpers. |
-| `create_draft_aop` | Create a draft with applicability and references. |
-| `add_or_update_ke` / `add_or_update_ker` | Modify draft graph components (with diffing + audit chain). |
-| `link_stressor` | Attach stressors to the draft with provenance. |
+| Category | Highlight tools | Notes |
+| --- | --- | --- |
+| AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination and schema validation. |
+| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops` | Joins CompTox + AOP-DB stressor/assay data to surface linked AOPs. |
+| Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
+| Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor` | In-memory draft graph edits with provenance, ready for publish planners. |
 
-Responses are validated against JSON Schemas under `docs/contracts/schemas/` to ensure MCP agents get consistent payloads.
+Every response is validated against JSON Schemas in `docs/contracts/schemas/`. Refer to `docs/contracts/tool-catalog.md` for full definitions and examples.
+
+---
+
+## Running the server
+
+The FastAPI app lives at `src/server/api/server.py`. All transports share the same JSON-RPC handlers defined in `src/server/mcp/router.py`.
+
+```bash
+uvicorn src.server.api.server:app --host 0.0.0.0 --port 8003
+```
+
+- `GET /health` – environment banner, dependency status.
+- `POST /mcp` – JSON-RPC 2.0 endpoint exposing the MCP tool catalog.
+
+Use `scripts/test_mcp_endpoints.sh` for a scripted smoke run against `/mcp` and to capture sample payloads.
 
 ---
 
 ## Integrating with coding agents
 
-Any MCP-aware agent can connect by pointing to the base URL:
+Add the server to your agent’s MCP configuration. Example Codex CLI entry:
 
 ```json
 {
-  "endpoint": "http://127.0.0.1:8000/mcp"
+  "name": "aop-mcp",
+  "endpoint": "http://127.0.0.1:8003/mcp"
 }
 ```
 
-Tested clients:
-- **Codex CLI** – `codex mcp connect http://127.0.0.1:8000/mcp`
-- **Gemini CLI** – add the server to `mcp_servers` in the CLI config.
-- **Claude Code** – use the custom MCP server configuration.
+Tested surfaces:
 
-Because the server exposes the standard `initialize`, `tools/list`, `tools/call`, and `shutdown` methods, everything behaves like the O-QT MCP server.
+- **Codex CLI** – `codex mcp connect http://127.0.0.1:8003/mcp`
+- **Gemini CLI** – add the endpoint under `mcp_servers` to auto-negotiate the tool catalog.
+- **Claude Code** – configure a custom MCP server with the base URL above.
+
+Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutdown`, agents immediately gain discovery plus structured responses (`content` + `structuredContent`).
 
 ---
 
-## Security & compliance
+## Output artifacts
 
-- Structured logging via `src/instrumentation/logging.py` (JSON payloads with draft/job context).
-- Cache + metrics instrumentation for SPARQL queries (`sparql.cache_hit`, `sparql.cache_miss`).
-- Audit chain verification helper (`src/instrumentation/audit.py`) plus docs/contracts/compliance/checklist.md.
-- Async job service with status transitions and logging to support alerts on failures or long runtimes.
+- **Structured MCP payloads** – JSON responses aligned with schemas under `docs/contracts/schemas/`.
+- **Audit + provenance** – draft edits capture author, summary, and version metadata for downstream review queues.
+- **Metrics & logs** – Prometheus metrics (`/metrics`) and structured logs (`src/instrumentation/logging.py`) capturing SPARQL latency, cache hit ratios, and job lifecycle events.
+- **Fixture captures** – optional local fixtures for offline testing when `AOP_MCP_ENABLE_FIXTURE_FALLBACK=1`.
+
+---
+
+## Security checklist
+
+- ✅ Structured logging + audit chain validation (`src/instrumentation/audit.py`).
+- ✅ SPARQL + CompTox clients respect retry/backoff limits; tune via settings.
+- ✅ MCP tools enforce JSON Schema validation before returning data to agents.
+- 🔲 Optional auth middleware (see `docs/adr/architecture-drivers.md`) – integrate with your gateway before production exposure.
+- 🔲 Review publish planners (MediaWiki / AOPOntology) before enabling automated publish jobs.
 
 ---
 
 ## Development notes
 
-- Tests: `pytest`
-- Benchmark stubs: `python scripts/benchmarks.py` (extend with real endpoints).
-- Keep MCP tools in sync with the underlying services—update JSON Schemas and docs (`docs/contracts/`, `docs/quickstarts/`) when payloads change.
+- `pytest` – run unit and schema validation tests.
+- `scripts/test_mcp_endpoints.sh` – exercise the MCP catalog end-to-end.
+- `make contract` – regenerate/validate JSON Schema docs (if available in your tooling setup).
+- `python scripts/benchmarks.py` – baseline latency testing (extend with real workloads).
+- Keep docs in sync: update `docs/contracts/endpoint-matrix.md`, `docs/quickstarts/`, and schema files when payloads change.
 
 ---
 
 ## Roadmap
 
-- Optional persistent job backend (Redis/Postgres) + LangGraph integration.
-- Automated benchmark runner with thresholds feeding CI.
-- Extended compliance automation (RBAC simulations, publish dry-run approvals).
-- Additional MCP resources/prompts if AOP agents need pre-authored content.
+- Persistent draft store (Redis/Postgres) with multi-user access control.
+- Automated benchmark thresholds feeding CI gating.
+- Additional MCP resources/prompts for curated applicability templates and evidence summaries.
+- Publish workflow hardening (approval queues, RBAC simulation, MediaWiki integration tests).
 
 ---
 

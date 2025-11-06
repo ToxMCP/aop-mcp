@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory houses ADRs for the AOP Taskmaster MCP. Number entries as
+This directory houses ADRs for the AOP MCP server. Number entries as
 `NNNN-title.md` and capture context, decision, alternatives, and consequences
 for each architectural choice.
 

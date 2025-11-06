@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from src.services.draft_store import DraftStoreService, InMemoryDraftRepository
+from src.tools import validate_payload
 from src.tools.write import (
     DraftApplicability,
     KeyEventPayload,
@@ -31,6 +32,7 @@ def test_create_draft_aop_returns_schema_compliant_payload() -> None:
         summary="Initial draft",
         tags=["demo"],
     )
+    validate_payload(response, namespace="write", name="create_draft_aop.response.schema")
     assert response == {"draft_id": "draft-1", "version_id": "v1"}
 
 
@@ -53,6 +55,7 @@ def test_add_or_update_ke_updates_graph() -> None:
         summary="Add KE",
         payload=KeyEventPayload(identifier="KE:1", title="Mitochondrial dysfunction", event_type="Cellular"),
     )
+    validate_payload(response, namespace="write", name="update_draft.response.schema")
     assert response == {"draft_id": "draft-1", "version_id": "v2"}
 
 
@@ -95,6 +98,7 @@ def test_add_or_update_ker_requires_existing_key_events() -> None:
             status="review",
         ),
     )
+    validate_payload(response, namespace="write", name="update_draft.response.schema")
     assert response == {"draft_id": "draft-1", "version_id": "v4"}
 
 
@@ -130,6 +134,7 @@ def test_link_stressor_creates_entity_and_relationship() -> None:
             provenance={"reference": "CompTox"},
         ),
     )
+    validate_payload(response, namespace="write", name="update_draft.response.schema")
     assert response == {"draft_id": "draft-1", "version_id": "v3"}
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class FeatureSupport(BaseModel):
@@ -22,12 +22,25 @@ class InitializeClientInfo(BaseModel):
 
 
 class InitializeParams(BaseModel):
-    client: InitializeClientInfo
+    protocolVersion: Optional[str] = None
+    client: Optional[InitializeClientInfo] = None
+    clientInfo: Optional[InitializeClientInfo] = None  # Some clients use this
     capabilities: Dict[str, Any] = Field(default_factory=dict)
+    
+    @model_validator(mode='after')
+    def use_client_info(self):
+        # Accept either client or clientInfo
+        if self.clientInfo and not self.client:
+            self.client = self.clientInfo
+        elif not self.client:
+            # Provide a default if neither is present
+            self.client = InitializeClientInfo(name="unknown", version=None)
+        return self
 
 
 class InitializeResult(BaseModel):
-    server: ServerInfo
+    protocolVersion: str
+    serverInfo: ServerInfo
     capabilities: Dict[str, FeatureSupport]
 
 
@@ -38,14 +51,33 @@ class ToolInputProperty(BaseModel):
 
 
 class ToolDescription(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     name: str
     description: str
-    input_schema: Dict[str, Any]
-    output_schema: Optional[Dict[str, Any]] = None
+    input_schema: Dict[str, Any] = Field(
+        alias="inputSchema",
+        serialization_alias="inputSchema",
+    )
+    output_schema: Optional[Dict[str, Any]] = Field(
+        default=None,
+        alias="outputSchema",
+        serialization_alias="outputSchema",
+    )
 
 
 class ListToolsResult(BaseModel):
     tools: List[ToolDescription]
+
+
+class PromptDescription(BaseModel):
+    name: str
+    description: str
+    input_schema: Optional[Dict[str, Any]] = None
+    output_schema: Optional[Dict[str, Any]] = None
+
+
+class ListPromptsResult(BaseModel):
+    prompts: List[PromptDescription]
 
 
 class JSONRPCRequest(BaseModel):
@@ -80,4 +112,3 @@ INTERNAL_ERROR = -32603
 UNAUTHORIZED = -32001
 FORBIDDEN = -32003
 TOOL_EXECUTION_ERROR = -32010
-

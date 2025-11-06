@@ -1,13 +1,15 @@
-"""FastAPI application entrypoint for the Taskmaster MCP service."""
+"""FastAPI application entrypoint for the AOP MCP service."""
 
 from fastapi import FastAPI
+
+from src.server.mcp.router import router as mcp_router
 
 
 def create_app() -> FastAPI:
     """Construct the FastAPI instance with baseline routes."""
 
     app = FastAPI(
-        title="Taskmaster MCP",
+        title="AOP MCP Server",
         description=(
             "Agent-facing API for Adverse Outcome Pathway discovery and authoring"
         ),
@@ -19,6 +21,8 @@ def create_app() -> FastAPI:
         """Return a minimal liveness payload."""
 
         return {"status": "ok"}
+
+    app.include_router(mcp_router)
 
     return app
 

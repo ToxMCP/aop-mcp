@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from src.tools import validate_payload
 from src.tools.semantic import SemanticToolConfig, SemanticTools
 
 
@@ -12,7 +13,10 @@ def make_tools() -> SemanticTools:
             "HsapDv": "http://purl.obolibrary.org/obo/HsapDv_",
             "PATO": "http://purl.obolibrary.org/obo/PATO_",
         },
-        species_map={"human": "NCBITaxon:9606"},
+        species_map={
+            "human": "NCBITaxon:9606",
+            "homo sapiens": "NCBITaxon:9606",
+        },
         life_stage_map={"adult": "HsapDv:0000087"},
         sex_map={"female": "PATO:0000383"},
     )
@@ -22,11 +26,14 @@ def make_tools() -> SemanticTools:
 def test_get_applicability_returns_normalized_payload() -> None:
     tools = make_tools()
     payload = tools.get_applicability(species="Human", life_stage="Adult", sex="Female")
-    assert payload == {
-        "species": "NCBITaxon:9606",
-        "life_stage": "HsapDv:0000087",
-        "sex": "PATO:0000383",
-    }
+    validate_payload(payload, namespace="semantic", name="get_applicability.response.schema")
+    assert payload["species"] == "NCBITaxon:9606"
+
+
+def test_get_applicability_accepts_latin_species_name() -> None:
+    tools = make_tools()
+    payload = tools.get_applicability(species="Homo sapiens", life_stage=None, sex=None)
+    assert payload["species"] == "NCBITaxon:9606"
 
 
 def test_get_evidence_matrix_returns_matrix() -> None:
@@ -40,6 +47,7 @@ def test_get_evidence_matrix_returns_matrix() -> None:
             }
         ]
     )
+    validate_payload(payload, namespace="semantic", name="get_evidence_matrix.response.schema")
     assert payload["matrix"][0]["dose_response"] == "not assessed"
 
 
