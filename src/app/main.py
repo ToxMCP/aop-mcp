@@ -1,8 +1,12 @@
 """FastAPI application entrypoint for the AOP MCP service."""
 
+import logging
+
 from fastapi import FastAPI
 
 from src.server.mcp.router import router as mcp_router
+
+logging.basicConfig(level=logging.INFO)
 
 
 def create_app() -> FastAPI:

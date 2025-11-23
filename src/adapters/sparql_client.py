@@ -14,12 +14,16 @@ from src.instrumentation.cache import Cache
 from src.instrumentation.metrics import MetricsRecorder
 
 
+import logging
+
 async def _resolve_maybe_awaitable(value: Any) -> Any:
     """Return awaited value when the input is awaitable, otherwise pass through."""
 
     if inspect.isawaitable(value):
         return await value
     return value
+
+logger = logging.getLogger(__name__)
 
 class SparqlClientError(Exception):
     """Base exception for SPARQL client errors."""
@@ -190,7 +194,14 @@ class SparqlClient:
                         content=query.encode("utf-8"),
                         timeout=timeout or self._timeout,
                     )
-                except httpx.RequestError as exc:
+                except Exception as exc:
+                    logger.warning(
+                        "SPARQL request to %s failed (attempt %d/%d): %s",
+                        endpoint.url,
+                        attempt + 1,
+                        attempts,
+                        exc,
+                    )
                     last_error = exc
                     continue
 
