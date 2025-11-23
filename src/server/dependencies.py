@@ -44,13 +44,22 @@ def get_aop_wiki_adapter() -> AOPWikiAdapter:
 def get_aop_db_adapter() -> AOPDBAdapter:
     settings = get_settings()
     client = _build_sparql_client(settings.aop_db_sparql_endpoints)
-    return AOPDBAdapter(client, enable_fixture_fallback=settings.enable_fixture_fallback)
+    comptox = get_comptox_client()
+    return AOPDBAdapter(
+        client,
+        comptox_client=comptox,
+        enable_fixture_fallback=settings.enable_fixture_fallback,
+    )
 
 
 @lru_cache
 def get_comptox_client() -> CompToxClient:
     settings = get_settings()
-    return CompToxClient(base_url=settings.comptox_base_url, api_key=settings.comptox_api_key)
+    return CompToxClient(
+        base_url=settings.comptox_base_url,
+        bioactivity_url=settings.comptox_bioactivity_url,
+        api_key=settings.comptox_api_key,
+    )
 
 
 @lru_cache

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # CompTox
     comptox_base_url: str = "https://comptox.epa.gov/dashboard/api/"
+    comptox_bioactivity_url: str = "https://comptox.epa.gov/ctx-api/"
     comptox_api_key: Optional[str] = None
 
     class Config:
