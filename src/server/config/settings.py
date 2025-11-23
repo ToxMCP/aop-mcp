@@ -21,7 +21,8 @@ class Settings(BaseSettings):
         # "https://sparql.aopwiki.org/sparql",
     ]
     aop_db_sparql_endpoints: List[str] = [
-        "https://sparql.aopdb.org/sparql",
+        "https://aopwiki.rdf.bigcat-bioinformatics.org/sparql",
+        # "https://sparql.aopdb.org/sparql",
     ]
 
     # CompTox
