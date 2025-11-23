@@ -1,13 +1,25 @@
-PREFIX aopo: <http://aopkb.org/aop-ontology#>
-PREFIX cheminf: <http://semanticscience.org/resource/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX ncit: <http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#>
 
-SELECT ?aop ?title ?stressId
+SELECT DISTINCT ?aop ?title ?stressId
 WHERE {{
-  VALUES ?identifier {{ "{inchikey}" "{cas}" "{name}" }}
-  ?stressor aopo:has_identifier_value ?identifier ;
-            aopo:maps_to_aop ?aop .
-  OPTIONAL {{ ?stressor dcterms:identifier ?stressId }}
-  ?aop dcterms:title ?title .
+  ?stressId a ncit:C54571 .
+  
+  {{
+     FILTER(STRLEN("{name}") > 0)
+     ?stressId dc:title ?stressorLabel .
+     FILTER(CONTAINS(LCASE(?stressorLabel), LCASE("{name}")))
+  }}
+  UNION
+  {{
+     FILTER(STRLEN("{cas}") > 0)
+     ?stressId aopo:has_chemical_entity <https://identifiers.org/cas/{cas}> .
+  }}
+
+  ?stressId dcterms:isPartOf ?aop .
+  ?aop a aopo:AdverseOutcomePathway ;
+       dc:title ?title .
 }}
-ORDER BY LCASE(?title)
+LIMIT 50
