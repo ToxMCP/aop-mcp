@@ -6,7 +6,7 @@ PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 SELECT ?aop ?title ?shortName
 WHERE {{
   ?aop a aopo:AdverseOutcomePathway ;
-       rdfs:label ?title .
+       dc:title ?title .
   OPTIONAL {{ ?aop skos:altLabel ?shortName }}
   {filter_clause}
 }}
