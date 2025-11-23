@@ -48,7 +48,7 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 ## Quick start
 
 ```bash
-git clone https://github.com/your-org/AOP_MCP.git
+git clone https://github.com/senseibelbi/AOP_MCP.git
 cd AOP_MCP
 python -m venv .venv
 source .venv/bin/activate
@@ -73,10 +73,11 @@ Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/late
 | --- | --- | --- | --- |
 | `AOP_MCP_ENVIRONMENT` | Optional | `development` | Controls defaults like permissive CORS and logging detail. |
 | `AOP_MCP_LOG_LEVEL` | Optional | `INFO` | Application log level. |
-| `AOP_MCP_AOP_WIKI_SPARQL_ENDPOINTS` | Optional | `https://sparql.aopwiki.org/sparql` | Comma-separated list of AOP-Wiki SPARQL endpoints. |
-| `AOP_MCP_AOP_DB_SPARQL_ENDPOINTS` | Optional | `https://sparql.aopdb.org/sparql` | Comma-separated list of AOP-DB SPARQL endpoints. |
+| `AOP_MCP_AOP_WIKI_SPARQL_ENDPOINTS` | Optional | `https://aopwiki.rdf.bigcat-bioinformatics.org/sparql` | Comma-separated list of AOP-Wiki SPARQL endpoints. |
+| `AOP_MCP_AOP_DB_SPARQL_ENDPOINTS` | Optional | `https://aopwiki.rdf.bigcat-bioinformatics.org/sparql` | Comma-separated list of AOP-DB SPARQL endpoints (defaults to AOP-Wiki for fallback). |
 | `AOP_MCP_COMPTOX_BASE_URL` | Optional | `https://comptox.epa.gov/dashboard/api/` | Base URL for CompTox enrichment calls. |
-| `AOP_MCP_COMPTOX_API_KEY` | Optional | – | API key for CompTox (recommended for higher quota). |
+| `AOP_MCP_COMPTOX_BIOACTIVITY_URL` | Optional | `https://comptox.epa.gov/ctx-api/` | Base URL for CompTox Bioactivity API (required for assay mapping). |
+| `AOP_MCP_COMPTOX_API_KEY` | Optional | – | API key for CompTox (required for assay mapping and higher quota). |
 | `AOP_MCP_ENABLE_FIXTURE_FALLBACK` | Optional | `0` | Set to `1` to serve fixture data when remote SPARQL endpoints are unavailable. |
 | `AOP_MCP_METRICS_ENABLED` | Optional | `1` | Expose `/metrics` (Prometheus). |
 
@@ -89,7 +90,7 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | Category | Highlight tools | Notes |
 | --- | --- | --- |
 | AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination and schema validation. |
-| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops` | Joins CompTox + AOP-DB stressor/assay data to surface linked AOPs. |
+| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops` | Joins CompTox Bioactivity/Metadata + AOP-Wiki stressor data to surface linked AOPs. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
 | Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor` | In-memory draft graph edits with provenance, ready for publish planners. |
 
