@@ -4,8 +4,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?ker ?upstream ?downstream ?plausibility ?status
 WHERE {{
-  BIND(<{aop_iri}> AS ?aop)
-  ?aop aopo:has_key_event_relationship ?ker .
+  <{aop_iri}> aopo:has_key_event_relationship ?ker .
   ?ker aopo:has_upstream_key_event ?upstream ;
        aopo:has_downstream_key_event ?downstream .
   OPTIONAL {{ ?ker aopo:has_biological_plausibility ?plausibility }}
