@@ -1,11 +1,12 @@
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX aopo: <http://aopkb.org/aop-ontology#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?ke ?label ?eventType
 WHERE {{
   BIND(<{aop_iri}> AS ?aop)
   ?aop aopo:has_key_event ?ke .
-  ?ke dcterms:title ?label .
+  ?ke rdfs:label ?label .
   OPTIONAL {{ ?ke aopo:has_event_type ?eventType }}
 }}
 ORDER BY LCASE(?label)

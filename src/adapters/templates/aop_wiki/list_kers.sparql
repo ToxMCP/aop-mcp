@@ -1,5 +1,6 @@
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX aopo: <http://aopkb.org/aop-ontology#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?ker ?upstream ?downstream ?plausibility ?status
 WHERE {{

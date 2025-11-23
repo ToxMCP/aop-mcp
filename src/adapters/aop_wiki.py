@@ -18,6 +18,12 @@ def _escape_literal(value: str) -> str:
 
 
 def _iri_to_curie(iri: str) -> str:
+    if iri.startswith("https://identifiers.org/aop/"):
+        return f"AOP:{iri.rsplit('/', 1)[-1]}"
+    if iri.startswith("https://identifiers.org/aop.events/"):
+        return f"KE:{iri.rsplit('/', 1)[-1]}"
+    if iri.startswith("https://identifiers.org/aop.relationships/"):
+        return f"KER:{iri.rsplit('/', 1)[-1]}"
     if iri.startswith("http://aopwiki.org/aops/"):
         return f"AOP:{iri.rsplit('/', 1)[-1]}"
     if iri.startswith("http://aopwiki.org/events/"):
@@ -149,13 +155,13 @@ class AOPWikiAdapter:
 
     @staticmethod
     def _aop_iri(aop_id: str) -> str:
-        if aop_id.startswith("http://"):
+        if aop_id.startswith("http://") or aop_id.startswith("https://"):
             return aop_id
         if aop_id.upper().startswith("AOP:"):
             suffix = aop_id.split(":", 1)[1]
         else:
             suffix = aop_id
-        return f"http://aopwiki.org/aops/{suffix}"
+        return f"https://identifiers.org/aop/{suffix}"
 
     def _load_fixture(self, namespace: str, name: str) -> dict[str, Any]:
         if not self.enable_fixture_fallback:
