@@ -4,8 +4,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?ke ?label ?eventType
 WHERE {{
-  BIND(<{aop_iri}> AS ?aop)
-  ?aop aopo:has_key_event ?ke .
+  <{aop_iri}> aopo:has_key_event ?ke .
   ?ke dc:title ?label .
   OPTIONAL {{ ?ke aopo:has_event_type ?eventType }}
 }}
