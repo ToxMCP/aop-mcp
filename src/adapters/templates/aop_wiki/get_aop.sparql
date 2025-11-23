@@ -6,7 +6,7 @@ PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 SELECT ?title ?shortName ?status ?abstract
 WHERE {{
   BIND(<{aop_iri}> AS ?aop)
-  ?aop rdfs:label ?title .
+  ?aop dc:title ?title .
   OPTIONAL {{ ?aop skos:altLabel ?shortName }}
   OPTIONAL {{ ?aop aopo:has_status ?status }}
   OPTIONAL {{ ?aop dc:description ?abstract }}
