@@ -11,11 +11,14 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
-    enable_fixture_fallback: bool = True
+    enable_fixture_fallback: bool = False
+    # enable_fixture_fallback: bool = True
 
     # SPARQL endpoints
     aop_wiki_sparql_endpoints: List[str] = [
-        "https://sparql.aopwiki.org/sparql",
+        "https://aopwiki.rdf.bigcat-bioinformatics.org/sparql",
+        "https://aopwiki.cloud.vhp4safety.nl/sparql/",
+        # "https://sparql.aopwiki.org/sparql",
     ]
     aop_db_sparql_endpoints: List[str] = [
         "https://sparql.aopdb.org/sparql",
