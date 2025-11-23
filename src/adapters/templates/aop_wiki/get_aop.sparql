@@ -1,13 +1,14 @@
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX aopo: <http://aopkb.org/aop-ontology#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
 SELECT ?title ?shortName ?status ?abstract
 WHERE {{
   BIND(<{aop_iri}> AS ?aop)
-  ?aop dcterms:title ?title .
-  OPTIONAL {{ ?aop aopo:has_short_name ?shortName }}
+  ?aop rdfs:label ?title .
+  OPTIONAL {{ ?aop skos:altLabel ?shortName }}
   OPTIONAL {{ ?aop aopo:has_status ?status }}
-  OPTIONAL {{ ?aop dcterms:abstract ?abstract }}
+  OPTIONAL {{ ?aop dc:description ?abstract }}
 }}
 LIMIT 1
