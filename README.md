@@ -40,8 +40,11 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 6. [Output artifacts](#output-artifacts)
 7. [Security checklist](#security-checklist)
 8. [Development notes](#development-notes)
-9. [Roadmap](#roadmap)
-10. [License](#license)
+9. [Contributing](#contributing)
+10. [Security policy](#security-policy)
+11. [Code of conduct](#code-of-conduct)
+12. [Roadmap](#roadmap)
+13. [License](#license)
 
 ---
 
@@ -53,6 +56,7 @@ cd AOP_MCP
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
+cp .env.example .env
 uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
 ```
 
@@ -67,7 +71,7 @@ Once the server is running:
 
 ## Configuration
 
-Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/settings/) with `.env`/`.env.local` support. Key environment variables:
+Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/settings/) with `.env`/`.env.local` support. Start from `.env.example` and keep `.env` untracked. Key environment variables:
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
@@ -79,7 +83,6 @@ Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/late
 | `AOP_MCP_COMPTOX_BIOACTIVITY_URL` | Optional | `https://comptox.epa.gov/ctx-api/` | Base URL for CompTox Bioactivity API (required for assay mapping). |
 | `AOP_MCP_COMPTOX_API_KEY` | Optional | – | API key for CompTox (required for assay mapping and higher quota). |
 | `AOP_MCP_ENABLE_FIXTURE_FALLBACK` | Optional | `0` | Set to `1` to serve fixture data when remote SPARQL endpoints are unavailable. |
-| `AOP_MCP_METRICS_ENABLED` | Optional | `1` | Expose `/metrics` (Prometheus). |
 
 See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for the extended configuration surface (auth, retries, cache sizing, job service knobs).
 
@@ -138,7 +141,7 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 
 - **Structured MCP payloads** – JSON responses aligned with schemas under `docs/contracts/schemas/`.
 - **Audit + provenance** – draft edits capture author, summary, and version metadata for downstream review queues.
-- **Metrics & logs** – Prometheus metrics (`/metrics`) and structured logs (`src/instrumentation/logging.py`) capturing SPARQL latency, cache hit ratios, and job lifecycle events.
+- **Metrics & logs** – in-process metrics recorder (`src/instrumentation/metrics.py`) and structured logs (`src/instrumentation/logging.py`) for SPARQL/cache and job lifecycle events.
 - **Fixture captures** – optional local fixtures for offline testing when `AOP_MCP_ENABLE_FIXTURE_FALLBACK=1`.
 
 ---
@@ -159,7 +162,26 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 - `scripts/test_mcp_endpoints.sh` – exercise the MCP catalog end-to-end.
 - `make contract` – regenerate/validate JSON Schema docs (if available in your tooling setup).
 - `python scripts/benchmarks.py` – baseline latency testing (extend with real workloads).
+- `docs/opensourcing-checklist.md` – final checks before switching repository visibility to public.
 - Keep docs in sync: update `docs/contracts/endpoint-matrix.md`, `docs/quickstarts/`, and schema files when payloads change.
+
+---
+
+## Contributing
+
+See `CONTRIBUTING.md` for local setup, test workflow, and pull request expectations.
+
+---
+
+## Security policy
+
+See `SECURITY.md` for reporting guidance and supported versions.
+
+---
+
+## Code of conduct
+
+This project follows `CODE_OF_CONDUCT.md`.
 
 ---
 
@@ -174,4 +196,4 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 
 ## License
 
-Apache-2.0
+Apache-2.0. See `LICENSE`.
