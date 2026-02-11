@@ -63,6 +63,27 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 
 ---
 
+## Quickstart TL;DR
+
+```bash
+# 1) install
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+
+# 2) configure
+cp .env.example .env
+
+# 3) run
+uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
+
+# 4) verify
+curl -s http://localhost:8003/health | jq .
+curl -s http://localhost:8003/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq .
+```
+
 ## Quick start
 
 ```bash
