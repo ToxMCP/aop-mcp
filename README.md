@@ -79,8 +79,8 @@ uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
 
 Once the server is running:
 
-- HTTP MCP endpoint: `http://127.0.0.1:8003/mcp`
-- Health check: `http://127.0.0.1:8003/health`
+- HTTP MCP endpoint: `http://localhost:8003/mcp`
+- Health check: `http://localhost:8003/health`
 
 ## Verification (smoke test)
 
@@ -88,10 +88,10 @@ Once the server is running:
 
 ```bash
 # health
-curl -s http://127.0.0.1:8003/health | jq .
+curl -s http://localhost:8003/health | jq .
 
 # list MCP tools
-curl -s http://127.0.0.1:8003/mcp \
+curl -s http://localhost:8003/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq .
 ```
@@ -153,13 +153,13 @@ Add the server to your agent’s MCP configuration. Example Codex CLI entry:
 ```json
 {
   "name": "aop-mcp",
-  "endpoint": "http://127.0.0.1:8003/mcp"
+  "endpoint": "http://localhost:8003/mcp"
 }
 ```
 
 Tested surfaces:
 
-- **Codex CLI** – `codex mcp connect http://127.0.0.1:8003/mcp`
+- **Codex CLI** – `codex mcp connect http://localhost:8003/mcp`
 - **Gemini CLI** – add the endpoint under `mcp_servers` to auto-negotiate the tool catalog.
 - **Claude Code** – configure a custom MCP server with the base URL above.
 
