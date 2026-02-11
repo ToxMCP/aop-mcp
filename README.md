@@ -43,8 +43,9 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 9. [Contributing](#contributing)
 10. [Security policy](#security-policy)
 11. [Code of conduct](#code-of-conduct)
-12. [Roadmap](#roadmap)
-13. [License](#license)
+12. [Citation](#citation)
+13. [Roadmap](#roadmap)
+14. [License](#license)
 
 ---
 
@@ -182,6 +183,14 @@ See `SECURITY.md` for reporting guidance and supported versions.
 ## Code of conduct
 
 This project follows `CODE_OF_CONDUCT.md`.
+
+---
+
+## Citation
+
+If you use `toxMCP` / AOP MCP Server in your work, please cite:
+
+- **Ivo Djidrovski**. BioRxiv preprint (2026). DOI: [10.64898/2026.02.06.703989v1](https://www.biorxiv.org/content/10.64898/2026.02.06.703989v1)
 
 ---
 
