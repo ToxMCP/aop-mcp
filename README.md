@@ -82,6 +82,21 @@ Once the server is running:
 - HTTP MCP endpoint: `http://127.0.0.1:8003/mcp`
 - Health check: `http://127.0.0.1:8003/health`
 
+## Verification (smoke test)
+
+Once the server is running:
+
+```bash
+# health
+curl -s http://127.0.0.1:8003/health | jq .
+
+# list MCP tools
+curl -s http://127.0.0.1:8003/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq .
+```
+
+
 ---
 
 ## Configuration
