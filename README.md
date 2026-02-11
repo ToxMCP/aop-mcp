@@ -1,5 +1,8 @@
 # AOP MCP Server
 
+> Part of **ToxMCP** Suite → https://github.com/ToxMCP/toxmcp
+
+
 **Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, semantics, and draft authoring.**  
 Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
 
