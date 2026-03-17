@@ -4,8 +4,10 @@ __pycache__/
 .venv/
 env/
 .env
+.env.*
 .env.local
 .env.*.local
+!.env.example
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
