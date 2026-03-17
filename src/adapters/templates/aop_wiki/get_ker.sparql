@@ -1,0 +1,25 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+
+SELECT ?upstream ?downstream ?upstreamTitle ?downstreamTitle ?description ?plausibility ?empiricalSupport ?quantitativeUnderstanding ?gene ?aop ?aopTitle ?created ?modified
+WHERE {{
+  BIND(<{ker_iri}> AS ?ker)
+  OPTIONAL {{
+    ?ker aopo:has_upstream_key_event ?upstream ;
+         aopo:has_downstream_key_event ?downstream .
+    OPTIONAL {{ ?upstream dc:title ?upstreamTitle }}
+    OPTIONAL {{ ?downstream dc:title ?downstreamTitle }}
+  }}
+  OPTIONAL {{ ?ker dc:description ?description }}
+  OPTIONAL {{ ?ker <http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C80263> ?plausibility }}
+  OPTIONAL {{ ?ker <http://edamontology.org/data_2042> ?empiricalSupport }}
+  OPTIONAL {{ ?ker <http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C71478> ?quantitativeUnderstanding }}
+  OPTIONAL {{ ?ker <http://edamontology.org/data_1025> ?gene }}
+  OPTIONAL {{
+    ?ker dcterms:isPartOf ?aop .
+    OPTIONAL {{ ?aop dc:title ?aopTitle }}
+  }}
+  OPTIONAL {{ ?ker dcterms:created ?created }}
+  OPTIONAL {{ ?ker dcterms:modified ?modified }}
+}}

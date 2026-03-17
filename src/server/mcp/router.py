@@ -25,13 +25,14 @@ from src.server.mcp.protocol import (
     PARSE_ERROR,
 )
 from src.server.tools.registry import tool_registry
+from src.server.version import get_app_version
 
 log = logging.getLogger(__name__)
 
 
 router = APIRouter()
 
-SERVER_INFO = ServerInfo(name="AOP MCP Server", version="0.1.0")
+SERVER_INFO = ServerInfo(name="AOP MCP Server", version=get_app_version())
 MCP_VERSION = "2025-03-26"
 
 SERVER_CAPABILITIES: dict[str, FeatureSupport] = {

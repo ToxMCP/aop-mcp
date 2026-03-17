@@ -1,0 +1,26 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+
+SELECT ?title ?shortName ?description ?level ?lifeStage ?cellType ?organ ?direction ?sex ?measurement ?biologicalProcess ?protein ?gene ?taxon ?aop ?aopTitle
+WHERE {{
+  BIND(<{ke_iri}> AS ?ke)
+  OPTIONAL {{ ?ke dc:title ?title }}
+  OPTIONAL {{ ?ke dcterms:alternative ?shortName }}
+  OPTIONAL {{ ?ke dc:description ?description }}
+  OPTIONAL {{ ?ke <http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#C25664> ?level }}
+  OPTIONAL {{ ?ke aopo:LifeStageContext ?lifeStage }}
+  OPTIONAL {{ ?ke aopo:CellTypeContext ?cellType }}
+  OPTIONAL {{ ?ke aopo:OrganContext ?organ }}
+  OPTIONAL {{ ?ke <http://purl.obolibrary.org/obo/PATO_0000001> ?direction }}
+  OPTIONAL {{ ?ke <http://purl.obolibrary.org/obo/PATO_0000047> ?sex }}
+  OPTIONAL {{ ?ke <http://purl.obolibrary.org/obo/MMO_0000000> ?measurement }}
+  OPTIONAL {{ ?ke <http://purl.obolibrary.org/obo/GO_0008150> ?biologicalProcess }}
+  OPTIONAL {{ ?ke <http://purl.obolibrary.org/obo/PATO_0001241> ?protein }}
+  OPTIONAL {{ ?ke <http://edamontology.org/data_1025> ?gene }}
+  OPTIONAL {{ ?ke <http://purl.bioontology.org/ontology/NCBITAXON/131567> ?taxon }}
+  OPTIONAL {{
+    ?ke dcterms:isPartOf ?aop .
+    OPTIONAL {{ ?aop dc:title ?aopTitle }}
+  }}
+}}
