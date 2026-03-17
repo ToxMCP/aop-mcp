@@ -613,6 +613,7 @@ def _derive_key_event_search_terms(key_event: dict[str, Any]) -> dict[str, list[
                 gene_symbols.append(symbol)
         _expand_alias_terms(description, gene_symbols, phrases)
     gene_symbols = _finalize_gene_symbols(gene_symbols)
+    phrases = _finalize_phrases(phrases, gene_symbols)
 
     return {
         "gene_symbols": gene_symbols[:8],
@@ -667,7 +668,8 @@ def _extract_description_gene_symbols(value: str) -> list[str]:
 
 
 def _expand_alias_terms(source_text: str, gene_symbols: list[str], phrases: list[str]) -> None:
-    normalized = source_text.lower()
+    normalized = re.sub(r"[-_/]+", " ", source_text.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
     for rule in _GENE_ALIAS_RULES:
         if not any(re.search(pattern, normalized) for pattern in rule["patterns"]):
             continue
@@ -690,6 +692,21 @@ def _finalize_gene_symbols(gene_symbols: list[str]) -> list[str]:
         deduped = [symbol for symbol in deduped if symbol != "NFE2"]
     if "NR1I2" in deduped and "NR1L2" in deduped:
         deduped = [symbol for symbol in deduped if symbol != "NR1L2"]
+    return deduped
+
+
+def _finalize_phrases(phrases: list[str], gene_symbols: list[str]) -> list[str]:
+    deduped: list[str] = []
+    for phrase in phrases:
+        normalized = phrase.strip().lower()
+        if not normalized:
+            continue
+        if " " not in normalized:
+            canonical = _GENE_SYMBOL_NORMALIZATION.get(normalized.upper(), normalized.upper())
+            if canonical in gene_symbols:
+                continue
+        if normalized not in deduped:
+            deduped.append(normalized)
     return deduped
 
 

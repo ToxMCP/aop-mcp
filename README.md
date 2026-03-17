@@ -16,16 +16,11 @@ Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any M
 
 ![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
 
-## What's new in v0.4.0
+## What's new in v0.4.1
 
-- Refined `assess_aop_confidence` so OECD core confidence dimensions are reported separately from supplemental AOP-level evidence text.
-- Added explicit `oecd_alignment` and `supplemental_signals` output to make the confidence summary less misleading when KE essentiality is unavailable.
-- Improved support-text parsing for KER biological plausibility and empirical support, producing more realistic calls on live AOP-Wiki content.
-- Updated KE-facing tool inputs to advertise `key_event_id` while keeping legacy `ke_id` requests compatible.
-- Extended `search_assays_for_key_event` with receptor/gene alias normalization for targets such as `PXR/NR1I2`, `FXR/NR1H4`, `LXR/NR1H3`, and `NRF2/NFE2L2`.
-- Tightened KE term derivation so title and short-name evidence outrank noisier description-only terms, while filtering generic tokens such as `protein`, `serum`, and `accumulation`.
-- Added applicability-aware assay reranking from KE taxonomic metadata, without allowing taxon matches to create false positives on their own.
-- Hardened KE assay search with an AOP-Wiki measurement-method fallback when the live CompTox assay catalog is temporarily unavailable.
+- Finalized KE alias handling so hyphenated receptor names such as `Pregnane-X receptor` resolve correctly and acronym-only phrase noise such as `ahr` is removed when the gene symbol is already present.
+- Kept `key_event_id` as the advertised MCP input while preserving legacy `ke_id` compatibility for existing clients.
+- Added an explicit limitations section describing OECD completeness, upstream dependency limits, data-coverage gaps, and current performance expectations.
 
 ## Why this project exists
 
@@ -64,13 +59,14 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 5. [Integrating with coding agents](#integrating-with-coding-agents)
 6. [Output artifacts](#output-artifacts)
 7. [Security checklist](#security-checklist)
-8. [Development notes](#development-notes)
-9. [Contributing](#contributing)
-10. [Security policy](#security-policy)
-11. [Code of conduct](#code-of-conduct)
-12. [Citation](#citation)
-13. [Roadmap](#roadmap)
-14. [License](#license)
+8. [Current limitations](#current-limitations)
+9. [Development notes](#development-notes)
+10. [Contributing](#contributing)
+11. [Security policy](#security-policy)
+12. [Code of conduct](#code-of-conduct)
+13. [Citation](#citation)
+14. [Roadmap](#roadmap)
+15. [License](#license)
 
 ---
 
@@ -98,8 +94,8 @@ curl -s http://localhost:8003/mcp \
 ## Quick start
 
 ```bash
-git clone https://github.com/senseibelbi/AOP_MCP.git
-cd AOP_MCP
+git clone https://github.com/ToxMCP/aop-mcp.git
+cd aop-mcp
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
@@ -236,6 +232,18 @@ Example `tools/call` payloads:
   }
 }
 ```
+
+---
+
+## Current limitations
+
+- `assess_aop_confidence` is OECD-aligned, not OECD-complete. Key-event essentiality is still reported as `not_assessed` because the current RDF export does not expose it directly.
+- Quantitative understanding is sparse in many live AOP-Wiki records, so confidence outputs often remain partial even when the tool is behaving correctly.
+- `search_assays_for_key_event` is a discovery helper, not a curated KE-to-assay ontology mapping or a full assay fit-for-purpose evaluator.
+- Query-driven assay workflows depend on upstream AOP-DB stressor links and CompTox coverage. Relevant AOPs without mapped stressors or bioactivity data can legitimately return no assay candidates.
+- The live CompTox assay catalog can be intermittently unavailable. In those cases KE-centered assay search falls back to AOP-Wiki measurement-method text, which is useful but narrower than a healthy catalog search.
+- Phenotype boundaries such as steatosis vs steatohepatitis / MASH still require manual scientific curation; the MCP should be used as a baseline discovery and prioritization layer rather than a final arbiter.
+- Federated SPARQL and assay aggregation calls can be slow on live infrastructure, especially for broad phenotype queries and large AOPs.
 
 ---
 

@@ -507,3 +507,33 @@ def test_derive_key_event_search_terms_filters_generic_measurement_words() -> No
         "gene_symbols": ["INSIG1"],
         "phrases": [],
     }
+
+
+def test_derive_key_event_search_terms_adds_alias_for_hyphenated_receptor_name() -> None:
+    terms = _derive_key_event_search_terms(
+        {
+            "title": "Activation, Pregnane-X receptor, NR1l2",
+            "short_name": None,
+            "description": None,
+        }
+    )
+
+    assert terms == {
+        "gene_symbols": ["NR1I2", "PXR"],
+        "phrases": ["pregnane x receptor"],
+    }
+
+
+def test_derive_key_event_search_terms_drops_acronym_phrase_when_symbol_present() -> None:
+    terms = _derive_key_event_search_terms(
+        {
+            "title": "Activation, AhR",
+            "short_name": None,
+            "description": None,
+        }
+    )
+
+    assert terms == {
+        "gene_symbols": ["AHR"],
+        "phrases": ["aryl hydrocarbon receptor"],
+    }
