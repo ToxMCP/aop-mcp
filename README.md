@@ -16,14 +16,13 @@ Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any M
 
 ![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
 
-## What's new in v0.2.0
+## What's new in v0.3.0
 
-- `search_aops` now ranks title, synonym, and abstract evidence together, with tighter handling for multi-word phenotype queries such as `liver steatosis`.
-- Added `list_assays_for_aop` to resolve `AOP -> linked stressor chemicals -> CompTox bioactivity assays`.
-- Added `list_assays_for_aops` to aggregate and deduplicate assay candidates across a curated AOP set.
-- Added `list_assays_for_query` so agents can run phenotype discovery and assay aggregation in one MCP call.
-- Added `export_assays_table` to return the aggregated assay table directly as `csv` or `tsv`.
-- Fixed the CompTox keyed request flow used for live assay mapping and export workflows.
+- Added OECD-aligned read tools for enriched KE/KER inspection, related-AOP discovery, and within-AOP path finding.
+- Added `validate_draft_oecd` for handbook-style completeness checks before review or publication planning.
+- Added `assess_aop_confidence` for explicit, heuristic AOP confidence summaries built from AOP-, KE-, and KER-level evidence text.
+- Added richer live AOP assessment retrieval so the server can surface MIE, AO, evidence text, and assessment timestamps together.
+- Synced server-reported version metadata with the package version so MCP clients and HTTP metadata report the same release.
 
 ## Why this project exists
 
@@ -153,10 +152,11 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | Category | Highlight tools | Notes |
 | --- | --- | --- |
 | AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination, schema validation, and improved ranking for phenotype searches. |
+| OECD review helpers | `get_key_event`, `get_ker`, `get_related_aops`, `assess_aop_confidence`, `find_paths_between_events` | Exposes richer KE/KER metadata, shared-AOP discovery, handbook-aligned heuristic confidence summaries, and directed path traversal for review and network analysis workflows. |
 | Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays. |
 | Assay aggregation | `list_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs and exports the ranked assay table as `csv` or `tsv`. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
-| Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor` | In-memory draft graph edits with provenance, ready for publish planners. |
+| Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `validate_draft_oecd` | In-memory draft graph edits with provenance plus OECD-style completeness checks before review/publish. |
 
 Every response is validated against JSON Schemas in `docs/contracts/schemas/`. Refer to `docs/contracts/tool-catalog.md` for full definitions and examples.
 
@@ -167,6 +167,14 @@ For a phenotype-driven workflow such as steatosis assay curation:
 1. Call `search_aops` with a phenotype query such as `liver steatosis`.
 2. Inspect the returned AOP set or pass the same query to `list_assays_for_query`.
 3. Export the aggregated assay candidates with `export_assays_table` when you need a table for downstream review.
+
+### Example OECD review flow
+
+For an OECD-style read/review workflow:
+
+1. Call `get_aop` or `search_aops` to select the pathway.
+2. Use `get_key_event` and `get_ker` for detailed KE/KER inspection.
+3. Use `assess_aop_confidence` to assemble a heuristic confidence summary from the available AOP, KE, and KER evidence text.
 
 Example `tools/call` payloads:
 
@@ -195,6 +203,15 @@ Example `tools/call` payloads:
     "limit": 25,
     "per_aop_limit": 15,
     "min_hitcall": 0.95
+  }
+}
+```
+
+```json
+{
+  "name": "assess_aop_confidence",
+  "arguments": {
+    "aop_id": "AOP:232"
   }
 }
 ```

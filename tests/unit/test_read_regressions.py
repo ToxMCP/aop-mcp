@@ -47,6 +47,19 @@ async def test_aop_wiki_get_aop_regression() -> None:
 
 
 @pytest.mark.asyncio
+async def test_aop_wiki_get_aop_assessment_regression() -> None:
+    payload = load_fixture(BASE_DIR / "aop_wiki" / "get_aop_assessment.json")
+    async with SparqlClient(["https://sparql.example"], transport=make_transport(payload)) as client:
+        adapter = AOPWikiAdapter(client, cache_ttl_seconds=0)
+        record = await adapter.get_aop_assessment("AOP:232")
+
+    assert record["id"] == "AOP:232"
+    assert record["evidence_summary"] == "Overall Moderate support."
+    assert record["molecular_initiating_events"][0]["id"] == "KE:1417"
+    assert record["adverse_outcomes"][0]["id"] == "KE:459"
+
+
+@pytest.mark.asyncio
 async def test_aop_db_map_chemical_regression() -> None:
     payload = load_fixture(BASE_DIR / "aop_db" / "map_chemical_to_aops.json")
     async with SparqlClient(["https://sparql.example"], transport=make_transport(payload)) as client:
@@ -89,6 +102,41 @@ async def test_aop_wiki_list_kers_regression() -> None:
 
     validate_payload({"results": results}, namespace="read", name="list_kers.response.schema")
     assert results[0]["id"] == "KER:888"
+
+
+@pytest.mark.asyncio
+async def test_aop_wiki_get_key_event_regression() -> None:
+    payload = load_fixture(BASE_DIR / "aop_wiki" / "get_key_event.json")
+    async with SparqlClient(["https://sparql.example"], transport=make_transport(payload)) as client:
+        adapter = AOPWikiAdapter(client, cache_ttl_seconds=0)
+        record = await adapter.get_key_event("KE:239")
+
+    assert record["id"] == "KE:239"
+    assert record["measurement_methods"] == ["Measured by transcriptomics.", "Measured by reporter assay."]
+    assert record["shared_aop_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_aop_wiki_get_ker_regression() -> None:
+    payload = load_fixture(BASE_DIR / "aop_wiki" / "get_ker.json")
+    async with SparqlClient(["https://sparql.example"], transport=make_transport(payload)) as client:
+        adapter = AOPWikiAdapter(client, cache_ttl_seconds=0)
+        record = await adapter.get_ker("KER:3365")
+
+    assert record["id"] == "KER:3365"
+    assert record["upstream"]["id"] == "KE:239"
+    assert record["quantitative_understanding"] == "Quantitative support is moderate."
+
+
+@pytest.mark.asyncio
+async def test_aop_wiki_get_related_aops_regression() -> None:
+    payload = load_fixture(BASE_DIR / "aop_wiki" / "get_related_aops.json")
+    async with SparqlClient(["https://sparql.example"], transport=make_transport(payload)) as client:
+        adapter = AOPWikiAdapter(client, cache_ttl_seconds=0)
+        results = await adapter.get_related_aops("AOP:232", limit=5)
+
+    assert results[0]["id"] == "AOP:517"
+    assert results[0]["total_shared_elements"] == 4
 
 
 def test_comp_tox_extracts_identifiers_from_fixture() -> None:

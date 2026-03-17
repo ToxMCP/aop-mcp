@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from src.server.config.settings import get_settings
 from src.server.mcp.router import router as mcp_router
+from src.server.version import get_app_version
 
 
 def create_app() -> FastAPI:
@@ -13,7 +14,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="AOP MCP Server",
         description="Model Context Protocol server for Adverse Outcome Pathway tooling",
-        version="0.1.0",
+        version=get_app_version(),
     )
 
     @app.get("/health")
@@ -25,4 +26,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

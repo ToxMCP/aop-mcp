@@ -1,0 +1,25 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "upstream": {"value": "https://identifiers.org/aop.events/239"},
+        "downstream": {"value": "https://identifiers.org/aop.events/2268"},
+        "upstreamTitle": {"value": "Activation, Pregnane-X receptor, NR1I2"},
+        "downstreamTitle": {"value": "Decreased, INSIG1 activity"},
+        "description": {"value": "Persistent activation of PXR decreases INSIG1 activity."},
+        "plausibility": {"value": "Strong mechanistic rationale."},
+        "empiricalSupport": {"value": "Temporal and dose concordance observed."},
+        "quantitativeUnderstanding": {"value": "Quantitative support is moderate."},
+        "gene": {"value": "https://identifiers.org/hgnc/7968"},
+        "created": {"value": "2024-10-22T13:49:17"},
+        "modified": {"value": "2025-02-10T15:57:38"},
+        "aop": {"value": "https://identifiers.org/aop/517"},
+        "aopTitle": {"value": "PXR activation leads to liver steatosis"}
+      },
+      {
+        "aop": {"value": "https://identifiers.org/aop/545"},
+        "aopTitle": {"value": "PXR activation to decreased INSIG1"}
+      }
+    ]
+  }
+}

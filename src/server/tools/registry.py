@@ -92,6 +92,12 @@ tool_registry.register(
     handler=aop.get_aop,
     input_model=aop.GetAopInput,
 )
+tool_registry.register(
+    name="get_key_event",
+    description="Fetch a single key event with OECD-style metadata fields.",
+    handler=aop.get_key_event,
+    input_model=aop.GetKeyEventInput,
+)
 
 tool_registry.register(
     name="list_key_events",
@@ -105,6 +111,30 @@ tool_registry.register(
     description="List key event relationships for an AOP.",
     handler=aop.list_kers,
     input_model=aop.ListKersInput,
+)
+tool_registry.register(
+    name="get_ker",
+    description="Fetch a single key event relationship with plausibility, evidence, and quantitative-support text.",
+    handler=aop.get_ker,
+    input_model=aop.GetKerInput,
+)
+tool_registry.register(
+    name="get_related_aops",
+    description="Find AOPs related to a source AOP through shared key events or KERs.",
+    handler=aop.get_related_aops,
+    input_model=aop.GetRelatedAopsInput,
+)
+tool_registry.register(
+    name="assess_aop_confidence",
+    description="Build an OECD-style heuristic confidence summary for an AOP from AOP-, KE-, and KER-level evidence text.",
+    handler=aop.assess_aop_confidence,
+    input_model=aop.AssessAopConfidenceInput,
+)
+tool_registry.register(
+    name="find_paths_between_events",
+    description="Find directed KE/KER paths between two events within a selected AOP.",
+    handler=aop.find_paths_between_events,
+    input_model=aop.FindPathsBetweenEventsInput,
 )
 
 tool_registry.register(
@@ -189,4 +219,10 @@ tool_registry.register(
     description="Link a stressor to a draft entity.",
     handler=aop.link_stressor,
     input_model=aop.StressorLinkInputModel,
+)
+tool_registry.register(
+    name="validate_draft_oecd",
+    description="Validate a draft against OECD AOP handbook-style completeness expectations.",
+    handler=aop.validate_draft_oecd,
+    input_model=aop.ValidateDraftOecdInput,
 )

@@ -1,0 +1,23 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+
+SELECT ?relatedAop ?title
+       (COUNT(DISTINCT ?sharedKe) AS ?sharedKeCount)
+       (COUNT(DISTINCT ?sharedKer) AS ?sharedKerCount)
+WHERE {{
+  ?relatedAop a aopo:AdverseOutcomePathway ;
+              dc:title ?title .
+  FILTER (?relatedAop != <{aop_iri}>)
+  OPTIONAL {{
+    <{aop_iri}> aopo:has_key_event ?sharedKe .
+    ?relatedAop aopo:has_key_event ?sharedKe .
+  }}
+  OPTIONAL {{
+    <{aop_iri}> aopo:has_key_event_relationship ?sharedKer .
+    ?relatedAop aopo:has_key_event_relationship ?sharedKer .
+  }}
+}}
+GROUP BY ?relatedAop ?title
+HAVING (COUNT(DISTINCT ?sharedKe) > 0 || COUNT(DISTINCT ?sharedKer) > 0)
+ORDER BY DESC(?sharedKeCount) DESC(?sharedKerCount) LCASE(?title)
+LIMIT {limit}

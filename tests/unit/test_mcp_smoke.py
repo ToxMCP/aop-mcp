@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.server.api.server import app
+from src.server.version import get_app_version
 
 
 client = TestClient(app)
@@ -26,6 +27,7 @@ def test_initialize_success() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["result"]["serverInfo"]["name"] == "AOP MCP Server"
+    assert data["result"]["serverInfo"]["version"] == get_app_version()
 
 
 def test_initialized_returns_empty_object_response() -> None:
@@ -45,7 +47,17 @@ def test_tools_list_includes_registered_tools() -> None:
     assert response.status_code == 200
     tools = response.json()["result"]["tools"]
     tool_names = {tool["name"] for tool in tools}
-    assert {"search_aops", "get_aop", "create_draft_aop"}.issubset(tool_names)
+    assert {
+        "search_aops",
+        "get_aop",
+        "get_key_event",
+        "get_ker",
+        "get_related_aops",
+        "assess_aop_confidence",
+        "find_paths_between_events",
+        "validate_draft_oecd",
+        "create_draft_aop",
+    }.issubset(tool_names)
 
 
 @pytest.mark.skip(reason="Requires live SPARQL endpoints; enable in environments with network access")

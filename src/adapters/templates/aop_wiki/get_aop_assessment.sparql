@@ -1,0 +1,25 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?title ?shortName ?status ?abstract ?evidence ?created ?modified ?mie ?mieTitle ?ao ?aoTitle
+WHERE {{
+  BIND(<{aop_iri}> AS ?aop)
+  OPTIONAL {{ ?aop dc:title ?title }}
+  OPTIONAL {{ ?aop skos:altLabel ?shortName }}
+  OPTIONAL {{ ?aop aopo:has_status ?status }}
+  OPTIONAL {{ ?aop dc:description ?abstract }}
+  OPTIONAL {{ ?aop aopo:has_evidence ?evidence }}
+  OPTIONAL {{ ?aop dcterms:created ?created }}
+  OPTIONAL {{ ?aop dcterms:modified ?modified }}
+  OPTIONAL {{
+    ?aop aopo:has_molecular_initiating_event ?mie .
+    OPTIONAL {{ ?mie dc:title ?mieTitle }}
+  }}
+  OPTIONAL {{
+    ?aop aopo:has_adverse_outcome ?ao .
+    OPTIONAL {{ ?ao dc:title ?aoTitle }}
+  }}
+}}
+LIMIT 100

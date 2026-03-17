@@ -1,0 +1,31 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "title": {"value": "Activation, Pregnane-X receptor, NR1I2"},
+        "shortName": {"value": "PXR activation"},
+        "description": {"value": "Pregnane X receptor activation event."},
+        "level": {"value": "Molecular"},
+        "lifeStage": {"value": "All life stages"},
+        "direction": {"value": "increased"},
+        "sex": {"value": "Unspecific"},
+        "measurement": {"value": "Measured by transcriptomics."},
+        "gene": {"value": "https://identifiers.org/hgnc/7968"},
+        "protein": {"value": "http://purl.obolibrary.org/obo/PR_000011397"},
+        "biologicalProcess": {"value": "http://purl.obolibrary.org/obo/GO_0023052"},
+        "taxon": {"value": "http://purl.bioontology.org/ontology/NCBITAXON/9606"},
+        "cellType": {"value": "http://purl.obolibrary.org/obo/CL_0000255"},
+        "aop": {"value": "https://identifiers.org/aop/517"},
+        "aopTitle": {"value": "PXR activation leads to liver steatosis"}
+      },
+      {
+        "measurement": {"value": "Measured by reporter assay."},
+        "gene": {"value": "https://identifiers.org/hgnc/1663"},
+        "organ": {"value": "liver"},
+        "taxon": {"value": "WikiUser_17"},
+        "aop": {"value": "https://identifiers.org/aop/545"},
+        "aopTitle": {"value": "PXR activation to decreased INSIG1"}
+      }
+    ]
+  }
+}

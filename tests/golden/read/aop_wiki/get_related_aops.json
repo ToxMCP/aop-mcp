@@ -1,0 +1,18 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "relatedAop": {"value": "https://identifiers.org/aop/517"},
+        "title": {"value": "PXR activation leads to liver steatosis"},
+        "sharedKeCount": {"value": "3"},
+        "sharedKerCount": {"value": "1"}
+      },
+      {
+        "relatedAop": {"value": "https://identifiers.org/aop/545"},
+        "title": {"value": "PXR activation to decreased INSIG1"},
+        "sharedKeCount": {"value": "2"},
+        "sharedKerCount": {"value": "2"}
+      }
+    ]
+  }
+}

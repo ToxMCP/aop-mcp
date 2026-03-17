@@ -1,0 +1,18 @@
+{
+  "results": {
+    "bindings": [
+      {
+        "title": {"value": "NFE2/Nrf2 repression to steatosis"},
+        "shortName": {"value": "AOP232"},
+        "abstract": {"value": "Steatosis is a regulatory endpoint."},
+        "evidence": {"value": "Overall Moderate support."},
+        "created": {"value": "2024-01-01T00:00:00"},
+        "modified": {"value": "2025-01-02T00:00:00"},
+        "mie": {"value": "https://identifiers.org/aop.events/1417"},
+        "mieTitle": {"value": "NFE2/Nrf2 repression"},
+        "ao": {"value": "https://identifiers.org/aop.events/459"},
+        "aoTitle": {"value": "Increase, Liver steatosis"}
+      }
+    ]
+  }
+}
