@@ -3,12 +3,14 @@ PREFIX aopo: <http://aopkb.org/aop_ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
-SELECT ?aop ?title ?shortName
+SELECT DISTINCT ?aop ?title ?shortName ?score
 WHERE {{
   ?aop a aopo:AdverseOutcomePathway ;
        dc:title ?title .
   OPTIONAL {{ ?aop skos:altLabel ?shortName }}
-  {filter_clause}
+  OPTIONAL {{ ?aop dc:description ?abstract }}
+  {search_bindings}
+  {search_filter}
 }}
-ORDER BY LCASE(?title)
+ORDER BY {order_by}
 LIMIT {limit}

@@ -42,14 +42,35 @@ async def test_search_aops_filters_and_normalizes_results() -> None:
     assert results[0]["id"] == "AOP:123"
     assert results[0]["title"] == "Estrogen leads to reproductive failure"
     assert "LIMIT 5" in captured_queries[0]
-    assert "FILTER (CONTAINS(LCASE(?title), LCASE(\"Estrogen\")))" in captured_queries[0]
+    assert 'OPTIONAL { ?aop dc:description ?abstract }' in captured_queries[0]
+    assert 'FILTER (?score > 0 && ?matchCount >= 1)' in captured_queries[0]
+    assert 'ORDER BY DESC(?surfaceMatchCount) DESC(?score) LCASE(?title)' in captured_queries[0]
+    assert 'CONTAINS(LCASE(COALESCE(?title, "")), "estrogen")' in captured_queries[0]
+    assert 'CONTAINS(LCASE(COALESCE(?abstract, "")), "estrogen")' in captured_queries[0]
+
+
+@pytest.mark.asyncio
+async def test_search_aops_expands_common_liver_synonyms() -> None:
+    captured_queries: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_queries.append(request.content.decode("utf-8"))
+        return httpx.Response(200, json={"results": {"bindings": []}})
+
+    transport = httpx.MockTransport(handler)
+    async with make_client(transport) as client:
+        adapter = AOPWikiAdapter(client)
+        await adapter.search_aops(text="liver steatosis", limit=5)
+
+    assert '"hepatic"' in captured_queries[0]
+    assert '"fatty liver"' in captured_queries[0]
 
 
 @pytest.mark.asyncio
 async def test_get_aop_returns_metadata() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         query = request.content.decode("utf-8")
-        assert "BIND(<http://aopwiki.org/aops/42> AS ?aop)" in query
+        assert "<https://identifiers.org/aop/42> dc:title ?title ." in query
         return httpx.Response(
             200,
             json={
@@ -80,7 +101,7 @@ async def test_get_aop_returns_metadata() -> None:
 @pytest.mark.asyncio
 async def test_list_key_events_normalizes_ke_identifiers() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        assert "BIND(<http://aopwiki.org/aops/99> AS ?aop)" in request.content.decode("utf-8")
+        assert "<https://identifiers.org/aop/99> aopo:has_key_event ?ke ." in request.content.decode("utf-8")
         return httpx.Response(
             200,
             json={

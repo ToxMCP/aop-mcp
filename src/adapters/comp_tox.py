@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -38,11 +39,12 @@ class CompToxClient:
     def _headers(self) -> dict[str, str]:
         headers = {"Accept": "application/json"}
         if self._api_key:
-            headers["X-API-Key"] = self._api_key
-            # ctx-api expects lowercase header usually, but requests is case insensitive. 
-            # however, let's be safe for bioactivity which might be strict.
             headers["x-api-key"] = self._api_key
         return headers
+
+    @property
+    def has_api_key(self) -> bool:
+        return bool(self._api_key)
 
     def chemical_by_inchikey(self, inchikey: str) -> dict[str, Any] | None:
         response = self._client.get(f"chemical/info/{inchikey}", headers=self._headers())
@@ -71,6 +73,38 @@ class CompToxClient:
             return []
         return payload if isinstance(payload, list) else []
 
+    def search_equal(self, value: str) -> list[dict[str, Any]]:
+        response = self._bio_client.get(
+            f"chemical/search/equal/{quote(value, safe='')}",
+            headers=self._headers(),
+        )
+        payload = self._handle_response(response)
+        if payload is None:
+            return []
+        return payload if isinstance(payload, list) else []
+
+    def bioactivity_data_by_dtxsid(self, dtxsid: str) -> list[dict[str, Any]]:
+        response = self._bio_client.get(
+            f"bioactivity/data/search/by-dtxsid/{quote(dtxsid, safe='')}",
+            headers=self._headers(),
+        )
+        payload = self._handle_response(response)
+        if payload is None:
+            return []
+        return payload if isinstance(payload, list) else []
+
+    def assay_by_aeid(self, aeid: int) -> dict[str, Any] | None:
+        response = self._bio_client.get(
+            f"bioactivity/assay/search/by-aeid/{aeid}",
+            headers=self._headers(),
+        )
+        payload = self._handle_response(response)
+        if payload is None:
+            return None
+        if isinstance(payload, list):
+            return payload[0] if payload else None
+        return payload if isinstance(payload, dict) else None
+
     @staticmethod
     def _handle_response(response: httpx.Response) -> dict[str, Any] | list[Any] | None:
         if response.status_code == 404:
@@ -89,4 +123,3 @@ def extract_identifiers(record: dict[str, Any]) -> dict[str, Any]:
         "dsstox_substance_id": record.get("dsstoxSubstanceId"),
         "dsstox_compound_id": record.get("dsstoxCompoundId"),
     }
-

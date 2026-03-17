@@ -41,6 +41,51 @@ def test_comp_tox_client_search_returns_results() -> None:
     assert results == [{"preferredName": "Aspirin"}]
 
 
+def test_comp_tox_client_search_equal_uses_ctx_api() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/chemical/search/equal/1763-23-1",
+            200,
+            json_data=[{"dtxsid": "DTXSID3031864"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        results = client.search_equal("1763-23-1")
+
+    assert results == [{"dtxsid": "DTXSID3031864"}]
+
+
+def test_comp_tox_client_bioactivity_data_by_dtxsid_returns_rows() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/data/search/by-dtxsid/DTXSID3031864",
+            200,
+            json_data=[{"aeid": 2309, "hitc": 0.95}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        rows = client.bioactivity_data_by_dtxsid("DTXSID3031864")
+
+    assert rows == [{"aeid": 2309, "hitc": 0.95}]
+
+
+def test_comp_tox_client_assay_by_aeid_returns_first_annotation() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/assay/search/by-aeid/2309",
+            200,
+            json_data=[{"aeid": 2309, "assayName": "CCTE_GLTED_hDIO1"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        assay = client.assay_by_aeid(2309)
+
+    assert assay == {"aeid": 2309, "assayName": "CCTE_GLTED_hDIO1"}
+
+
 def test_comp_tox_client_handles_not_found() -> None:
     responses = dict([
         make_response(
