@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -21,11 +22,11 @@ class Settings(BaseSettings):
     enable_fixture_fallback: bool = False
 
     # SPARQL endpoints
-    aop_wiki_sparql_endpoints: list[str] = [
+    aop_wiki_sparql_endpoints: Annotated[list[str], NoDecode] = [
         "https://aopwiki.rdf.bigcat-bioinformatics.org/sparql",
         "https://aopwiki.cloud.vhp4safety.nl/sparql/",
     ]
-    aop_db_sparql_endpoints: list[str] = [
+    aop_db_sparql_endpoints: Annotated[list[str], NoDecode] = [
         "https://aopwiki.rdf.bigcat-bioinformatics.org/sparql",
     ]
 
