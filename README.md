@@ -1,21 +1,20 @@
-[![CI](https://github.com/ToxMCP/aop-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ToxMCP/aop-mcp/actions/workflows/ci.yml)
+# AOP MCP Server
 
-## Architecture
-
-![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
-
+[![CI](https://github.com/ToxMCP/aop-mcp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ToxMCP/aop-mcp/actions/workflows/ci.yml)
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.02.06.703989-blue)](https://doi.org/10.64898/2026.02.06.703989)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/ToxMCP/aop-mcp?sort=semver)](https://github.com/ToxMCP/aop-mcp/releases)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-
-# AOP MCP Server
 
 > Part of **ToxMCP** Suite → https://github.com/ToxMCP/toxmcp
 
 
 **Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, semantics, and draft authoring.**  
 Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
+
+## Architecture
+
+![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
 
 ## What's new in v0.2.0
 
@@ -330,4 +329,3 @@ Djidrovski, I. **ToxMCP: Guardrailed, Auditable Agentic Workflows for Computatio
 ```
 
 Citation metadata: [`CITATION.cff`](./CITATION.cff)
-
