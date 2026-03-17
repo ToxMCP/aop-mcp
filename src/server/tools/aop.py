@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from __future__ import annotations
 
-from typing import Any, Optional
+import csv
+import io
+import re
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -24,7 +27,7 @@ from src.tools.write import (
 
 class SearchAopsInput(BaseModel):
     text: Optional[str] = None
-    limit: int = Field(default=10, ge=1, le=100)
+    limit: int = Field(default=25, ge=1, le=100)
 
 
 async def search_aops(params: SearchAopsInput) -> dict[str, Any]:
@@ -69,10 +72,10 @@ class MapChemicalInput(BaseModel):
     name: Optional[str] = None
 
     @model_validator(mode="after")
-    def ensure_identifier(cls, model: "MapChemicalInput"):  # type: ignore[override]
-        if not (model.inchikey or model.cas or model.name):
+    def ensure_identifier(self) -> "MapChemicalInput":
+        if not (self.inchikey or self.cas or self.name):
             raise ValueError("Provide at least one identifier: inchikey, cas, or name")
-        return model
+        return self
 
 
 async def map_chemical_to_aops(params: MapChemicalInput) -> dict[str, Any]:
@@ -93,6 +96,218 @@ async def map_assay_to_aops(params: MapAssayInput) -> dict[str, Any]:
     adapter = get_aop_db_adapter()
     records = await adapter.map_assay_to_aops(params.assay_id)
     return {"results": records}
+
+
+class ListAssaysForAopInput(BaseModel):
+    aop_id: str
+    limit: int = Field(default=25, ge=1, le=100)
+    min_hitcall: float = Field(default=0.9, ge=0.0, le=1.0)
+
+
+async def list_assays_for_aop(params: ListAssaysForAopInput) -> dict[str, Any]:
+    adapter = get_aop_db_adapter()
+    records = await adapter.list_assays_for_aop(
+        params.aop_id,
+        limit=params.limit,
+        min_hitcall=params.min_hitcall,
+    )
+    return {"results": records}
+
+
+class ListAssaysForAopsInput(BaseModel):
+    aop_ids: list[str]
+    limit: int = Field(default=25, ge=1, le=100)
+    per_aop_limit: int = Field(default=15, ge=1, le=100)
+    min_hitcall: float = Field(default=0.9, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def ensure_aop_ids(self) -> "ListAssaysForAopsInput":
+        if not self.aop_ids:
+            raise ValueError("Provide at least one aop_id")
+        return self
+
+
+async def list_assays_for_aops(params: ListAssaysForAopsInput) -> dict[str, Any]:
+    adapter = get_aop_db_adapter()
+    records = await adapter.list_assays_for_aops(
+        params.aop_ids,
+        limit=params.limit,
+        per_aop_limit=params.per_aop_limit,
+        min_hitcall=params.min_hitcall,
+    )
+    return {"results": records}
+
+
+class ListAssaysForQueryInput(BaseModel):
+    query: str
+    search_limit: int = Field(default=25, ge=1, le=100)
+    aop_limit: int = Field(default=10, ge=1, le=100)
+    limit: int = Field(default=25, ge=1, le=100)
+    per_aop_limit: int = Field(default=15, ge=1, le=100)
+    min_hitcall: float = Field(default=0.9, ge=0.0, le=1.0)
+
+
+async def list_assays_for_query(params: ListAssaysForQueryInput) -> dict[str, Any]:
+    selected_aops, records = await _resolve_assays_from_query(
+        params.query,
+        search_limit=params.search_limit,
+        aop_limit=params.aop_limit,
+        limit=params.limit,
+        per_aop_limit=params.per_aop_limit,
+        min_hitcall=params.min_hitcall,
+    )
+    return {
+        "query": params.query,
+        "selected_aops": selected_aops,
+        "results": records,
+    }
+
+
+class ExportAssaysTableInput(BaseModel):
+    query: Optional[str] = None
+    aop_ids: Optional[list[str]] = None
+    format: Literal["csv", "tsv"] = "csv"
+    search_limit: int = Field(default=25, ge=1, le=100)
+    aop_limit: int = Field(default=10, ge=1, le=100)
+    limit: int = Field(default=25, ge=1, le=100)
+    per_aop_limit: int = Field(default=15, ge=1, le=100)
+    min_hitcall: float = Field(default=0.9, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def ensure_source(self) -> "ExportAssaysTableInput":
+        if bool(self.query) == bool(self.aop_ids):
+            raise ValueError("Provide exactly one of query or aop_ids")
+        return self
+
+
+async def export_assays_table(params: ExportAssaysTableInput) -> dict[str, Any]:
+    selected_aops: list[dict[str, Any]]
+    if params.query:
+        selected_aops, records = await _resolve_assays_from_query(
+            params.query,
+            search_limit=params.search_limit,
+            aop_limit=params.aop_limit,
+            limit=params.limit,
+            per_aop_limit=params.per_aop_limit,
+            min_hitcall=params.min_hitcall,
+        )
+    else:
+        adapter = get_aop_db_adapter()
+        aop_ids = params.aop_ids or []
+        selected_aops = [{"id": aop_id} for aop_id in aop_ids]
+        records = await adapter.list_assays_for_aops(
+            aop_ids,
+            limit=params.limit,
+            per_aop_limit=params.per_aop_limit,
+            min_hitcall=params.min_hitcall,
+        )
+
+    return {
+        "format": params.format,
+        "filename": _build_export_filename(params.format, query=params.query, aop_ids=params.aop_ids or []),
+        "row_count": len(records),
+        "selected_aops": selected_aops,
+        "content": _serialize_assay_rows(records, params.format),
+    }
+
+
+async def _resolve_assays_from_query(
+    query: str,
+    *,
+    search_limit: int,
+    aop_limit: int,
+    limit: int,
+    per_aop_limit: int,
+    min_hitcall: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    wiki_adapter = get_aop_wiki_adapter()
+    search_results = await wiki_adapter.search_aops(text=query, limit=search_limit)
+    selected_aops = search_results[:aop_limit]
+    selected_aop_ids = [row["id"] for row in selected_aops if row.get("id")]
+    if not selected_aop_ids:
+        return selected_aops, []
+
+    db_adapter = get_aop_db_adapter()
+    records = await db_adapter.list_assays_for_aops(
+        selected_aop_ids,
+        limit=limit,
+        per_aop_limit=per_aop_limit,
+        min_hitcall=min_hitcall,
+    )
+    return selected_aops, records
+
+
+def _build_export_filename(format_name: str, *, query: str | None, aop_ids: list[str]) -> str:
+    if query:
+        return f"assays_{_slugify(query)}.{format_name}"
+    return f"assays_{len(aop_ids)}_aops.{format_name}"
+
+
+def _slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+    return slug or "query"
+
+
+def _serialize_assay_rows(rows: list[dict[str, Any]], format_name: str) -> str:
+    fieldnames = [
+        "aeid",
+        "assay_name",
+        "assay_component_endpoint_name",
+        "assay_function_type",
+        "target_family",
+        "target_family_sub",
+        "gene_symbols",
+        "aop_support_count",
+        "supporting_aops",
+        "chemical_support_count",
+        "supporting_chemicals",
+        "supporting_dtxsids",
+        "supporting_casrns",
+        "stressor_labels",
+        "max_hitcall",
+    ]
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=fieldnames,
+        delimiter="," if format_name == "csv" else "\t",
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    for row in rows:
+        supporting_chemicals = row.get("supporting_chemicals", [])
+        writer.writerow(
+            {
+                "aeid": row.get("aeid"),
+                "assay_name": row.get("assay_name"),
+                "assay_component_endpoint_name": row.get("assay_component_endpoint_name"),
+                "assay_function_type": row.get("assay_function_type"),
+                "target_family": row.get("target_family"),
+                "target_family_sub": row.get("target_family_sub"),
+                "gene_symbols": "|".join(row.get("gene_symbols", [])),
+                "aop_support_count": row.get("aop_support_count", row.get("support_count")),
+                "supporting_aops": "|".join(row.get("supporting_aops", [])),
+                "chemical_support_count": row.get("chemical_support_count", len(supporting_chemicals)),
+                "supporting_chemicals": "|".join(
+                    chemical.get("preferred_name") or ""
+                    for chemical in supporting_chemicals
+                ),
+                "supporting_dtxsids": "|".join(
+                    chemical.get("dtxsid") or ""
+                    for chemical in supporting_chemicals
+                ),
+                "supporting_casrns": "|".join(
+                    chemical.get("casrn") or ""
+                    for chemical in supporting_chemicals
+                ),
+                "stressor_labels": "|".join(
+                    "|".join(chemical.get("stressor_labels", []))
+                    for chemical in supporting_chemicals
+                ),
+                "max_hitcall": row.get("max_hitcall"),
+            }
+        )
+    return output.getvalue()
 
 
 class GetApplicabilityInput(BaseModel):

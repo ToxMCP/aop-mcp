@@ -17,6 +17,15 @@
 **Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, semantics, and draft authoring.**  
 Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
 
+## What's new in v0.2.0
+
+- `search_aops` now ranks title, synonym, and abstract evidence together, with tighter handling for multi-word phenotype queries such as `liver steatosis`.
+- Added `list_assays_for_aop` to resolve `AOP -> linked stressor chemicals -> CompTox bioactivity assays`.
+- Added `list_assays_for_aops` to aggregate and deduplicate assay candidates across a curated AOP set.
+- Added `list_assays_for_query` so agents can run phenotype discovery and assay aggregation in one MCP call.
+- Added `export_assays_table` to return the aggregated assay table directly as `csv` or `tsv`.
+- Fixed the CompTox keyed request flow used for live assay mapping and export workflows.
+
 ## Why this project exists
 
 AOP research depends on stitching together heterogeneous sources (AOP-Wiki, AOP-DB, CompTox, AOPOntology, MediaWiki drafts) while enforcing ontology, provenance, and publication rules. Traditional pipelines are bespoke notebooks or scripts that agents cannot safely reuse.  
@@ -35,10 +44,11 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 
 | Capability | Description |
 | --- | --- |
-| 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation (search AOPs, list KEs/KERs, map chemicals/assays). |
+| 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation with improved phenotype search ranking, synonym expansion, and curated AOP retrieval. |
+| 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, multi-AOP aggregation, and query-driven assay selection for phenotype-focused curation work. |
 | 🧭 **Semantic services** | CURIE normalization, applicability helper, and evidence matrix builder; enforced via JSON Schema responses. |
 | ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support. |
-| 📦 **Artifacts & audit** | Structured logging, audit bundles, and metrics for SPARQL/cache, draft edits, and job orchestration. |
+| 📦 **Artifacts & audit** | Structured logging, audit bundles, metrics for SPARQL/cache, draft edits, and direct assay table export in `csv`/`tsv`. |
 | ⚙️ **Configurable transports** | FastAPI JSON-RPC service with configurable endpoints, retries, and observability hooks. |
 | 🤖 **Agent friendly** | Verified with Codex CLI, Gemini CLI, and Claude Code; includes quick-start snippets and smoke scripts. |
 
@@ -143,12 +153,52 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 
 | Category | Highlight tools | Notes |
 | --- | --- | --- |
-| AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination and schema validation. |
-| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops` | Joins CompTox Bioactivity/Metadata + AOP-Wiki stressor data to surface linked AOPs. |
+| AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination, schema validation, and improved ranking for phenotype searches. |
+| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays. |
+| Assay aggregation | `list_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs and exports the ranked assay table as `csv` or `tsv`. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
 | Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor` | In-memory draft graph edits with provenance, ready for publish planners. |
 
 Every response is validated against JSON Schemas in `docs/contracts/schemas/`. Refer to `docs/contracts/tool-catalog.md` for full definitions and examples.
+
+### Example assay curation flow
+
+For a phenotype-driven workflow such as steatosis assay curation:
+
+1. Call `search_aops` with a phenotype query such as `liver steatosis`.
+2. Inspect the returned AOP set or pass the same query to `list_assays_for_query`.
+3. Export the aggregated assay candidates with `export_assays_table` when you need a table for downstream review.
+
+Example `tools/call` payloads:
+
+```json
+{
+  "name": "list_assays_for_query",
+  "arguments": {
+    "query": "liver steatosis",
+    "search_limit": 12,
+    "aop_limit": 5,
+    "limit": 25,
+    "per_aop_limit": 15,
+    "min_hitcall": 0.95
+  }
+}
+```
+
+```json
+{
+  "name": "export_assays_table",
+  "arguments": {
+    "query": "liver steatosis",
+    "format": "csv",
+    "search_limit": 12,
+    "aop_limit": 5,
+    "limit": 25,
+    "per_aop_limit": 15,
+    "min_hitcall": 0.95
+  }
+}
+```
 
 ---
 

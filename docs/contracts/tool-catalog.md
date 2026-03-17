@@ -1,30 +1,31 @@
 # AOP MCP Tool Catalog
 
-Planned tool surface extracted from `information.md`:
+Current MCP tool surface exposed by `POST /mcp`.
 
-## Read Tools
-- `search_aops`
-- `get_aop`
-- `list_key_events`
-- `get_key_event`
-- `list_kers`
-- `get_ker`
-- `find_paths`
-- `map_chemical_to_aops`
-- `map_assay_to_aops`
-- `get_applicability`
-- `get_evidence_matrix`
-- `graph_query`
+## Read tools
 
-## Write Tools
-- `create_draft_aop`
-- `add_or_update_ke`
-- `add_or_update_ker`
-- `link_stressor`
-- `validate_draft`
-- `propose_publish`
-- `publish`
-- `export_effectopedia` (optional)
+- `search_aops`: Search Adverse Outcome Pathways by text query with ranked title, synonym, and abstract matching.
+- `get_aop`: Fetch a single AOP and its core metadata by AOP identifier.
+- `list_key_events`: List key events for a selected AOP.
+- `list_kers`: List key event relationships for a selected AOP.
+- `map_chemical_to_aops`: Map a chemical identifier to related AOPs using AOP-DB and CompTox.
+- `map_assay_to_aops`: Map an assay identifier to related AOPs.
+- `list_assays_for_aop`: Resolve assay candidates for one AOP from linked stressor chemicals and CompTox bioactivity.
+- `list_assays_for_aops`: Aggregate and deduplicate assay candidates across multiple AOPs.
+- `list_assays_for_query`: Search AOPs by phenotype or mechanism query and aggregate assay candidates for the selected AOP set.
+- `export_assays_table`: Export aggregated assay candidates as `csv` or `tsv` from either a query or explicit AOP list.
+- `get_applicability`: Normalize applicability parameters such as species, sex, and life stage.
+- `get_evidence_matrix`: Build an evidence matrix from KER facets.
 
-Each tool will receive a JSON Schema description and associated contracts as
-the implementation progresses.
+## Write tools
+
+- `create_draft_aop`: Create a new draft AOP for write-path workflows.
+- `add_or_update_ke`: Add or update a key event within a draft.
+- `add_or_update_ker`: Add or update a key event relationship within a draft.
+- `link_stressor`: Link a stressor to a draft entity.
+
+## Notes
+
+- Tool schemas are exposed through MCP `tools/list` and validated by the server before tool execution.
+- Response contracts live under `docs/contracts/schemas/`.
+- Use `search_aops` for discovery and `get_aop` for fetching a known identifier.

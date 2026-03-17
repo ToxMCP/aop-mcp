@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any
 
 from .fixtures import FixtureNotFoundError, load_fixture
@@ -12,9 +13,96 @@ from .sparql_client import TemplateCatalog as _TemplateCatalog
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "aop_wiki"
 
+_SEARCH_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "liver": ("hepatic",),
+    "hepatic": ("liver",),
+    "steatosis": ("fatty liver",),
+    "fatty liver": ("steatosis",),
+    "masld": (
+        "non-alcoholic fatty liver disease",
+        "nonalcoholic fatty liver disease",
+        "metabolic dysfunction-associated steatotic liver disease",
+    ),
+    "nafld": (
+        "masld",
+        "non-alcoholic fatty liver disease",
+        "nonalcoholic fatty liver disease",
+    ),
+    "nash": ("steatohepatitis", "nonalcoholic steatohepatitis"),
+    "steatohepatitis": ("nash", "nonalcoholic steatohepatitis"),
+}
+
 
 def _escape_literal(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _normalize_search_text(value: str) -> str:
+    return " ".join(value.split()).strip().lower()
+
+
+def _expand_search_terms(text: str) -> list[str]:
+    normalized = _normalize_search_text(text)
+    if not normalized:
+        return []
+
+    expanded_terms: list[str] = []
+    for candidate in [normalized, *re.split(r"\s+", normalized)]:
+        if not candidate:
+            continue
+        if candidate not in expanded_terms:
+            expanded_terms.append(candidate)
+        for synonym in _SEARCH_SYNONYMS.get(candidate, ()):
+            if synonym not in expanded_terms:
+                expanded_terms.append(synonym)
+    return expanded_terms
+
+
+def _build_search_query_parts(text: str | None) -> dict[str, str]:
+    if not text or not text.strip():
+        return {
+            "search_bindings": "BIND(0 AS ?surfaceMatchCount)\n  BIND(0 AS ?matchCount)\n  BIND(0 AS ?score)",
+            "search_filter": "",
+            "order_by": "LCASE(?title)",
+        }
+
+    normalized = _normalize_search_text(text)
+    query_tokens = [token for token in re.split(r"\s+", normalized) if token]
+    require_surface_matches = len(query_tokens) > 1
+
+    match_terms: list[str] = []
+    surface_match_terms: list[str] = []
+    score_terms: list[str] = []
+    for term in _expand_search_terms(text):
+        escaped = _escape_literal(term)
+        surface_match_terms.append(
+            f'(IF(CONTAINS(LCASE(COALESCE(?title, "")), "{escaped}") || '
+            f'CONTAINS(LCASE(COALESCE(?shortName, "")), "{escaped}"), 1, 0))'
+        )
+        match_terms.append(
+            f'(IF(CONTAINS(LCASE(COALESCE(?title, "")), "{escaped}") || '
+            f'CONTAINS(LCASE(COALESCE(?shortName, "")), "{escaped}") || '
+            f'CONTAINS(LCASE(COALESCE(?abstract, "")), "{escaped}"), 1, 0))'
+        )
+        score_terms.append(
+            f'(IF(CONTAINS(LCASE(COALESCE(?title, "")), "{escaped}"), 100, 0) + '
+            f'IF(CONTAINS(LCASE(COALESCE(?shortName, "")), "{escaped}"), 70, 0) + '
+            f'IF(CONTAINS(LCASE(COALESCE(?abstract, "")), "{escaped}"), 30, 0))'
+        )
+
+    return {
+        "search_bindings": (
+            f'BIND(({" + ".join(surface_match_terms)}) AS ?surfaceMatchCount)\n'
+            f'  BIND(({" + ".join(match_terms)}) AS ?matchCount)\n'
+            f'  BIND(({" + ".join(score_terms)}) AS ?score)'
+        ),
+        "search_filter": (
+            "FILTER (?score > 0 && ?matchCount >= 1)"
+            if not require_surface_matches
+            else "FILTER (?score > 0 && ?surfaceMatchCount >= 2)"
+        ),
+        "order_by": "DESC(?surfaceMatchCount) DESC(?score) LCASE(?title)",
+    }
 
 
 def _iri_to_curie(iri: str) -> str:
@@ -59,16 +147,12 @@ class AOPWikiAdapter:
         self._templates = _TemplateCatalog.from_directory(TEMPLATE_DIR)
 
     async def search_aops(self, *, text: str | None = None, limit: int = 25) -> list[dict[str, Any]]:
-        filter_clause = ""
-        if text:
-            filter_clause = (
-                "FILTER (CONTAINS(LCASE(?title), LCASE(\"" + _escape_literal(text) + "\")))"
-            )
+        search_query_parts = _build_search_query_parts(text)
 
         query = self._templates.render(
             "search_aops",
             {
-                "filter_clause": filter_clause,
+                **search_query_parts,
                 "limit": limit,
             },
         )
@@ -78,8 +162,14 @@ class AOPWikiAdapter:
             payload = self._load_fixture("aop_wiki", "search_aops")
         bindings = payload.get("results", {}).get("bindings", [])
         results: list[dict[str, Any]] = []
+        seen_identifiers: set[str] = set()
         for row in bindings:
             identifier = _normalize_binding_identifier(row, "aop")
+            dedupe_key = identifier["id"] or identifier["iri"]
+            if dedupe_key in seen_identifiers:
+                continue
+            if dedupe_key:
+                seen_identifiers.add(dedupe_key)
             results.append(
                 {
                     **identifier,

@@ -1,9 +1,10 @@
 # Quickstart: Find an AOP
 
-1. Call the forthcoming `search_aops` tool with query terms for the molecular
-   initiating event or adverse outcome of interest.
-2. Use `get_aop` with an AOP identifier (e.g. `AOP:000296`) to retrieve the
-   enriched pathway payload.
+1. Call `search_aops` first with broad outcome or MIE terms and a higher limit
+   when recall matters (for example `steatosis`, `hepatic steatosis`, `MASLD`,
+   with `limit=25` or higher).
+2. Use `get_aop` only after you already have an AOP identifier (for example
+   `AOP:000296`) and want the enriched pathway payload for that single record.
 3. Traverse supporting events via `list_key_events` and `list_kers` to inspect
    evidence and applicability metadata.
 

@@ -122,6 +122,34 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="list_assays_for_aop",
+    description="List assay candidates for an AOP using linked stressor chemicals and CompTox bioactivity.",
+    handler=aop.list_assays_for_aop,
+    input_model=aop.ListAssaysForAopInput,
+)
+
+tool_registry.register(
+    name="list_assays_for_aops",
+    description="Aggregate and deduplicate assay candidates across multiple AOPs.",
+    handler=aop.list_assays_for_aops,
+    input_model=aop.ListAssaysForAopsInput,
+)
+
+tool_registry.register(
+    name="list_assays_for_query",
+    description="Search AOPs by phenotype or mechanism query and aggregate assay candidates across the selected AOP set.",
+    handler=aop.list_assays_for_query,
+    input_model=aop.ListAssaysForQueryInput,
+)
+
+tool_registry.register(
+    name="export_assays_table",
+    description="Export aggregated assay candidates as CSV or TSV from a query or explicit AOP list.",
+    handler=aop.export_assays_table,
+    input_model=aop.ExportAssaysTableInput,
+)
+
+tool_registry.register(
     name="get_applicability",
     description="Normalize applicability parameters (species, sex, life stage).",
     handler=aop.get_applicability,
