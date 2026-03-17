@@ -152,6 +152,13 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="search_assays_for_key_event",
+    description="Search CompTox assays using gene and phrase terms derived from a selected key event.",
+    handler=aop.search_assays_for_key_event,
+    input_model=aop.SearchAssaysForKeyEventInput,
+)
+
+tool_registry.register(
     name="list_assays_for_aop",
     description="List assay candidates for an AOP using linked stressor chemicals and CompTox bioactivity.",
     handler=aop.list_assays_for_aop,

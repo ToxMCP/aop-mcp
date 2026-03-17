@@ -16,13 +16,16 @@ Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any M
 
 ![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
 
-## What's new in v0.3.0
+## What's new in v0.4.0
 
-- Added OECD-aligned read tools for enriched KE/KER inspection, related-AOP discovery, and within-AOP path finding.
-- Added `validate_draft_oecd` for handbook-style completeness checks before review or publication planning.
-- Added `assess_aop_confidence` for explicit, heuristic AOP confidence summaries built from AOP-, KE-, and KER-level evidence text.
-- Added richer live AOP assessment retrieval so the server can surface MIE, AO, evidence text, and assessment timestamps together.
-- Synced server-reported version metadata with the package version so MCP clients and HTTP metadata report the same release.
+- Refined `assess_aop_confidence` so OECD core confidence dimensions are reported separately from supplemental AOP-level evidence text.
+- Added explicit `oecd_alignment` and `supplemental_signals` output to make the confidence summary less misleading when KE essentiality is unavailable.
+- Improved support-text parsing for KER biological plausibility and empirical support, producing more realistic calls on live AOP-Wiki content.
+- Updated KE-facing tool inputs to advertise `key_event_id` while keeping legacy `ke_id` requests compatible.
+- Extended `search_assays_for_key_event` with receptor/gene alias normalization for targets such as `PXR/NR1I2`, `FXR/NR1H4`, `LXR/NR1H3`, and `NRF2/NFE2L2`.
+- Tightened KE term derivation so title and short-name evidence outrank noisier description-only terms, while filtering generic tokens such as `protein`, `serum`, and `accumulation`.
+- Added applicability-aware assay reranking from KE taxonomic metadata, without allowing taxon matches to create false positives on their own.
+- Hardened KE assay search with an AOP-Wiki measurement-method fallback when the live CompTox assay catalog is temporarily unavailable.
 
 ## Why this project exists
 
@@ -43,7 +46,7 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 | Capability | Description |
 | --- | --- |
 | 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation with improved phenotype search ranking, synonym expansion, and curated AOP retrieval. |
-| 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, multi-AOP aggregation, and query-driven assay selection for phenotype-focused curation work. |
+| 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, KE-centered CompTox assay search with alias normalization and taxonomic reranking, multi-AOP aggregation, and query-driven assay selection for phenotype-focused curation work. |
 | 🧭 **Semantic services** | CURIE normalization, applicability helper, and evidence matrix builder; enforced via JSON Schema responses. |
 | ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support. |
 | 📦 **Artifacts & audit** | Structured logging, audit bundles, metrics for SPARQL/cache, draft edits, and direct assay table export in `csv`/`tsv`. |
@@ -152,8 +155,8 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | Category | Highlight tools | Notes |
 | --- | --- | --- |
 | AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination, schema validation, and improved ranking for phenotype searches. |
-| OECD review helpers | `get_key_event`, `get_ker`, `get_related_aops`, `assess_aop_confidence`, `find_paths_between_events` | Exposes richer KE/KER metadata, shared-AOP discovery, handbook-aligned heuristic confidence summaries, and directed path traversal for review and network analysis workflows. |
-| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays. |
+| OECD review helpers | `get_key_event`, `get_ker`, `get_related_aops`, `assess_aop_confidence`, `find_paths_between_events` | Exposes richer KE/KER metadata, shared-AOP discovery, partial OECD-aligned heuristic confidence summaries, and directed path traversal for review and network analysis workflows. |
+| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop`, `search_assays_for_key_event` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays, including KE-derived assay search with title-biased term extraction, alias normalization, taxonomic preference hints, and AOP-Wiki fallback extraction. |
 | Assay aggregation | `list_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs and exports the ranked assay table as `csv` or `tsv`. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
 | Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `validate_draft_oecd` | In-memory draft graph edits with provenance plus OECD-style completeness checks before review/publish. |
@@ -168,13 +171,21 @@ For a phenotype-driven workflow such as steatosis assay curation:
 2. Inspect the returned AOP set or pass the same query to `list_assays_for_query`.
 3. Export the aggregated assay candidates with `export_assays_table` when you need a table for downstream review.
 
+For a curated KE or MIE workflow:
+
+1. Call `get_key_event` to inspect the event metadata and confirm the mechanistic scope.
+2. Call `search_assays_for_key_event` to rank CompTox assays using KE-derived gene symbols, mechanism phrases, and KE taxonomic applicability when available. Use `key_event_id` in the MCP payload; legacy `ke_id` remains accepted for compatibility.
+3. Review `derived_search_terms`, `matched_terms`, and `applicability_match` in the result to understand why an assay was surfaced.
+4. Treat the result as a first-pass assay candidate list, not a curated KE-to-assay ontology mapping.
+
 ### Example OECD review flow
 
 For an OECD-style read/review workflow:
 
 1. Call `get_aop` or `search_aops` to select the pathway.
 2. Use `get_key_event` and `get_ker` for detailed KE/KER inspection.
-3. Use `assess_aop_confidence` to assemble a heuristic confidence summary from the available AOP, KE, and KER evidence text.
+3. Use `assess_aop_confidence` to assemble a heuristic confidence summary from the available KE and KER evidence text.
+4. Read `confidence_dimensions` as the OECD core dimensions, `supplemental_signals` as non-core context, and `oecd_alignment` for the current completeness status.
 
 Example `tools/call` payloads:
 
@@ -203,6 +214,16 @@ Example `tools/call` payloads:
     "limit": 25,
     "per_aop_limit": 15,
     "min_hitcall": 0.95
+  }
+}
+```
+
+```json
+{
+  "name": "search_assays_for_key_event",
+  "arguments": {
+    "key_event_id": "KE:239",
+    "limit": 10
   }
 }
 ```

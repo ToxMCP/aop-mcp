@@ -3,7 +3,8 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from src.adapters import AOPDBAdapter, SparqlClient
+from src.adapters import AOPDBAdapter, CompToxError, SparqlClient
+from src.adapters.aop_db import _derive_key_event_search_terms
 
 
 def make_client(handler: httpx.MockTransport) -> SparqlClient:
@@ -281,3 +282,228 @@ async def test_list_assays_for_aops_aggregates_by_aeid() -> None:
         "Perfluorooctanoic acid",
     ]
     assert [record["aeid"] for record in records[:3]] == [2309, 5000, 4000]
+
+
+@pytest.mark.asyncio
+async def test_search_assays_for_key_event_derives_terms_and_returns_ranked_results() -> None:
+    class KeyEventSearchCompTox:
+        def search_assay_catalog(self, *, gene_symbols=None, phrases=None, preferred_taxa=None, limit=25):
+            assert gene_symbols == ["NR1I2", "PXR"]
+            assert phrases == ["pregnane x receptor"]
+            assert preferred_taxa == []
+            assert limit == 5
+            return [
+                {
+                    "aeid": 103,
+                    "assay_name": "ATG_PXRE_CIS",
+                    "gene_symbols": ["NR1I2"],
+                    "match_score": 245,
+                    "match_basis": ["gene_symbol_exact", "gene_name_exact"],
+                    "matched_terms": ["NR1I2", "pregnane x receptor"],
+                    "source": "comptox_assay_catalog",
+                }
+            ]
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=KeyEventSearchCompTox())
+        result = await adapter.search_assays_for_key_event(
+            {
+                "id": "KE:239",
+                "title": "Activation, Pregnane-X receptor, NR1I2",
+                "short_name": "PXR activation",
+                "description": "Pregnane X receptor activation event.",
+            },
+            limit=5,
+        )
+
+    assert result["derived_search_terms"] == {
+        "gene_symbols": ["NR1I2", "PXR"],
+        "phrases": ["pregnane x receptor"],
+    }
+    assert len(result["limitations"]) == 1
+    assert result["results"][0]["aeid"] == 103
+
+
+@pytest.mark.asyncio
+async def test_search_assays_for_key_event_reports_phrase_only_matching() -> None:
+    class PhraseOnlyCompTox:
+        def search_assay_catalog(self, *, gene_symbols=None, phrases=None, preferred_taxa=None, limit=25):
+            assert gene_symbols == []
+            assert phrases == ["liver steatosis"]
+            assert preferred_taxa == []
+            return []
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=PhraseOnlyCompTox())
+        result = await adapter.search_assays_for_key_event(
+            {
+                "id": "KE:999",
+                "title": "Increase, liver steatosis",
+                "short_name": None,
+                "description": None,
+            },
+            limit=5,
+        )
+
+    assert result["derived_search_terms"] == {
+        "gene_symbols": [],
+        "phrases": ["liver steatosis"],
+    }
+    assert "phrase similarity" in result["limitations"][1]
+    assert "No CompTox assay catalog entries matched the derived key-event terms." in result["limitations"][2]
+
+
+@pytest.mark.asyncio
+async def test_search_assays_for_key_event_falls_back_to_measurement_methods() -> None:
+    class FailingCompTox:
+        def search_assay_catalog(self, *, gene_symbols=None, phrases=None, preferred_taxa=None, limit=25):
+            raise CompToxError("503 Service Unavailable")
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=FailingCompTox())
+        result = await adapter.search_assays_for_key_event(
+            {
+                "id": "KE:239",
+                "title": "Activation, Pregnane-X receptor, NR1I2",
+                "short_name": "PXR activation",
+                "description": "Pregnane X receptor activation event.",
+                "measurement_methods": [
+                    "The following ToxCast assays measure PXR activation: ATG_PXRE_CIS; TOX21_PXR_agonist; NVS_NR_hPXR."
+                ],
+            },
+            limit=5,
+        )
+
+    assert "measurement-method text" in result["limitations"][1]
+    assert result["results"] == [
+        {
+            "aeid": None,
+            "assay_name": "ATG_PXRE_CIS",
+            "assay_component_endpoint_name": "ATG_PXRE_CIS",
+            "assay_component_endpoint_desc": "Recovered from AOP-Wiki key event measurement methods.",
+            "assay_function_type": None,
+            "target_family": None,
+            "target_family_sub": None,
+            "target_type": None,
+            "gene_symbols": ["NR1I2", "PXR"],
+            "taxon_name": None,
+            "applicability_match": "unknown",
+            "matched_taxa": [],
+            "match_score": 40,
+            "match_basis": ["key_event_measurement_methods"],
+            "matched_terms": ["ATG_PXRE_CIS"],
+            "multi_conc_assay_chemical_count_active": None,
+            "multi_conc_assay_chemical_count_total": None,
+            "single_conc_assay_chemical_count_active": None,
+            "single_conc_assay_chemical_count_total": None,
+            "source": "aop_wiki_measurement_methods",
+        },
+        {
+            "aeid": None,
+            "assay_name": "TOX21_PXR_agonist",
+            "assay_component_endpoint_name": "TOX21_PXR_agonist",
+            "assay_component_endpoint_desc": "Recovered from AOP-Wiki key event measurement methods.",
+            "assay_function_type": None,
+            "target_family": None,
+            "target_family_sub": None,
+            "target_type": None,
+            "gene_symbols": ["NR1I2", "PXR"],
+            "taxon_name": None,
+            "applicability_match": "unknown",
+            "matched_taxa": [],
+            "match_score": 40,
+            "match_basis": ["key_event_measurement_methods"],
+            "matched_terms": ["TOX21_PXR_agonist"],
+            "multi_conc_assay_chemical_count_active": None,
+            "multi_conc_assay_chemical_count_total": None,
+            "single_conc_assay_chemical_count_active": None,
+            "single_conc_assay_chemical_count_total": None,
+            "source": "aop_wiki_measurement_methods",
+        },
+        {
+            "aeid": None,
+            "assay_name": "NVS_NR_hPXR",
+            "assay_component_endpoint_name": "NVS_NR_hPXR",
+            "assay_component_endpoint_desc": "Recovered from AOP-Wiki key event measurement methods.",
+            "assay_function_type": None,
+            "target_family": None,
+            "target_family_sub": None,
+            "target_type": None,
+            "gene_symbols": ["NR1I2", "PXR"],
+            "taxon_name": None,
+            "applicability_match": "unknown",
+            "matched_taxa": [],
+            "match_score": 40,
+            "match_basis": ["key_event_measurement_methods"],
+            "matched_terms": ["NVS_NR_hPXR"],
+            "multi_conc_assay_chemical_count_active": None,
+            "multi_conc_assay_chemical_count_total": None,
+            "single_conc_assay_chemical_count_active": None,
+            "single_conc_assay_chemical_count_total": None,
+            "source": "aop_wiki_measurement_methods",
+        },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_search_assays_for_key_event_expands_aliases_and_taxa() -> None:
+    class AliasCompTox:
+        def search_assay_catalog(self, *, gene_symbols=None, phrases=None, preferred_taxa=None, limit=25):
+            assert gene_symbols == ["FXR", "NR1H4"]
+            assert phrases == ["farnesoid x receptor"]
+            assert preferred_taxa == ["human", "homo sapiens", "mouse", "mus musculus"]
+            return []
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=AliasCompTox())
+        result = await adapter.search_assays_for_key_event(
+            {
+                "id": "KE:1419",
+                "title": "Reduced, FXR activity",
+                "short_name": None,
+                "description": None,
+                "taxonomic_applicability": ["NCBITaxon:9606", "NCBITaxon:10090"],
+            },
+            limit=5,
+        )
+
+    assert result["derived_search_terms"] == {
+        "gene_symbols": ["FXR", "NR1H4"],
+        "phrases": ["farnesoid x receptor"],
+    }
+
+
+def test_derive_key_event_search_terms_prefers_title_scope_over_description_noise() -> None:
+    terms = _derive_key_event_search_terms(
+        {
+            "title": "Accumulation, Triglyceride",
+            "short_name": None,
+            "description": (
+                "Triglyceride accumulation may be modulated by PXR, FXR, LXR, CAR, and AHR signaling."
+            ),
+        }
+    )
+
+    assert terms == {
+        "gene_symbols": [],
+        "phrases": ["triglyceride"],
+    }
+
+
+def test_derive_key_event_search_terms_filters_generic_measurement_words() -> None:
+    terms = _derive_key_event_search_terms(
+        {
+            "title": "Reduced, INSIG1 protein",
+            "short_name": None,
+            "description": "INSIG1 protein abundance is reduced in hepatocytes.",
+        }
+    )
+
+    assert terms == {
+        "gene_symbols": ["INSIG1"],
+        "phrases": [],
+    }

@@ -126,3 +126,159 @@ def test_extract_identifiers_returns_expected_fields() -> None:
 
     assert result["preferred_name"] == "Aspirin"
     assert result["casrn"] == "50-78-2"
+
+
+def test_comp_tox_client_search_assay_catalog_ranks_gene_and_phrase_matches(monkeypatch) -> None:
+    catalog_items = [
+        {
+            "aeid": 103,
+            "assayName": "ATG_PXRE_CIS",
+            "assayComponentEndpointName": "ATG_PXRE_CIS",
+            "assayComponentEndpointDesc": "Pregnane X receptor reporter assay",
+            "taxonName": "human",
+            "multi_conc_assay_chemical_count_active": 600,
+            "multi_conc_assay_chemical_count_total": 1000,
+            "single_conc_assay_chemical_count_active": 0,
+            "single_conc_assay_chemical_count_total": 0,
+            "genes": [{"geneSymbol": "NR1I2", "geneName": "pregnane X receptor"}],
+        },
+        {
+            "aeid": 2309,
+            "assayName": "CCTE_GLTED_hDIO1",
+            "assayComponentEndpointName": "CCTE_GLTED_hDIO1",
+            "assayComponentEndpointDesc": "DIO1 activity assay",
+            "taxonName": "human",
+            "multi_conc_assay_chemical_count_active": 50,
+            "multi_conc_assay_chemical_count_total": 400,
+            "single_conc_assay_chemical_count_active": 0,
+            "single_conc_assay_chemical_count_total": 0,
+            "genes": [{"geneSymbol": "DIO1", "geneName": "iodothyronine deiodinase 1"}],
+        },
+    ]
+
+    with CompToxClient() as client:
+        monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
+        monkeypatch.setattr(
+            client,
+            "assay_by_aeid",
+            lambda aeid: {
+                103: {
+                    "assayName": "ATG_PXRE_CIS",
+                    "assayComponentEndpointName": "ATG_PXRE_CIS",
+                    "assayComponentEndpointDesc": "Pregnane X receptor reporter assay",
+                    "assayFunctionType": "reporter gene",
+                    "intendedTargetFamily": "nuclear receptor",
+                    "intendedTargetFamilySub": "PXR",
+                    "intendedTargetType": "protein",
+                    "gene": [{"geneSymbol": "NR1I2"}],
+                }
+            }.get(aeid),
+        )
+
+        results = client.search_assay_catalog(
+            gene_symbols=["NR1I2", "PXR"],
+            phrases=["pregnane x receptor"],
+            preferred_taxa=["human"],
+            limit=5,
+        )
+
+    assert [row["aeid"] for row in results] == [103]
+    assert results[0]["applicability_match"] == "match"
+    assert results[0]["matched_taxa"] == ["human"]
+    assert "gene_symbol_exact" in results[0]["match_basis"]
+    assert "pregnane x receptor" in results[0]["matched_terms"]
+    assert results[0]["target_family"] == "nuclear receptor"
+
+
+def test_comp_tox_client_search_assay_catalog_falls_back_to_catalog_metadata(monkeypatch) -> None:
+    catalog_items = [
+        {
+            "aeid": 103,
+            "assayName": "ATG_PXRE_CIS",
+            "assayComponentEndpointName": "ATG_PXRE_CIS",
+            "assayComponentEndpointDesc": "Pregnane X receptor reporter assay",
+            "taxonName": "human",
+            "multi_conc_assay_chemical_count_active": 600,
+            "multi_conc_assay_chemical_count_total": 1000,
+            "single_conc_assay_chemical_count_active": 0,
+            "single_conc_assay_chemical_count_total": 0,
+            "genes": [{"geneSymbol": "NR1I2", "geneName": "pregnane X receptor"}],
+        }
+    ]
+
+    with CompToxClient() as client:
+        monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
+
+        def fail_assay_lookup(aeid: int) -> dict[str, Any] | None:
+            raise CompToxError(f"lookup failed for {aeid}")
+
+        monkeypatch.setattr(client, "assay_by_aeid", fail_assay_lookup)
+        results = client.search_assay_catalog(gene_symbols=["NR1I2"], limit=5)
+
+    assert results == [
+        {
+            "aeid": 103,
+            "assay_name": "ATG_PXRE_CIS",
+            "assay_component_endpoint_name": "ATG_PXRE_CIS",
+            "assay_component_endpoint_desc": "Pregnane X receptor reporter assay",
+            "assay_function_type": None,
+            "target_family": None,
+            "target_family_sub": None,
+            "target_type": None,
+            "gene_symbols": ["NR1I2"],
+            "taxon_name": "human",
+            "applicability_match": "unknown",
+            "matched_taxa": [],
+            "match_score": 122,
+            "match_basis": ["gene_symbol_exact"],
+            "matched_terms": ["NR1I2"],
+            "multi_conc_assay_chemical_count_active": 600,
+            "multi_conc_assay_chemical_count_total": 1000,
+            "single_conc_assay_chemical_count_active": 0,
+            "single_conc_assay_chemical_count_total": 0,
+            "source": "comptox_assay_catalog",
+        }
+    ]
+
+
+def test_comp_tox_client_search_assay_catalog_prefers_matching_taxa(monkeypatch) -> None:
+    catalog_items = [
+        {
+            "aeid": 10,
+            "assayName": "FXR_human",
+            "assayComponentEndpointName": "FXR_human",
+            "assayComponentEndpointDesc": "Farnesoid X receptor human assay",
+            "taxonName": "human",
+            "multi_conc_assay_chemical_count_active": 10,
+            "multi_conc_assay_chemical_count_total": 100,
+            "single_conc_assay_chemical_count_active": 0,
+            "single_conc_assay_chemical_count_total": 0,
+            "genes": [{"geneSymbol": "NR1H4", "geneName": "farnesoid X receptor"}],
+        },
+        {
+            "aeid": 11,
+            "assayName": "FXR_rat",
+            "assayComponentEndpointName": "FXR_rat",
+            "assayComponentEndpointDesc": "Farnesoid X receptor rat assay",
+            "taxonName": "rat",
+            "multi_conc_assay_chemical_count_active": 10,
+            "multi_conc_assay_chemical_count_total": 100,
+            "single_conc_assay_chemical_count_active": 0,
+            "single_conc_assay_chemical_count_total": 0,
+            "genes": [{"geneSymbol": "NR1H4", "geneName": "farnesoid X receptor"}],
+        },
+    ]
+
+    with CompToxClient() as client:
+        monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
+        monkeypatch.setattr(client, "assay_by_aeid", lambda aeid: None)
+        results = client.search_assay_catalog(
+            gene_symbols=["NR1H4"],
+            phrases=["farnesoid x receptor"],
+            preferred_taxa=["human"],
+            limit=5,
+        )
+
+    assert [row["aeid"] for row in results] == [10, 11]
+    assert results[0]["applicability_match"] == "match"
+    assert results[1]["applicability_match"] == "mismatch"

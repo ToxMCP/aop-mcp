@@ -8,7 +8,7 @@ import io
 import re
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 from src.server.dependencies import (
     get_draft_store,
@@ -47,12 +47,14 @@ async def get_aop(params: GetAopInput) -> dict[str, Any]:
 
 
 class GetKeyEventInput(BaseModel):
-    ke_id: str
+    key_event_id: str = Field(
+        validation_alias=AliasChoices("key_event_id", "ke_id"),
+    )
 
 
 async def get_key_event(params: GetKeyEventInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
-    return await adapter.get_key_event(params.ke_id)
+    return await adapter.get_key_event(params.key_event_id)
 
 
 class ListKeyEventsInput(BaseModel):
@@ -119,18 +121,21 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
     applicability_summary = _build_applicability_summary(key_event_details)
     confidence_dimensions = _build_confidence_dimensions(
         ker_details,
+    )
+    supplemental_signals = _build_supplemental_signals(
         overall_evidence=aop.get("evidence_summary"),
     )
     heuristic_overall_call = _build_overall_confidence_call(
         coverage,
         confidence_dimensions,
-        has_aop_evidence=bool(aop.get("evidence_summary")),
     )
     limitations = _build_assessment_limitations(
         coverage,
         confidence_dimensions,
         applicability_summary,
+        supplemental_signals,
     )
+    oecd_alignment = _build_oecd_alignment_summary(confidence_dimensions)
 
     rationale = [
         f"AOP contains {coverage['key_event_count']} key events and {coverage['ker_count']} KERs.",
@@ -139,10 +144,10 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
         f"{coverage['kers_with_quantitative_understanding']}/{coverage['ker_count']} KERs include quantitative understanding text.",
         f"{coverage['key_events_with_measurement_methods']}/{coverage['key_event_count']} key events include measurement guidance.",
     ]
-    if confidence_dimensions["overall_aop_evidence"]["heuristic_call"] != "not_reported":
+    if supplemental_signals["aop_level_evidence_signal"]["heuristic_call"] != "not_reported":
         rationale.append(
-            "AOP-level evidence text suggests "
-            f"{confidence_dimensions['overall_aop_evidence']['heuristic_call'].replace('_', ' ')} support."
+            "Supplemental AOP-level evidence text suggests "
+            f"{supplemental_signals['aop_level_evidence_signal']['heuristic_call'].replace('_', ' ')} support."
         )
 
     return {
@@ -154,6 +159,8 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
         "coverage": coverage,
         "applicability_summary": applicability_summary,
         "confidence_dimensions": confidence_dimensions,
+        "supplemental_signals": supplemental_signals,
+        "oecd_alignment": oecd_alignment,
         "heuristic_overall_call": heuristic_overall_call,
         "rationale": rationale,
         "limitations": limitations,
@@ -266,6 +273,28 @@ async def map_assay_to_aops(params: MapAssayInput) -> dict[str, Any]:
     adapter = get_aop_db_adapter()
     records = await adapter.map_assay_to_aops(params.assay_id)
     return {"results": records}
+
+
+class SearchAssaysForKeyEventInput(BaseModel):
+    key_event_id: str = Field(
+        validation_alias=AliasChoices("key_event_id", "ke_id"),
+    )
+    limit: int = Field(default=25, ge=1, le=100)
+
+
+async def search_assays_for_key_event(params: SearchAssaysForKeyEventInput) -> dict[str, Any]:
+    wiki_adapter = get_aop_wiki_adapter()
+    key_event = await wiki_adapter.get_key_event(params.key_event_id)
+
+    db_adapter = get_aop_db_adapter()
+    assay_search = await db_adapter.search_assays_for_key_event(
+        key_event,
+        limit=params.limit,
+    )
+    return {
+        "key_event": key_event,
+        **assay_search,
+    }
 
 
 class ListAssaysForAopInput(BaseModel):
@@ -945,8 +974,6 @@ def _build_applicability_summary(key_event_details: list[dict[str, Any]]) -> dic
 
 def _build_confidence_dimensions(
     ker_details: list[dict[str, Any]],
-    *,
-    overall_evidence: str | None,
 ) -> dict[str, Any]:
     total = len(ker_details)
     plausibility_calls = [
@@ -964,42 +991,50 @@ def _build_confidence_dimensions(
         for record in ker_details
         if record.get("quantitative_understanding")
     ]
-    overall_evidence_call = _extract_support_call(overall_evidence)
 
     return {
         "biological_plausibility": {
             "heuristic_call": _aggregate_dimension_call(plausibility_calls, total),
             "coverage": {"present": len(plausibility_calls), "total": total},
             "basis": "Aggregated from KER biological plausibility text.",
+            "oecd_dimension": True,
         },
         "empirical_support": {
             "heuristic_call": _aggregate_dimension_call(empirical_calls, total),
             "coverage": {"present": len(empirical_calls), "total": total},
             "basis": "Aggregated from KER empirical support text.",
+            "oecd_dimension": True,
         },
         "quantitative_understanding": {
             "heuristic_call": _aggregate_dimension_call(quantitative_calls, total),
             "coverage": {"present": len(quantitative_calls), "total": total},
             "basis": "Aggregated from KER quantitative understanding text.",
-        },
-        "overall_aop_evidence": {
-            "heuristic_call": overall_evidence_call,
-            "coverage": {"present": 1 if overall_evidence else 0, "total": 1},
-            "basis": "Derived from AOP-level evidence text when present.",
+            "oecd_dimension": True,
         },
         "essentiality_of_key_events": {
             "heuristic_call": "not_assessed",
             "coverage": {"present": 0, "total": total},
             "basis": "Key-event essentiality is not directly surfaced in the current RDF export, so this tool does not assign an essentiality score.",
+            "oecd_dimension": True,
         },
+    }
+
+
+def _build_supplemental_signals(*, overall_evidence: str | None) -> dict[str, Any]:
+    overall_evidence_call = _extract_support_call(overall_evidence)
+    return {
+        "aop_level_evidence_signal": {
+            "heuristic_call": overall_evidence_call,
+            "coverage": {"present": 1 if overall_evidence else 0, "total": 1},
+            "basis": "Derived from AOP-level free-text evidence when present. This is supplemental context and not an OECD core confidence dimension.",
+            "oecd_dimension": False,
+        }
     }
 
 
 def _build_overall_confidence_call(
     coverage: dict[str, int],
     confidence_dimensions: dict[str, Any],
-    *,
-    has_aop_evidence: bool,
 ) -> str:
     ker_count = coverage["ker_count"]
     if ker_count == 0:
@@ -1020,8 +1055,7 @@ def _build_overall_confidence_call(
         plausibility_call in {"strong", "moderate"}
         and empirical_call in {"strong", "moderate"}
         and quantitative_call in {"strong", "moderate"}
-        and coverage["key_events_with_measurement_methods"] >= max(1, coverage["key_event_count"] // 2)
-        and has_aop_evidence
+        and confidence_dimensions["essentiality_of_key_events"]["heuristic_call"] in {"strong", "moderate"}
     ):
         return "high"
 
@@ -1035,13 +1069,18 @@ def _build_assessment_limitations(
     coverage: dict[str, int],
     confidence_dimensions: dict[str, Any],
     applicability_summary: dict[str, Any],
+    supplemental_signals: dict[str, Any],
 ) -> list[str]:
     limitations = [
         "Key-event essentiality is not directly surfaced in the current RDF export, so this assessment does not assign an OECD essentiality score.",
     ]
-    if confidence_dimensions["overall_aop_evidence"]["heuristic_call"] == "not_reported":
+    if supplemental_signals["aop_level_evidence_signal"]["heuristic_call"] == "not_reported":
         limitations.append(
-            "No AOP-level overall evidence text was available, so the assessment relies on KE/KER evidence coverage."
+            "No supplemental AOP-level evidence text was available, so the assessment relies on the OECD core dimensions that are exposed in KE/KER metadata."
+        )
+    else:
+        limitations.append(
+            "AOP-level evidence text is reported separately as a supplemental signal and is not used as an OECD core confidence dimension."
         )
     if coverage["kers_with_quantitative_understanding"] < coverage["ker_count"]:
         limitations.append(
@@ -1052,6 +1091,23 @@ def _build_assessment_limitations(
             "Applicability summary is sparse and is aggregated from key-event metadata rather than a dedicated AOP-level applicability field."
         )
     return limitations
+
+
+def _build_oecd_alignment_summary(confidence_dimensions: dict[str, Any]) -> dict[str, Any]:
+    missing_dimensions = [
+        dimension_name
+        for dimension_name, dimension in confidence_dimensions.items()
+        if dimension.get("heuristic_call") == "not_assessed"
+    ]
+    return {
+        "status": "partial" if missing_dimensions else "core_dimensions_available",
+        "core_dimensions": list(confidence_dimensions.keys()),
+        "missing_dimensions": missing_dimensions,
+        "notes": [
+            "Overall OECD confidence is defined by biological plausibility, empirical support, quantitative understanding, and KE essentiality.",
+            "This tool currently approximates the first three dimensions from KER text and reports KE essentiality as unavailable when the RDF export does not expose it.",
+        ],
+    }
 
 
 def _collect_unique(values: list[list[str]] | Any) -> list[str]:
@@ -1105,16 +1161,45 @@ def _extract_support_call(text: str | None) -> str:
         return "moderate_to_strong"
     if re.search(r"\b(strong)\s*(to|-|/)\s*(moderate)\b", normalized):
         return "moderate_to_strong"
+    if re.search(r"\b(is|are|was|were)\s+strong\b", normalized):
+        return "strong"
+    if re.search(r"\b(is|are|was|were)\s+moderate\b", normalized):
+        return "moderate"
+    if re.search(r"\b(is|are|was|were)\s+(low|weak)\b", normalized):
+        return "low"
     if "strong mechanistic rationale" in normalized or "strong biological rationale" in normalized:
         return "strong"
     if "moderate mechanistic rationale" in normalized or "moderate biological rationale" in normalized:
         return "moderate"
+    support_dimension_match = re.search(
+        r"\b(strong|moderate|low|weak)\s+"
+        r"(biological plausibility|empirical support|quantitative support|quantitative understanding|mechanistic rationale|rationale)\b",
+        normalized,
+    )
+    if support_dimension_match:
+        level = support_dimension_match.group(1)
+        if level == "strong":
+            return "strong"
+        if level == "moderate":
+            return "moderate"
+        return "low"
     if re.search(r"\b(strong|high)\s+(support|evidence|confidence)\b", normalized):
         return "strong"
     if re.search(r"\bmoderate\s+(support|evidence|confidence)\b", normalized):
         return "moderate"
     if re.search(r"\b(low|weak)\s+(support|evidence|confidence)\b", normalized):
         return "low"
+    citation_count = normalized.count("et al.")
+    if citation_count >= 3 and ("correlated" in normalized or "concordance" in normalized):
+        return "strong"
+    if citation_count >= 2 and (
+        "correlated" in normalized
+        or "dose" in normalized
+        or "temporal" in normalized
+        or "concordance" in normalized
+        or "yes yes" in normalized
+    ):
+        return "moderate"
     if "plausible but in need of further study" in normalized:
         return "mixed"
     if "causal relationship" in normalized or "consistent response" in normalized:

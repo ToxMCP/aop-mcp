@@ -3,17 +3,138 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Any
 
+from .aop_wiki import _iri_to_curie  # reuse IRI normalization
+from .comp_tox import CompToxClient, CompToxError
 from .fixtures import FixtureNotFoundError, load_fixture
 from .sparql_client import SparqlClient, SparqlClientError
 from .sparql_client import TemplateCatalog as _TemplateCatalog
-from .aop_wiki import _iri_to_curie  # reuse IRI normalization
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "aop_db"
 
+_KEY_EVENT_SYMBOL_STOPWORDS = {
+    "ACTIVATION",
+    "ACTIVITY",
+    "ADVERSE",
+    "ALTERED",
+    "CHANGE",
+    "DECREASE",
+    "DECREASED",
+    "DECREASES",
+    "DECREASING",
+    "EVENT",
+    "EXPRESSION",
+    "INCREASE",
+    "INCREASED",
+    "INCREASES",
+    "INCREASING",
+    "INDUCTION",
+    "LIVER",
+    "MOLECULAR",
+    "OUTCOME",
+    "RECEPTOR",
+    "REPRESSION",
+    "RESPONSE",
+    "STEATOSIS",
+}
 
-from .comp_tox import CompToxClient
+_KEY_EVENT_PHRASE_STOPWORDS = {
+    "a",
+    "accumulation",
+    "activation",
+    "activated",
+    "activates",
+    "activity",
+    "adverse",
+    "altered",
+    "and",
+    "change",
+    "changes",
+    "decrease",
+    "decreased",
+    "decreases",
+    "decreasing",
+    "event",
+    "events",
+    "elevated",
+    "enhanced",
+    "expression",
+    "induced",
+    "inhibited",
+    "in",
+    "increase",
+    "increased",
+    "increases",
+    "increasing",
+    "induction",
+    "lead",
+    "leads",
+    "level",
+    "levels",
+    "mediated",
+    "of",
+    "persistent",
+    "protein",
+    "response",
+    "repression",
+    "repressed",
+    "reduced",
+    "serum",
+    "sustained",
+    "suppressed",
+    "the",
+    "to",
+    "upregulated",
+    "upregulation",
+    "via",
+    "downregulated",
+    "downregulation",
+}
+
+_GENE_SYMBOL_NORMALIZATION = {
+    "NR1L2": "NR1I2",
+}
+
+_TAXON_PREFERENCE_MAP = {
+    "NCBITaxon:9606": ["human", "homo sapiens"],
+    "NCBITaxon:10090": ["mouse", "mus musculus"],
+    "NCBITaxon:10116": ["rat", "rattus norvegicus"],
+}
+
+_GENE_ALIAS_RULES = [
+    {
+        "patterns": [r"\bpregnane x receptor\b", r"\bpxr\b"],
+        "gene_symbols": ["PXR", "NR1I2"],
+        "phrases": ["pregnane x receptor"],
+    },
+    {
+        "patterns": [r"\bfarnesoid x receptor\b", r"\bfxr\b"],
+        "gene_symbols": ["FXR", "NR1H4"],
+        "phrases": ["farnesoid x receptor"],
+    },
+    {
+        "patterns": [r"\bliver x receptor\b", r"\blxr\b"],
+        "gene_symbols": ["LXR", "NR1H3", "NR1H2"],
+        "phrases": ["liver x receptor"],
+    },
+    {
+        "patterns": [r"\bnrf2\b", r"\bnfe2l2\b", r"\bnfe2/nrf2\b"],
+        "gene_symbols": ["NRF2", "NFE2L2"],
+        "phrases": ["nrf2"],
+    },
+    {
+        "patterns": [r"\bahr\b", r"\baryl hydrocarbon receptor\b"],
+        "gene_symbols": ["AHR"],
+        "phrases": ["aryl hydrocarbon receptor"],
+    },
+    {
+        "patterns": [r"\bconstitutive androstane receptor\b", r"\bcar\b"],
+        "gene_symbols": ["CAR", "NR1I3"],
+        "phrases": ["constitutive androstane receptor"],
+    },
+]
 
 
 def _aop_iri(aop_id: str) -> str:
@@ -348,6 +469,68 @@ class AOPDBAdapter:
         )
         return materialized_candidates[:limit]
 
+    async def search_assays_for_key_event(
+        self,
+        key_event: dict[str, Any],
+        *,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        if not self.comptox:
+            raise ValueError("CompTox client is required for key-event assay search")
+
+        derived_search_terms = _derive_key_event_search_terms(key_event)
+        limitations = [
+            "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping.",
+        ]
+
+        if not derived_search_terms["gene_symbols"] and not derived_search_terms["phrases"]:
+            limitations.append(
+                "No gene-like symbols or searchable phrases could be derived from the key event metadata."
+            )
+            return {
+                "derived_search_terms": derived_search_terms,
+                "limitations": limitations,
+                "results": [],
+            }
+
+        if not derived_search_terms["gene_symbols"]:
+            limitations.append(
+                "This key event did not expose gene-like symbols, so assay matching relies on phrase similarity and may be broader."
+            )
+
+        used_measurement_fallback = False
+        try:
+            results = self.comptox.search_assay_catalog(
+                gene_symbols=derived_search_terms["gene_symbols"],
+                phrases=derived_search_terms["phrases"],
+                preferred_taxa=_preferred_taxa_from_key_event(key_event),
+                limit=limit,
+            )
+        except CompToxError as exc:
+            used_measurement_fallback = True
+            limitations.append(
+                "CompTox assay catalog search was unavailable, so results were derived from AOP-Wiki measurement-method text instead."
+            )
+            limitations.append(f"CompTox detail: {exc}")
+            results = _extract_measurement_method_assays(
+                key_event.get("measurement_methods") or [],
+                gene_symbols=derived_search_terms["gene_symbols"],
+                limit=limit,
+            )
+        if not results:
+            if used_measurement_fallback:
+                limitations.append(
+                    "No assay candidates were recovered from either the CompTox catalog search or AOP-Wiki measurement-method text."
+                )
+            else:
+                limitations.append("No CompTox assay catalog entries matched the derived key-event terms.")
+
+        return {
+            "derived_search_terms": derived_search_terms,
+            "limitations": limitations,
+            "results": results,
+        }
+
     async def _map_assay_legacy(self, assay_id: str) -> list[dict[str, Any]]:
         query = self._templates.render("map_assay_to_aops", {"assay_id": assay_id})
         try:
@@ -400,3 +583,160 @@ class AOPDBAdapter:
                 }
             )
         return stressors
+
+
+def _derive_key_event_search_terms(key_event: dict[str, Any]) -> dict[str, list[str]]:
+    title = str(key_event.get("title") or "")
+    short_name = str(key_event.get("short_name") or "")
+    description = str(key_event.get("description") or "")
+    label_source = " ".join(filter(None, [title, short_name]))
+
+    gene_symbols: list[str] = []
+    for value in (title, short_name):
+        for token in re.split(r"[^A-Za-z0-9/+_-]+", value):
+            for part in re.split(r"[+/]", token):
+                symbol = _normalize_gene_like_token(part)
+                if symbol and symbol not in gene_symbols:
+                    gene_symbols.append(symbol)
+
+    phrases: list[str] = []
+    for value in (title, short_name):
+        for segment in re.split(r"[,;()]+", value):
+            phrase = _normalize_key_event_phrase(segment, gene_symbols=gene_symbols)
+            if phrase and phrase not in phrases:
+                phrases.append(phrase)
+
+    _expand_alias_terms(label_source, gene_symbols, phrases)
+    if not gene_symbols and not phrases:
+        for symbol in _extract_description_gene_symbols(description):
+            if symbol not in gene_symbols:
+                gene_symbols.append(symbol)
+        _expand_alias_terms(description, gene_symbols, phrases)
+    gene_symbols = _finalize_gene_symbols(gene_symbols)
+
+    return {
+        "gene_symbols": gene_symbols[:8],
+        "phrases": phrases[:8],
+    }
+
+
+def _normalize_gene_like_token(value: str) -> str | None:
+    token = value.strip().strip("-_")
+    if len(token) < 3:
+        return None
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9-]*", token):
+        return None
+
+    upper = _GENE_SYMBOL_NORMALIZATION.get(token.upper(), token.upper())
+    if upper in _KEY_EVENT_SYMBOL_STOPWORDS:
+        return None
+    if not any(char.isdigit() for char in token) and not token.isupper():
+        return None
+    return upper
+
+
+def _normalize_key_event_phrase(value: str, *, gene_symbols: list[str]) -> str | None:
+    if not value:
+        return None
+    normalized = value.replace("-", " ").replace("/", " ")
+    normalized = re.sub(r"[^A-Za-z0-9\s]", " ", normalized).lower()
+    tokens = []
+    for token in normalized.split():
+        if token in _KEY_EVENT_PHRASE_STOPWORDS:
+            continue
+        canonical_symbol = _normalize_gene_like_token(token)
+        if token.upper() in gene_symbols or (canonical_symbol and canonical_symbol in gene_symbols):
+            continue
+        tokens.append(token)
+
+    if not tokens:
+        return None
+    phrase = " ".join(tokens).strip()
+    return phrase if len(phrase) >= 3 else None
+
+
+def _extract_description_gene_symbols(value: str) -> list[str]:
+    symbols: list[str] = []
+    for section in re.findall(r"\(([^)]+)\)", value or ""):
+        for token in re.split(r"[^A-Za-z0-9/+_-]+", section):
+            for part in re.split(r"[+/]", token):
+                symbol = _normalize_gene_like_token(part)
+                if symbol and symbol not in symbols:
+                    symbols.append(symbol)
+    return symbols
+
+
+def _expand_alias_terms(source_text: str, gene_symbols: list[str], phrases: list[str]) -> None:
+    normalized = source_text.lower()
+    for rule in _GENE_ALIAS_RULES:
+        if not any(re.search(pattern, normalized) for pattern in rule["patterns"]):
+            continue
+        for symbol in rule["gene_symbols"]:
+            if symbol not in gene_symbols:
+                gene_symbols.append(symbol)
+        for phrase in rule["phrases"]:
+            if phrase not in phrases:
+                phrases.append(phrase)
+
+
+def _finalize_gene_symbols(gene_symbols: list[str]) -> list[str]:
+    deduped: list[str] = []
+    for symbol in gene_symbols:
+        canonical = _GENE_SYMBOL_NORMALIZATION.get(symbol, symbol)
+        if canonical not in deduped:
+            deduped.append(canonical)
+
+    if "NFE2L2" in deduped and "NFE2" in deduped:
+        deduped = [symbol for symbol in deduped if symbol != "NFE2"]
+    if "NR1I2" in deduped and "NR1L2" in deduped:
+        deduped = [symbol for symbol in deduped if symbol != "NR1L2"]
+    return deduped
+
+
+def _preferred_taxa_from_key_event(key_event: dict[str, Any]) -> list[str]:
+    preferred_taxa: list[str] = []
+    for taxon in key_event.get("taxonomic_applicability") or []:
+        for label in _TAXON_PREFERENCE_MAP.get(taxon, []):
+            if label not in preferred_taxa:
+                preferred_taxa.append(label)
+    return preferred_taxa
+
+
+def _extract_measurement_method_assays(
+    measurement_methods: list[str],
+    *,
+    gene_symbols: list[str],
+    limit: int,
+) -> list[dict[str, Any]]:
+    assay_names: list[str] = []
+    for text in measurement_methods:
+        for match in re.findall(r"\b[A-Za-z0-9]+(?:_[A-Za-z0-9]+){1,}\b", text):
+            assay_name = match.strip(".,;:()[]")
+            if assay_name and assay_name not in assay_names:
+                assay_names.append(assay_name)
+
+    return [
+        {
+            "aeid": None,
+            "assay_name": assay_name,
+            "assay_component_endpoint_name": assay_name,
+            "assay_component_endpoint_desc": "Recovered from AOP-Wiki key event measurement methods.",
+            "assay_function_type": None,
+            "target_family": None,
+            "target_family_sub": None,
+            "target_type": None,
+            "gene_symbols": gene_symbols,
+            "taxon_name": None,
+            "applicability_match": "unknown",
+            "matched_taxa": [],
+            "match_score": 40,
+            "match_basis": ["key_event_measurement_methods"],
+            "matched_terms": [assay_name],
+            "multi_conc_assay_chemical_count_active": None,
+            "multi_conc_assay_chemical_count_total": None,
+            "single_conc_assay_chemical_count_active": None,
+            "single_conc_assay_chemical_count_total": None,
+            "source": "aop_wiki_measurement_methods",
+        }
+        for assay_name in assay_names[:limit]
+    ]

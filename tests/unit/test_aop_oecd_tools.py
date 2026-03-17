@@ -178,6 +178,9 @@ async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monk
     assert result["confidence_dimensions"]["biological_plausibility"]["heuristic_call"] == "strong"
     assert result["confidence_dimensions"]["empirical_support"]["heuristic_call"] == "moderate"
     assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_call"] == "not_assessed"
+    assert "overall_aop_evidence" not in result["confidence_dimensions"]
+    assert result["supplemental_signals"]["aop_level_evidence_signal"]["heuristic_call"] == "moderate"
+    assert result["oecd_alignment"]["status"] == "partial"
     assert result["heuristic_overall_call"] == "moderate"
     assert any("essentiality" in item.lower() for item in result["limitations"])
     assert result["applicability_summary"]["taxonomic_applicability"] == ["NCBITaxon:9606"]

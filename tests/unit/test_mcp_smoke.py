@@ -55,6 +55,7 @@ def test_tools_list_includes_registered_tools() -> None:
         "get_related_aops",
         "assess_aop_confidence",
         "find_paths_between_events",
+        "search_assays_for_key_event",
         "validate_draft_oecd",
         "create_draft_aop",
     }.issubset(tool_names)
