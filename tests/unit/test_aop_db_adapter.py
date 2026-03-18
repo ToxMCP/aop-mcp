@@ -352,7 +352,7 @@ async def test_search_assays_for_key_event_reports_phrase_only_matching() -> Non
         "phrases": ["liver steatosis"],
     }
     assert "phrase similarity" in result["limitations"][1]
-    assert "No CompTox assay catalog entries matched the derived key-event terms." in result["limitations"][2]
+    assert "No CompTox assay candidates matched the derived key-event terms." in result["limitations"][2]
 
 
 @pytest.mark.asyncio
@@ -445,6 +445,35 @@ async def test_search_assays_for_key_event_falls_back_to_measurement_methods() -
             "single_conc_assay_chemical_count_total": None,
             "source": "aop_wiki_measurement_methods",
         },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_search_assays_for_key_event_uses_measurement_methods_when_comptox_has_no_matches() -> None:
+    class EmptyCompTox:
+        def search_assay_catalog(self, *, gene_symbols=None, phrases=None, preferred_taxa=None, limit=25):
+            return []
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=EmptyCompTox())
+        result = await adapter.search_assays_for_key_event(
+            {
+                "id": "KE:239",
+                "title": "Activation, Pregnane-X receptor, NR1I2",
+                "short_name": "PXR activation",
+                "description": "Pregnane X receptor activation event.",
+                "measurement_methods": [
+                    "Reported by ATG_PXRE_CIS and TOX21_PXR_agonist in ToxCast."
+                ],
+            },
+            limit=5,
+        )
+
+    assert "measurement-method text was used as a fallback" in result["limitations"][1]
+    assert [row["assay_name"] for row in result["results"]] == [
+        "ATG_PXRE_CIS",
+        "TOX21_PXR_agonist",
     ]
 
 

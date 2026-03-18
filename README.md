@@ -16,11 +16,11 @@ Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any M
 
 ![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
 
-## What's new in v0.4.1
+## What's new in v0.4.2
 
-- Finalized KE alias handling so hyphenated receptor names such as `Pregnane-X receptor` resolve correctly and acronym-only phrase noise such as `ahr` is removed when the gene symbol is already present.
-- Kept `key_event_id` as the advertised MCP input while preserving legacy `ke_id` compatibility for existing clients.
-- Added an explicit limitations section describing OECD completeness, upstream dependency limits, data-coverage gaps, and current performance expectations.
+- Switched KE-centered assay search to the direct CTX gene assay endpoint as the primary path for gene-backed key events, so live receptor-style queries now return structured CompTox assay hits instead of depending on the dashboard assay catalog page.
+- Added a phrase-only fallback over the full CTX assay metadata set, so phenotype-style key events such as `Increase, Liver steatosis` can recover assay candidates even when no gene symbol is available.
+- Cleaned the fallback logic so clean zero-match phrase searches no longer surface misleading assay-catalog `503` errors when the full CTX assay dataset was available and searchable.
 
 ## Why this project exists
 
@@ -41,7 +41,7 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 | Capability | Description |
 | --- | --- |
 | 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation with improved phenotype search ranking, synonym expansion, and curated AOP retrieval. |
-| 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, KE-centered CompTox assay search with alias normalization and taxonomic reranking, multi-AOP aggregation, and query-driven assay selection for phenotype-focused curation work. |
+| 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, KE-centered CompTox assay search with direct CTX gene lookup, phrase-only full-assay fallback, alias normalization, and taxonomic reranking, plus multi-AOP aggregation and query-driven assay selection. |
 | 🧭 **Semantic services** | CURIE normalization, applicability helper, and evidence matrix builder; enforced via JSON Schema responses. |
 | ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support. |
 | 📦 **Artifacts & audit** | Structured logging, audit bundles, metrics for SPARQL/cache, draft edits, and direct assay table export in `csv`/`tsv`. |
@@ -152,7 +152,7 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | --- | --- | --- |
 | AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination, schema validation, and improved ranking for phenotype searches. |
 | OECD review helpers | `get_key_event`, `get_ker`, `get_related_aops`, `assess_aop_confidence`, `find_paths_between_events` | Exposes richer KE/KER metadata, shared-AOP discovery, partial OECD-aligned heuristic confidence summaries, and directed path traversal for review and network analysis workflows. |
-| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop`, `search_assays_for_key_event` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays, including KE-derived assay search with title-biased term extraction, alias normalization, taxonomic preference hints, and AOP-Wiki fallback extraction. |
+| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop`, `search_assays_for_key_event` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays, including KE-derived assay search with direct CTX gene lookup, full-assay phrase search, title-biased term extraction, alias normalization, taxonomic preference hints, and AOP-Wiki fallback extraction. |
 | Assay aggregation | `list_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs and exports the ranked assay table as `csv` or `tsv`. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
 | Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `validate_draft_oecd` | In-memory draft graph edits with provenance plus OECD-style completeness checks before review/publish. |
@@ -170,7 +170,7 @@ For a phenotype-driven workflow such as steatosis assay curation:
 For a curated KE or MIE workflow:
 
 1. Call `get_key_event` to inspect the event metadata and confirm the mechanistic scope.
-2. Call `search_assays_for_key_event` to rank CompTox assays using KE-derived gene symbols, mechanism phrases, and KE taxonomic applicability when available. Use `key_event_id` in the MCP payload; legacy `ke_id` remains accepted for compatibility.
+2. Call `search_assays_for_key_event` to rank CompTox assays using KE-derived gene symbols, mechanism phrases, and KE taxonomic applicability when available. Gene-backed events use direct CTX gene assay endpoints first; phrase-only events fall back to full CTX assay metadata before AOP-Wiki measurement methods. Use `key_event_id` in the MCP payload; legacy `ke_id` remains accepted for compatibility.
 3. Review `derived_search_terms`, `matched_terms`, and `applicability_match` in the result to understand why an assay was surfaced.
 4. Treat the result as a first-pass assay candidate list, not a curated KE-to-assay ontology mapping.
 
@@ -241,7 +241,7 @@ Example `tools/call` payloads:
 - Quantitative understanding is sparse in many live AOP-Wiki records, so confidence outputs often remain partial even when the tool is behaving correctly.
 - `search_assays_for_key_event` is a discovery helper, not a curated KE-to-assay ontology mapping or a full assay fit-for-purpose evaluator.
 - Query-driven assay workflows depend on upstream AOP-DB stressor links and CompTox coverage. Relevant AOPs without mapped stressors or bioactivity data can legitimately return no assay candidates.
-- The live CompTox assay catalog can be intermittently unavailable. In those cases KE-centered assay search falls back to AOP-Wiki measurement-method text, which is useful but narrower than a healthy catalog search.
+- Phrase-only KE assay search depends on what is explicitly described in live CompTox assay metadata. When the phenotype or endpoint wording is not present upstream, the tool can still return no hits even though the full CTX dataset was searched.
 - Phenotype boundaries such as steatosis vs steatohepatitis / MASH still require manual scientific curation; the MCP should be used as a baseline discovery and prioritization layer rather than a final arbiter.
 - Federated SPARQL and assay aggregation calls can be slow on live infrastructure, especially for broad phenotype queries and large AOPs.
 

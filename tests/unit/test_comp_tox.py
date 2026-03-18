@@ -86,6 +86,36 @@ def test_comp_tox_client_assay_by_aeid_returns_first_annotation() -> None:
     assert assay == {"aeid": 2309, "assayName": "CCTE_GLTED_hDIO1"}
 
 
+def test_comp_tox_client_assays_by_gene_returns_rows() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/assay/search/by-gene/NR1I2",
+            200,
+            json_data=[{"aeid": 103, "geneSymbol": "NR1I2"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        assays = client.assays_by_gene("NR1I2")
+
+    assert assays == [{"aeid": 103, "geneSymbol": "NR1I2"}]
+
+
+def test_comp_tox_client_all_assays_returns_rows() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/assay/",
+            200,
+            json_data=[{"aeid": 916, "assayName": "LTEA_HepaRG"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        assays = client.all_assays()
+
+    assert assays == [{"aeid": 916, "assayName": "LTEA_HepaRG"}]
+
+
 def test_comp_tox_client_handles_not_found() -> None:
     responses = dict([
         make_response(
@@ -157,6 +187,8 @@ def test_comp_tox_client_search_assay_catalog_ranks_gene_and_phrase_matches(monk
     ]
 
     with CompToxClient() as client:
+        monkeypatch.setattr(client, "assays_by_gene", lambda symbol: [])
+        monkeypatch.setattr(client, "all_assays", lambda: (_ for _ in ()).throw(CompToxError("full api unavailable")))
         monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
         monkeypatch.setattr(
             client,
@@ -190,6 +222,134 @@ def test_comp_tox_client_search_assay_catalog_ranks_gene_and_phrase_matches(monk
     assert results[0]["target_family"] == "nuclear receptor"
 
 
+def test_comp_tox_client_search_assay_catalog_uses_full_api_for_phrase_only(monkeypatch) -> None:
+    with CompToxClient() as client:
+        monkeypatch.setattr(client, "all_assays", lambda: [
+            {
+                "aeid": 916,
+                "assayName": "LTEA_HepaRG",
+                "assayComponentName": "LTEA_HepaRG_steatosis",
+                "assayComponentEndpointName": "LTEA_HepaRG_steatosis",
+                "assayComponentEndpointDesc": "Human HepaRG transcriptomic assay panel related to steatosis responses.",
+                "assayDesc": "A HepaRG liver model for steatosis-associated response profiling.",
+                "organism": "human",
+                "gene": [{"geneSymbol": "LIPC", "geneName": "lipase C"}],
+            }
+        ])
+        monkeypatch.setattr(
+            client,
+            "assay_catalog_items",
+            lambda: (_ for _ in ()).throw(AssertionError("catalog fallback should not be used")),
+        )
+
+        results = client.search_assay_catalog(
+            phrases=["liver steatosis"],
+            preferred_taxa=["human"],
+            limit=5,
+        )
+
+    assert [row["aeid"] for row in results] == [916]
+    assert results[0]["source"] == "comptox_assay_api"
+    assert results[0]["applicability_match"] == "match"
+    assert "steatosis" in results[0]["matched_terms"]
+    assert any(basis.startswith("assay_") for basis in results[0]["match_basis"])
+
+
+def test_comp_tox_client_search_assay_catalog_returns_clean_empty_when_full_api_has_no_phrase_hits(monkeypatch) -> None:
+    with CompToxClient() as client:
+        monkeypatch.setattr(
+            client,
+            "all_assays",
+            lambda: [
+                {
+                    "aeid": 1,
+                    "assayName": "Example",
+                    "assayComponentEndpointName": "Example_endpoint",
+                    "assayComponentEndpointDesc": "No relevant phenotype text here.",
+                    "organism": "human",
+                }
+            ],
+        )
+        monkeypatch.setattr(
+            client,
+            "assay_catalog_items",
+            lambda: (_ for _ in ()).throw(AssertionError("catalog fallback should not be used")),
+        )
+
+        results = client.search_assay_catalog(
+            phrases=["triglyceride"],
+            preferred_taxa=["human"],
+            limit=5,
+        )
+
+    assert results == []
+
+
+def test_comp_tox_client_search_assay_catalog_prefers_direct_gene_api(monkeypatch) -> None:
+    with CompToxClient() as client:
+        monkeypatch.setattr(
+            client,
+            "assays_by_gene",
+            lambda symbol: [
+                {
+                    "aeid": 103,
+                    "geneSymbol": "NR1I2",
+                    "assayComponentEndpointName": "ATG_PXRE_CIS",
+                    "assayComponentEndpointDesc": "Pregnane X receptor reporter assay",
+                    "multiConcActives": "2076/4060(51.13%)",
+                    "singleConcActive": "0/310(0.00%)",
+                }
+            ]
+            if symbol == "NR1I2"
+            else [],
+        )
+        monkeypatch.setattr(
+            client,
+            "assay_by_aeid",
+            lambda aeid: {
+                "assayName": "ATG_CIS",
+                "assayComponentEndpointName": "ATG_PXRE_CIS",
+                "assayComponentEndpointDesc": "Pregnane X receptor reporter assay",
+                "assayFunctionType": "reporter gene",
+                "intendedTargetFamily": "nuclear receptor",
+                "intendedTargetFamilySub": "non-steroidal",
+                "intendedTargetType": "protein",
+                "organism": "human",
+                "gene": [{"geneSymbol": "NR1I2", "geneName": "pregnane X receptor"}],
+            },
+        )
+        monkeypatch.setattr(
+            client,
+            "assay_catalog_items",
+            lambda: (_ for _ in ()).throw(AssertionError("catalog fallback should not be used")),
+        )
+        monkeypatch.setattr(client, "all_assays", lambda: (_ for _ in ()).throw(AssertionError("full api fallback should not be used")))
+
+        results = client.search_assay_catalog(
+            gene_symbols=["NR1I2", "PXR"],
+            phrases=["pregnane x receptor"],
+            preferred_taxa=["human"],
+            limit=5,
+        )
+
+    assert [row["aeid"] for row in results] == [103]
+    assert results[0]["source"] == "comptox_assay_gene_api"
+    assert results[0]["assay_name"] == "ATG_CIS"
+    assert results[0]["gene_symbols"] == ["NR1I2"]
+    assert results[0]["applicability_match"] == "match"
+    assert results[0]["matched_taxa"] == ["human"]
+    assert results[0]["multi_conc_assay_chemical_count_active"] == 2076
+    assert results[0]["multi_conc_assay_chemical_count_total"] == 4060
+    assert results[0]["single_conc_assay_chemical_count_active"] == 0
+    assert results[0]["single_conc_assay_chemical_count_total"] == 310
+    assert results[0]["match_score"] >= 300
+    assert "ctx_gene_search_exact" in results[0]["match_basis"]
+    assert "gene_name_exact" in results[0]["match_basis"]
+    assert "taxonomic_applicability_match" in results[0]["match_basis"]
+    assert "NR1I2" in results[0]["matched_terms"]
+    assert "pregnane x receptor" in results[0]["matched_terms"]
+
+
 def test_comp_tox_client_search_assay_catalog_falls_back_to_catalog_metadata(monkeypatch) -> None:
     catalog_items = [
         {
@@ -207,6 +367,8 @@ def test_comp_tox_client_search_assay_catalog_falls_back_to_catalog_metadata(mon
     ]
 
     with CompToxClient() as client:
+        monkeypatch.setattr(client, "assays_by_gene", lambda symbol: [])
+        monkeypatch.setattr(client, "all_assays", lambda: (_ for _ in ()).throw(CompToxError("full api unavailable")))
         monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
 
         def fail_assay_lookup(aeid: int) -> dict[str, Any] | None:
@@ -270,6 +432,8 @@ def test_comp_tox_client_search_assay_catalog_prefers_matching_taxa(monkeypatch)
     ]
 
     with CompToxClient() as client:
+        monkeypatch.setattr(client, "assays_by_gene", lambda symbol: [])
+        monkeypatch.setattr(client, "all_assays", lambda: (_ for _ in ()).throw(CompToxError("full api unavailable")))
         monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
         monkeypatch.setattr(client, "assay_by_aeid", lambda aeid: None)
         results = client.search_assay_catalog(

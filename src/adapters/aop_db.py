@@ -480,7 +480,7 @@ class AOPDBAdapter:
 
         derived_search_terms = _derive_key_event_search_terms(key_event)
         limitations = [
-            "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping.",
+            "Assays are ranked using key-event-derived gene and phrase matches against CompTox assay search endpoints when available, with catalog and AOP-Wiki measurement-method fallbacks; this is not a curated KE-to-assay ontology mapping.",
         ]
 
         if not derived_search_terms["gene_symbols"] and not derived_search_terms["phrases"]:
@@ -509,9 +509,19 @@ class AOPDBAdapter:
         except CompToxError as exc:
             used_measurement_fallback = True
             limitations.append(
-                "CompTox assay catalog search was unavailable, so results were derived from AOP-Wiki measurement-method text instead."
+                "CompTox assay search was unavailable or unauthorized, so results were derived from AOP-Wiki measurement-method text instead."
             )
             limitations.append(f"CompTox detail: {exc}")
+            results = _extract_measurement_method_assays(
+                key_event.get("measurement_methods") or [],
+                gene_symbols=derived_search_terms["gene_symbols"],
+                limit=limit,
+            )
+        if not results and key_event.get("measurement_methods") and not used_measurement_fallback:
+            used_measurement_fallback = True
+            limitations.append(
+                "No CompTox assay candidates matched the derived key-event terms, so AOP-Wiki measurement-method text was used as a fallback."
+            )
             results = _extract_measurement_method_assays(
                 key_event.get("measurement_methods") or [],
                 gene_symbols=derived_search_terms["gene_symbols"],
@@ -520,10 +530,10 @@ class AOPDBAdapter:
         if not results:
             if used_measurement_fallback:
                 limitations.append(
-                    "No assay candidates were recovered from either the CompTox catalog search or AOP-Wiki measurement-method text."
+                    "No assay candidates were recovered from CompTox assay search or AOP-Wiki measurement-method text."
                 )
             else:
-                limitations.append("No CompTox assay catalog entries matched the derived key-event terms.")
+                limitations.append("No CompTox assay candidates matched the derived key-event terms.")
 
         return {
             "derived_search_terms": derived_search_terms,

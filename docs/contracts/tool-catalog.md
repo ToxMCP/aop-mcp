@@ -16,7 +16,7 @@ Current MCP tool surface exposed by `POST /mcp`.
 - `map_chemical_to_aops`: Map a chemical identifier to related AOPs using AOP-DB and CompTox.
 - `map_assay_to_aops`: Map an assay identifier to related AOPs.
 - `list_assays_for_aop`: Resolve assay candidates for one AOP from linked stressor chemicals and CompTox bioactivity.
-- `search_assays_for_key_event`: Rank CompTox assays from gene and phrase terms derived from a selected key event, with title-biased term extraction, alias expansion, taxonomic preference hints, and AOP-Wiki fallback extraction.
+- `search_assays_for_key_event`: Rank CompTox assays from gene and phrase terms derived from a selected key event, with direct CTX gene lookup, full-assay phrase search, title-biased term extraction, alias expansion, taxonomic preference hints, and AOP-Wiki fallback extraction.
 - `list_assays_for_aops`: Aggregate and deduplicate assay candidates across multiple AOPs.
 - `list_assays_for_query`: Search AOPs by phenotype or mechanism query and aggregate assay candidates for the selected AOP set.
 - `export_assays_table`: Export aggregated assay candidates as `csv` or `tsv` from either a query or explicit AOP list.
@@ -36,6 +36,6 @@ Current MCP tool surface exposed by `POST /mcp`.
 - Tool schemas are exposed through MCP `tools/list` and validated by the server before tool execution.
 - Response contracts live under `docs/contracts/schemas/`.
 - Use `search_aops` for discovery and `get_aop` for fetching a known identifier.
-- Use `search_assays_for_key_event` as a first-pass KE/MIE assay search; it is KE-derived target matching rather than a curated ontology mapping.
+- Use `search_assays_for_key_event` as a first-pass KE/MIE assay search; it is KE-derived target matching rather than a curated ontology mapping. Gene-backed KEs use direct CTX gene assay endpoints first, while phrase-only KEs search the full CTX assay metadata set before falling back to AOP-Wiki measurement methods.
 - `get_key_event` and `search_assays_for_key_event` advertise `key_event_id` in MCP `tools/list`; legacy `ke_id` input remains accepted for compatibility.
 - In `assess_aop_confidence`, OECD core dimensions are exposed under `confidence_dimensions`; AOP-level free-text evidence is reported separately under `supplemental_signals`.
