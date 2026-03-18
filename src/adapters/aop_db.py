@@ -103,6 +103,16 @@ _TAXON_PREFERENCE_MAP = {
     "NCBITaxon:10116": ["rat", "rattus norvegicus"],
 }
 
+_PHENOTYPE_PHRASE_EXPANSIONS = {
+    "triglyceride": ["steatosis"],
+    "triglycerides": ["steatosis"],
+    "steatosis": ["liver steatosis", "fatty liver"],
+    "liver steatosis": ["steatosis", "fatty liver"],
+    "fatty liver": ["steatosis", "liver steatosis"],
+    "lipid accumulation": ["steatosis"],
+    "neutral lipid accumulation": ["steatosis"],
+}
+
 _GENE_ALIAS_RULES = [
     {
         "patterns": [r"\bpregnane x receptor\b", r"\bpxr\b"],
@@ -623,6 +633,8 @@ def _derive_key_event_search_terms(key_event: dict[str, Any]) -> dict[str, list[
                 gene_symbols.append(symbol)
         _expand_alias_terms(description, gene_symbols, phrases)
     gene_symbols = _finalize_gene_symbols(gene_symbols)
+    if not gene_symbols:
+        phrases = _expand_phenotype_phrases(phrases)
     phrases = _finalize_phrases(phrases, gene_symbols)
 
     return {
@@ -718,6 +730,16 @@ def _finalize_phrases(phrases: list[str], gene_symbols: list[str]) -> list[str]:
         if normalized not in deduped:
             deduped.append(normalized)
     return deduped
+
+
+def _expand_phenotype_phrases(phrases: list[str]) -> list[str]:
+    expanded = list(phrases)
+    for phrase in phrases:
+        normalized = phrase.strip().lower()
+        for synonym in _PHENOTYPE_PHRASE_EXPANSIONS.get(normalized, []):
+            if synonym not in expanded:
+                expanded.append(synonym)
+    return expanded
 
 
 def _preferred_taxa_from_key_event(key_event: dict[str, Any]) -> list[str]:

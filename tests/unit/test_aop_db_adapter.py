@@ -330,7 +330,7 @@ async def test_search_assays_for_key_event_reports_phrase_only_matching() -> Non
     class PhraseOnlyCompTox:
         def search_assay_catalog(self, *, gene_symbols=None, phrases=None, preferred_taxa=None, limit=25):
             assert gene_symbols == []
-            assert phrases == ["liver steatosis"]
+            assert phrases == ["liver steatosis", "steatosis", "fatty liver"]
             assert preferred_taxa == []
             return []
 
@@ -349,7 +349,7 @@ async def test_search_assays_for_key_event_reports_phrase_only_matching() -> Non
 
     assert result["derived_search_terms"] == {
         "gene_symbols": [],
-        "phrases": ["liver steatosis"],
+        "phrases": ["liver steatosis", "steatosis", "fatty liver"],
     }
     assert "phrase similarity" in result["limitations"][1]
     assert "No CompTox assay candidates matched the derived key-event terms." in result["limitations"][2]
@@ -519,7 +519,7 @@ def test_derive_key_event_search_terms_prefers_title_scope_over_description_nois
 
     assert terms == {
         "gene_symbols": [],
-        "phrases": ["triglyceride"],
+        "phrases": ["triglyceride", "steatosis"],
     }
 
 
@@ -565,4 +565,19 @@ def test_derive_key_event_search_terms_drops_acronym_phrase_when_symbol_present(
     assert terms == {
         "gene_symbols": ["AHR"],
         "phrases": ["aryl hydrocarbon receptor"],
+    }
+
+
+def test_derive_key_event_search_terms_expands_fatty_liver_synonyms() -> None:
+    terms = _derive_key_event_search_terms(
+        {
+            "title": "Increase, Fatty liver",
+            "short_name": None,
+            "description": None,
+        }
+    )
+
+    assert terms == {
+        "gene_symbols": [],
+        "phrases": ["fatty liver", "steatosis", "liver steatosis"],
     }
