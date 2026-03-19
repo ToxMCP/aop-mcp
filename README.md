@@ -77,13 +77,13 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
-## What's new in v0.6.0
+## What's new in v0.7.0
 
-- Tightened `assess_aop_confidence` so key-event essentiality is only inferred when bounded text evidence and supporting path structure both exist; path structure alone is retained as context but no longer produces an essentiality score.
-- Added structured heuristic applicability evidence calls and rationale across the OECD-aligned read surface, including direct KE applicability, derived KER applicability, and aggregated AOP applicability summaries.
-- Verified the stricter essentiality behavior live against representative AOPs such as `AOP:232`, `AOP:517`, `AOP:545`, and `AOP:529`, all of which now remain `not_assessed` for essentiality when only structural support is present.
-- Expanded regression coverage for generic essentiality language so phrases like `essential roles` and `necessary for maintaining balance` do not trigger false OECD-style essentiality signals.
-- Preserved the earlier OECD-aligned contracts, schemas, and architecture documentation introduced in `v0.5.0`.
+- Added a governed KE-level `attributes.essentiality` contract on the draft write path, with controlled `evidence_call` values, required rationale text, and optional references/provenance.
+- Extended `validate_draft_oecd` with `ke_essentiality_shape` and `ke_essentiality_coverage`, so explicit `not_assessed` and `not_reported` KE judgments are tracked as valid draft coverage instead of being silently omitted.
+- Updated MCP schema discoverability so `tools/list` now exposes the nested `essentiality` input model for `add_or_update_ke`, and invalid payloads fail cleanly with `400` / `-32602` at the JSON-RPC boundary.
+- Added `docs/quickstarts/oecd-draft-authoring.md` plus README links and examples for OECD-style draft authoring with governed KE essentiality capture.
+- Expanded test coverage across write tools, OECD draft validation, and MCP smoke paths; the full suite now passes with `130 passed, 1 skipped`.
 
 ## Why this project exists
 
