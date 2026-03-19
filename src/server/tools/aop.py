@@ -8,7 +8,7 @@ import io
 import re
 from typing import Any, Literal, Optional
 
-from pydantic import AliasChoices, BaseModel, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from src.server.dependencies import (
     get_draft_store,
@@ -22,6 +22,8 @@ from src.tools.write import (
     KeyEventPayload,
     KeyEventRelationshipPayload,
     StressorLinkPayload,
+    is_governed_ke_essentiality,
+    normalize_key_event_attributes,
 )
 from src.tools import validate_payload
 
@@ -618,6 +620,16 @@ async def create_draft_aop(params: CreateDraftInputModel) -> dict[str, Any]:
 
 
 class KeyEventInputModel(BaseModel):
+    class KeyEventEssentialityInputModel(BaseModel):
+        evidence_call: Literal["high", "moderate", "low", "not_reported", "not_assessed"]
+        rationale: str
+        references: list[dict[str, Any]] = Field(default_factory=list)
+        provenance: list[dict[str, Any]] = Field(default_factory=list)
+
+    class KeyEventAttributesInputModel(BaseModel):
+        model_config = ConfigDict(extra="allow")
+        essentiality: Optional["KeyEventInputModel.KeyEventEssentialityInputModel"] = None
+
     draft_id: str
     version_id: str
     author: str
@@ -625,11 +637,22 @@ class KeyEventInputModel(BaseModel):
     identifier: str
     title: str
     event_type: Optional[str] = None
-    attributes: Optional[dict[str, Any]] = None
+    attributes: Optional["KeyEventInputModel.KeyEventAttributesInputModel"] = None
+
+    @model_validator(mode="after")
+    def _validate_governed_essentiality(self) -> "KeyEventInputModel":
+        raw_attributes = None
+        if self.attributes is not None:
+            raw_attributes = self.attributes.model_dump(exclude_none=True)
+        normalize_key_event_attributes(raw_attributes)
+        return self
 
 
 async def add_or_update_ke(params: KeyEventInputModel) -> dict[str, Any]:
     write_tools = get_write_tools()
+    attributes = None
+    if params.attributes is not None:
+        attributes = normalize_key_event_attributes(params.attributes.model_dump(exclude_none=True))
     result = write_tools.add_or_update_ke(
         draft_id=params.draft_id,
         version_id=params.version_id,
@@ -639,7 +662,7 @@ async def add_or_update_ke(params: KeyEventInputModel) -> dict[str, Any]:
             identifier=params.identifier,
             title=params.title,
             event_type=params.event_type,
-            attributes=params.attributes,
+            attributes=attributes,
         ),
     )
     return result
@@ -864,6 +887,17 @@ async def validate_draft_oecd(params: ValidateDraftOecdInput) -> dict[str, Any]:
         for entity in key_events
         if any(entity.attributes.get(key) for key in applicability_keys)
     )
+    ke_with_governed_essentiality = sum(
+        1
+        for entity in key_events
+        if is_governed_ke_essentiality(entity.attributes.get("essentiality"))
+    )
+    ke_with_invalid_essentiality = sum(
+        1
+        for entity in key_events
+        if entity.attributes.get("essentiality") is not None
+        and not is_governed_ke_essentiality(entity.attributes.get("essentiality"))
+    )
     add_check(
         "ke_measurement_coverage",
         "Key events include measurement/detection guidance",
@@ -877,6 +911,26 @@ async def validate_draft_oecd(params: ValidateDraftOecdInput) -> dict[str, Any]:
         ke_with_applicability == len(key_events) and len(key_events) > 0,
         "warning",
         f"{ke_with_applicability}/{len(key_events)} key events include applicability metadata.",
+    )
+    add_check(
+        "ke_essentiality_shape",
+        "Governed KE essentiality records follow the draft contract",
+        ke_with_invalid_essentiality == 0,
+        "error",
+        (
+            "Key-event essentiality metadata must use the governed object form "
+            "{evidence_call, rationale, references?, provenance?}."
+        ),
+    )
+    add_check(
+        "ke_essentiality_coverage",
+        "Key events include explicit essentiality status",
+        ke_with_governed_essentiality == len(key_events) and len(key_events) > 0,
+        "warning",
+        (
+            f"{ke_with_governed_essentiality}/{len(key_events)} key events include governed essentiality "
+            "metadata; explicit 'not_assessed' or 'not_reported' counts as coverage."
+        ),
     )
 
     ker_with_plausibility = sum(

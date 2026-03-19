@@ -229,7 +229,7 @@ Status legend:
 | Target area | Current source | Status | Notes |
 | --- | --- | --- | --- |
 | OECD core dimensions | `confidence_dimensions` | partial | Correct dimensions are separated, but they are heuristic aggregations over sparse text. |
-| Essentiality of KEs | bounded text-plus-path heuristic on `assess_aop_confidence` | partial | The tool now derives a conservative heuristic only when essentiality-like text cues and supporting path structure both exist, but there is still no dedicated structured essentiality field in the upstream RDF export. |
+| Essentiality of KEs | bounded text-plus-path heuristic on `assess_aop_confidence`; governed draft `KE.attributes.essentiality` on the write path | partial | The live read path remains heuristic because the upstream RDF export does not expose a dedicated structured essentiality field. Draft authoring now supports an explicit governed `essentiality` object that can record `evidence_call`, `rationale`, and references for later review. |
 | Overall applicability | `applicability_summary` | partial | Derived from KE metadata with structured heuristic evidence calls rather than a dedicated AOP- and KER-level applicability field. |
 | Rationales and limitations | `rationale`, `limitations` | complete | Good start, but should eventually reference explicit OECD guiding questions. |
 | OECD alignment status | `oecd_alignment` | complete | Correctly warns when the output is only partial. |
@@ -240,7 +240,7 @@ Status legend:
 | Target area | Current source | Status | Notes |
 | --- | --- | --- | --- |
 | Root AOP completeness checks | `validate_draft_oecd` | partial | Useful checklist exists, but it does not yet validate ontology-backed fields deeply. |
-| KE/KER coverage checks | `validate_draft_oecd` | partial | Presence checks exist, but not the full target schema. |
+| KE/KER coverage checks | `validate_draft_oecd` | partial | Presence checks exist, and KE essentiality now has a governed draft contract, but the full target schema is not yet enforced for all draft fields. |
 | Applicability presence | `validate_draft_oecd` | partial | Presence only, no structured evidence-call validation. |
 | OECD read-model parity | not yet enforced | missing | Draft validation is ahead of the read-model in some places and behind it in others. |
 
@@ -282,9 +282,10 @@ Extend KE and KER payloads with:
 This is the highest-value OECD assessment gap.
 
 Implementation target:
-- a dedicated essentiality representation on the AOP assessment path;
-- evidence type counts such as direct, indirect, contradictory, and no-data;
-- a resulting `EvidenceBlock` for `essentiality_of_key_events`.
+- keep the live AOP assessment path conservative until a dedicated upstream essentiality field exists;
+- use a governed draft `KE.attributes.essentiality` object to capture explicit essentiality judgments for authoring and review;
+- later add evidence type counts such as direct, indirect, contradictory, and no-data;
+- eventually expose a resulting `EvidenceBlock` for `essentiality_of_key_events` without relying on loose text inference.
 
 ### Phase 5: tighten assessment outputs
 

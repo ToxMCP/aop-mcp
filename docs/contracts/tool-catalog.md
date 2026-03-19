@@ -26,10 +26,10 @@ Current MCP tool surface exposed by `POST /mcp`.
 ## Write tools
 
 - `create_draft_aop`: Create a new draft AOP for write-path workflows.
-- `add_or_update_ke`: Add or update a key event within a draft.
+- `add_or_update_ke`: Add or update a key event within a draft, including governed KE-level `essentiality` metadata when available.
 - `add_or_update_ker`: Add or update a key event relationship within a draft.
 - `link_stressor`: Link a stressor to a draft entity.
-- `validate_draft_oecd`: Validate a draft against OECD AOP handbook-style completeness expectations.
+- `validate_draft_oecd`: Validate a draft against OECD AOP handbook-style completeness expectations, including governed KE-level `essentiality` coverage and shape checks.
 
 ## Notes
 

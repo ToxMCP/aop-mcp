@@ -37,7 +37,9 @@ def test_create_draft_aop_returns_schema_compliant_payload() -> None:
 
 
 def test_add_or_update_ke_updates_graph() -> None:
-    tools = make_tools()
+    repository = InMemoryDraftRepository()
+    service = DraftStoreService(repository)
+    tools = WriteTools(service)
     tools.create_draft_aop(
         draft_id="draft-1",
         title="Draft AOP",
@@ -57,6 +59,95 @@ def test_add_or_update_ke_updates_graph() -> None:
     )
     validate_payload(response, namespace="write", name="update_draft.response.schema")
     assert response == {"draft_id": "draft-1", "version_id": "v2"}
+    draft = service.get_draft("draft-1")
+    assert draft is not None
+    assert draft.versions[-1].graph.entities["KE:1"].attributes["title"] == "Mitochondrial dysfunction"
+
+
+def test_add_or_update_ke_normalizes_governed_essentiality_payload() -> None:
+    repository = InMemoryDraftRepository()
+    service = DraftStoreService(repository)
+    tools = WriteTools(service)
+    tools.create_draft_aop(
+        draft_id="draft-1",
+        title="Draft AOP",
+        description="Example",
+        adverse_outcome="AO:1",
+        applicability=None,
+        references=None,
+        author="alice",
+        summary="Initial draft",
+    )
+
+    tools.add_or_update_ke(
+        draft_id="draft-1",
+        version_id="v2",
+        author="bob",
+        summary="Add KE",
+        payload=KeyEventPayload(
+            identifier="KE:1",
+            title="Intermediate event",
+            event_type="Cellular",
+            attributes={
+                "essentiality": {
+                    "evidence_call": "moderate",
+                    "rationale": "Blocking the event reduced the downstream outcome.",
+                    "references": [{"identifier": "PMID:123456", "source": "pmid"}],
+                }
+            },
+        ),
+    )
+
+    draft = service.get_draft("draft-1")
+    assert draft is not None
+    essentiality = draft.versions[-1].graph.entities["KE:1"].attributes["essentiality"]
+    assert essentiality["evidence_call"] == "moderate"
+    assert essentiality["rationale"] == "Blocking the event reduced the downstream outcome."
+    assert essentiality["references"][0]["identifier"] == "PMID:123456"
+    assert essentiality["provenance"] == []
+
+
+@pytest.mark.parametrize(
+    ("essentiality", "expected_message"),
+    [
+        (
+            {"evidence_call": "strong", "rationale": "Bad vocabulary."},
+            "evidence_call",
+        ),
+        (
+            {"evidence_call": "moderate", "rationale": " ", "references": []},
+            "rationale",
+        ),
+    ],
+)
+def test_add_or_update_ke_rejects_malformed_essentiality_payload(
+    essentiality: dict[str, object],
+    expected_message: str,
+) -> None:
+    tools = make_tools()
+    tools.create_draft_aop(
+        draft_id="draft-1",
+        title="Draft AOP",
+        description="Example",
+        adverse_outcome="AO:1",
+        applicability=None,
+        references=None,
+        author="alice",
+        summary="Initial draft",
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        tools.add_or_update_ke(
+            draft_id="draft-1",
+            version_id="v2",
+            author="bob",
+            summary="Add KE",
+            payload=KeyEventPayload(
+                identifier="KE:1",
+                title="Intermediate event",
+                attributes={"essentiality": essentiality},
+            ),
+        )
 
 
 def test_add_or_update_ker_requires_existing_key_events() -> None:

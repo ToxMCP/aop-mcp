@@ -64,6 +64,17 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["get_key_event"]["outputSchema"]["title"] == "get_key_event.response"
     assert by_name["get_ker"]["outputSchema"]["title"] == "get_ker.response"
     assert by_name["assess_aop_confidence"]["outputSchema"]["title"] == "assess_aop_confidence.response"
+    add_ke_schema = by_name["add_or_update_ke"]["inputSchema"]
+    essentiality_ref = add_ke_schema["$defs"]["KeyEventAttributesInputModel"]["properties"]["essentiality"]["anyOf"][0]["$ref"]
+    essentiality_schema = add_ke_schema["$defs"][essentiality_ref.split("/")[-1]]
+    assert "evidence_call" in essentiality_schema["properties"]
+    assert essentiality_schema["properties"]["evidence_call"]["enum"] == [
+        "high",
+        "moderate",
+        "low",
+        "not_reported",
+        "not_assessed",
+    ]
 
 
 @pytest.mark.skip(reason="Requires live SPARQL endpoints; enable in environments with network access")
@@ -119,3 +130,148 @@ def test_tools_call_returns_error_for_unknown_tool() -> None:
     assert response.status_code == 404
     data = response.json()
     assert data["error"]["code"] == -32601  # METHOD_NOT_FOUND
+
+
+def test_tools_call_add_or_update_ke_accepts_governed_essentiality_and_validator_reports_coverage() -> None:
+    draft_id = "mcp-essentiality-pass"
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "create_draft_aop",
+            "arguments": {
+                "draft_id": draft_id,
+                "title": "PXR activation leading to liver steatosis",
+                "description": "MCP smoke draft.",
+                "adverse_outcome": "Liver steatosis",
+                "applicability": {"species": "human", "life_stage": "adult", "sex": "female"},
+                "references": [{"title": "Example reference"}],
+                "author": "tester",
+                "summary": "create draft",
+            },
+        },
+    )
+    assert response.status_code == 200
+
+    for version_id, identifier, title, attributes in [
+        (
+            "v2",
+            "KE:1",
+            "PXR activation",
+            {
+                "measurement_methods": ["Reporter assay"],
+                "essentiality": {
+                    "evidence_call": "moderate",
+                    "rationale": "Blocking the event reduced downstream lipid accumulation.",
+                    "references": [{"identifier": "PMID:111", "source": "pmid"}],
+                },
+            },
+        ),
+        (
+            "v3",
+            "KE:2",
+            "Liver steatosis",
+            {
+                "measurement": "Histopathology",
+                "essentiality": {
+                    "evidence_call": "not_assessed",
+                    "rationale": "Direct perturbation evidence has not yet been curated.",
+                    "references": [],
+                },
+            },
+        ),
+    ]:
+        response = _call_rpc(
+            "tools/call",
+            params={
+                "name": "add_or_update_ke",
+                "arguments": {
+                    "draft_id": draft_id,
+                    "version_id": version_id,
+                    "author": "tester",
+                    "summary": "add key event",
+                    "identifier": identifier,
+                    "title": title,
+                    "attributes": attributes,
+                },
+            },
+        )
+        assert response.status_code == 200
+
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "add_or_update_ker",
+            "arguments": {
+                "draft_id": draft_id,
+                "version_id": "v4",
+                "author": "tester",
+                "summary": "add ker",
+                "identifier": "KER:1",
+                "upstream": "KE:1",
+                "downstream": "KE:2",
+                "plausibility": "Strong mechanistic rationale",
+                "attributes": {"empirical_support": "Dose concordance observed."},
+            },
+        },
+    )
+    assert response.status_code == 200
+
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "validate_draft_oecd",
+            "arguments": {"draft_id": draft_id, "version_id": "v4"},
+        },
+    )
+    assert response.status_code == 200
+    structured = response.json()["result"]["structuredContent"]
+    checks = {item["id"]: item["status"] for item in structured["results"]}
+    assert checks["ke_essentiality_shape"] == "pass"
+    assert checks["ke_essentiality_coverage"] == "pass"
+
+
+def test_tools_call_add_or_update_ke_rejects_invalid_essentiality_payload() -> None:
+    draft_id = "mcp-essentiality-fail"
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "create_draft_aop",
+            "arguments": {
+                "draft_id": draft_id,
+                "title": "PXR activation leading to liver steatosis",
+                "description": "MCP smoke draft.",
+                "adverse_outcome": "Liver steatosis",
+                "applicability": {"species": "human", "life_stage": "adult", "sex": "female"},
+                "references": [{"title": "Example reference"}],
+                "author": "tester",
+                "summary": "create draft",
+            },
+        },
+    )
+    assert response.status_code == 200
+
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "add_or_update_ke",
+            "arguments": {
+                "draft_id": draft_id,
+                "version_id": "v2",
+                "author": "tester",
+                "summary": "bad ke",
+                "identifier": "KE:1",
+                "title": "PXR activation",
+                "attributes": {
+                    "essentiality": {
+                        "evidence_call": "strong",
+                        "rationale": "Invalid controlled vocabulary.",
+                    }
+                },
+            },
+        },
+        request_id=2,
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["error"]["code"] == -32602
+    assert "essentiality" in data["error"]["message"]

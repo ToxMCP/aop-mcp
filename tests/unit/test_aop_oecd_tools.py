@@ -3,7 +3,13 @@ from __future__ import annotations
 import pytest
 
 from src.server.tools import aop as aop_tools
-from src.services.draft_store import DraftStoreService, InMemoryDraftRepository
+from src.services.draft_store import (
+    DraftStoreService,
+    GraphEntity,
+    GraphRelationship,
+    InMemoryDraftRepository,
+    UpdateDraftInput,
+)
 from src.tools import validate_payload
 from src.tools.write import WriteTools
 
@@ -417,7 +423,15 @@ async def test_validate_draft_oecd_reports_readiness_and_warnings(monkeypatch) -
             summary="add ke1",
             identifier="KE:1",
             title="PXR activation",
-            attributes={"measurement_methods": ["Reporter assay"], "taxonomic_applicability": ["NCBITaxon:9606"]},
+            attributes={
+                "measurement_methods": ["Reporter assay"],
+                "taxonomic_applicability": ["NCBITaxon:9606"],
+                "essentiality": {
+                    "evidence_call": "moderate",
+                    "rationale": "Blocking the event reduced downstream lipid accumulation.",
+                    "references": [{"identifier": "PMID:111", "source": "pmid"}],
+                },
+            },
         )
     )
     await aop_tools.add_or_update_ke(
@@ -428,7 +442,15 @@ async def test_validate_draft_oecd_reports_readiness_and_warnings(monkeypatch) -
             summary="add ke2",
             identifier="KE:2",
             title="Liver steatosis",
-            attributes={"measurement": "Histopathology", "applicability": {"sex": "female"}},
+            attributes={
+                "measurement": "Histopathology",
+                "applicability": {"sex": "female"},
+                "essentiality": {
+                    "evidence_call": "not_assessed",
+                    "rationale": "Direct perturbation evidence has not yet been curated for this draft.",
+                    "references": [],
+                },
+            },
         )
     )
     await aop_tools.add_or_update_ker(
@@ -469,3 +491,87 @@ async def test_validate_draft_oecd_reports_readiness_and_warnings(monkeypatch) -
     assert result["summary"]["error_count"] == 0
     assert result["summary"]["ready_for_review"] is True
     assert result["summary"]["warning_count"] >= 1
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["ke_essentiality_shape"]["status"] == "pass"
+    assert checks["ke_essentiality_coverage"]["status"] == "pass"
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_flags_legacy_malformed_essentiality(monkeypatch) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-legacy",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            applicability={"species": "human", "life_stage": "adult", "sex": "female"},
+            references=[{"title": "Example reference"}],
+            author="tester",
+            summary="create draft",
+        )
+    )
+
+    draft_store.append_version(
+        UpdateDraftInput(
+            draft_id="draft-oecd-legacy",
+            version_id="v2",
+            author="tester",
+            summary="inject legacy malformed ke",
+            entities=[
+                GraphEntity(
+                    identifier="AOP:draft-oecd-legacy",
+                    type="AdverseOutcomePathway",
+                    attributes={
+                        "title": "PXR activation leading to liver steatosis",
+                        "description": "Initial OECD-style draft.",
+                        "adverse_outcome": "Liver steatosis",
+                        "applicability": {"species": "human", "life_stage": "adult", "sex": "female"},
+                        "references": [{"title": "Example reference"}],
+                    },
+                ),
+                GraphEntity(
+                    identifier="KE:1",
+                    type="KeyEvent",
+                    attributes={
+                        "title": "PXR activation",
+                        "measurement_methods": ["Reporter assay"],
+                        "essentiality": {
+                            "evidence_call": "strong",
+                            "rationale": "",
+                        },
+                    },
+                ),
+                GraphEntity(
+                    identifier="KE:2",
+                    type="KeyEvent",
+                    attributes={
+                        "title": "Liver steatosis",
+                        "measurement": "Histopathology",
+                    },
+                ),
+            ],
+            relationships=[
+                GraphRelationship(
+                    identifier="KER:1",
+                    source="KE:1",
+                    target="KE:2",
+                    type="KeyEventRelationship",
+                    attributes={"plausibility": "Strong mechanistic rationale"},
+                )
+            ],
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-legacy")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["ke_essentiality_shape"]["status"] == "fail"
+    assert checks["ke_essentiality_shape"]["severity"] == "error"
+    assert checks["ke_essentiality_coverage"]["status"] == "fail"

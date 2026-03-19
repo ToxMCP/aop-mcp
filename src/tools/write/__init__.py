@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from src.services.draft_store import (
     CreateDraftInput,
@@ -50,6 +51,56 @@ class StressorLinkPayload:
     source: str
     target: str
     provenance: Mapping[str, Any] | None = None
+
+
+GOVERNED_ESSENTIALITY_CALLS = frozenset(
+    {"high", "moderate", "low", "not_reported", "not_assessed"}
+)
+_GOVERNED_ESSENTIALITY_KEYS = frozenset(
+    {"evidence_call", "rationale", "references", "provenance"}
+)
+
+
+def is_governed_ke_essentiality(value: Any) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    if set(value.keys()) - _GOVERNED_ESSENTIALITY_KEYS:
+        return False
+    evidence_call = value.get("evidence_call")
+    rationale = value.get("rationale")
+    references = value.get("references", [])
+    provenance = value.get("provenance", [])
+    if evidence_call not in GOVERNED_ESSENTIALITY_CALLS:
+        return False
+    if not isinstance(rationale, str) or not rationale.strip():
+        return False
+    if not isinstance(references, list) or any(not isinstance(item, Mapping) for item in references):
+        return False
+    if not isinstance(provenance, list) or any(not isinstance(item, Mapping) for item in provenance):
+        return False
+    return True
+
+
+def normalize_key_event_attributes(attributes: Mapping[str, Any] | None) -> dict[str, Any]:
+    normalized = dict(attributes or {})
+    if "essentiality" not in normalized:
+        return normalized
+
+    essentiality = normalized["essentiality"]
+    if not is_governed_ke_essentiality(essentiality):
+        raise ValueError(
+            "Key-event 'essentiality' must be an object with "
+            "'evidence_call' in {high, moderate, low, not_reported, not_assessed}, "
+            "a non-empty 'rationale', and optional 'references'/'provenance' lists."
+        )
+
+    normalized["essentiality"] = {
+        "evidence_call": essentiality["evidence_call"],
+        "rationale": str(essentiality["rationale"]).strip(),
+        "references": [dict(item) for item in essentiality.get("references", [])],
+        "provenance": [dict(item) for item in essentiality.get("provenance", [])],
+    }
+    return normalized
 
 
 class WriteTools:
@@ -137,12 +188,13 @@ class WriteTools:
         latest = draft.versions[-1].graph
         entities = dict(latest.entities)
         relationships = dict(latest.relationships)
+        normalized_attributes = normalize_key_event_attributes(payload.attributes)
         attributes = {
             "title": payload.title,
             "event_type": payload.event_type,
         }
-        if payload.attributes:
-            attributes.update(payload.attributes)
+        if normalized_attributes:
+            attributes.update(normalized_attributes)
         entities[payload.identifier] = GraphEntity(
             identifier=payload.identifier,
             type="KeyEvent",

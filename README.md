@@ -105,7 +105,7 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 | 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation with improved phenotype search ranking, synonym expansion, and curated AOP retrieval. |
 | 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, KE-centered CompTox assay search with direct CTX gene lookup, phrase-only full-assay fallback, narrow phenotype synonym expansion, alias normalization, and taxonomic reranking, plus multi-AOP aggregation and query-driven assay selection. |
 | 🧭 **Semantic services** | CURIE normalization, applicability helper, and evidence matrix builder; enforced via JSON Schema responses. |
-| ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support. |
+| ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support, plus governed KE-level `essentiality` capture for OECD-style draft review. |
 | 📦 **Artifacts & audit** | Structured logging, audit bundles, metrics for SPARQL/cache, draft edits, and direct assay table export in `csv`/`tsv`. |
 | ⚙️ **Configurable transports** | FastAPI JSON-RPC service with configurable endpoints, retries, and observability hooks. |
 | 🤖 **Agent friendly** | Verified with Codex CLI, Gemini CLI, and Claude Code; includes quick-start snippets and smoke scripts. |
@@ -218,7 +218,7 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop`, `search_assays_for_key_event` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays, including KE-derived assay search with direct CTX gene lookup, full-assay phrase search, narrow phenotype synonym expansion, title-biased term extraction, alias normalization, taxonomic preference hints, and AOP-Wiki fallback extraction. |
 | Assay aggregation | `list_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs and exports the ranked assay table as `csv` or `tsv`. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
-| Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `validate_draft_oecd` | In-memory draft graph edits with provenance plus OECD-style completeness checks before review/publish. |
+| Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `validate_draft_oecd` | In-memory draft graph edits with provenance plus OECD-style completeness checks, including governed KE-level `essentiality` coverage before review/publish. |
 
 Every response is validated against JSON Schemas in `docs/contracts/schemas/`. Refer to `docs/contracts/tool-catalog.md` for full definitions and examples.
 
@@ -245,6 +245,15 @@ For an OECD-style read/review workflow:
 2. Use `get_key_event` and `get_ker` for detailed KE/KER inspection.
 3. Use `assess_aop_confidence` to assemble a heuristic confidence summary from the available KE and KER evidence text.
 4. Read `confidence_dimensions` as the OECD core dimensions, `supplemental_signals` as non-core context, and `oecd_alignment` for the current completeness status.
+
+### Example draft authoring flow
+
+For an OECD-style draft workflow with explicit KE essentiality capture:
+
+1. Call `create_draft_aop` to create the draft root.
+2. Call `add_or_update_ke` for each KE. When you have an explicit essentiality judgment for a KE, store it under `attributes.essentiality`.
+3. Call `add_or_update_ker` and `link_stressor` as the draft graph matures.
+4. Call `validate_draft_oecd` before review. Explicit `essentiality.evidence_call` values of `not_assessed` or `not_reported` still count as coverage, as long as a rationale is present.
 
 Example `tools/call` payloads:
 
@@ -296,11 +305,100 @@ Example `tools/call` payloads:
 }
 ```
 
+```json
+{
+  "name": "create_draft_aop",
+  "arguments": {
+    "draft_id": "draft-steatosis-1",
+    "title": "PXR activation leading to liver steatosis",
+    "description": "Draft AOP assembled for OECD-style review.",
+    "adverse_outcome": "Liver steatosis",
+    "applicability": {
+      "species": "human",
+      "life_stage": "adult",
+      "sex": "female"
+    },
+    "references": [
+      {
+        "title": "Example review reference"
+      }
+    ],
+    "author": "researcher",
+    "summary": "Create draft root"
+  }
+}
+```
+
+```json
+{
+  "name": "add_or_update_ke",
+  "arguments": {
+    "draft_id": "draft-steatosis-1",
+    "version_id": "v2",
+    "author": "researcher",
+    "summary": "Add KE with governed essentiality",
+    "identifier": "KE:239",
+    "title": "Activation, Pregnane-X receptor, NR1I2",
+    "attributes": {
+      "measurement_methods": [
+        "Reporter assay"
+      ],
+      "taxonomic_applicability": [
+        "NCBITaxon:9606"
+      ],
+      "essentiality": {
+        "evidence_call": "moderate",
+        "rationale": "Blocking or attenuating this event reduced the downstream steatosis signal in the supporting studies curated for the draft.",
+        "references": [
+          {
+            "identifier": "PMID:123456",
+            "source": "pmid",
+            "label": "Example essentiality reference"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+```json
+{
+  "name": "add_or_update_ke",
+  "arguments": {
+    "draft_id": "draft-steatosis-1",
+    "version_id": "v3",
+    "author": "researcher",
+    "summary": "Add KE with explicit no-data essentiality status",
+    "identifier": "KE:459",
+    "title": "Liver steatosis",
+    "attributes": {
+      "measurement": "Histopathology",
+      "essentiality": {
+        "evidence_call": "not_assessed",
+        "rationale": "Direct perturbation evidence has not yet been curated for this KE in the current draft.",
+        "references": []
+      }
+    }
+  }
+}
+```
+
+```json
+{
+  "name": "validate_draft_oecd",
+  "arguments": {
+    "draft_id": "draft-steatosis-1"
+  }
+}
+```
+
 ---
 
 ## Current limitations
 
-- `assess_aop_confidence` is OECD-aligned, not OECD-complete. Key-event essentiality is only inferred when bounded text evidence and supporting path structure both exist; path structure alone is retained as context but does not produce an essentiality score. The current RDF export still does not expose a dedicated structured essentiality field.
+- `assess_aop_confidence` is OECD-aligned, not OECD-complete. Key-event essentiality is only inferred when bounded text evidence and supporting path structure both exist; path structure alone is retained as context but does not produce an essentiality score. The current RDF export still does not expose a dedicated structured essentiality field. Draft authoring now supports an explicit governed KE-level `essentiality` object, and `validate_draft_oecd` checks its coverage and shape.
+- The governed draft `essentiality` object currently improves authoring and `validate_draft_oecd`, but it is not yet fed back into the live read-side `assess_aop_confidence` output or a downstream publish/export path.
 - Quantitative understanding is sparse in many live AOP-Wiki records, so confidence outputs often remain partial even when the tool is behaving correctly.
 - Applicability evidence calls are now structured on the read path, but they are still heuristic. They reflect source presence, cross-KE consistency, and supporting references rather than an explicit OECD applicability-strength field from upstream RDF.
 - `search_assays_for_key_event` is a discovery helper, not a curated KE-to-assay ontology mapping or a full assay fit-for-purpose evaluator.
