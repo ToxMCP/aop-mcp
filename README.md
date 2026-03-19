@@ -76,13 +76,13 @@ The current implementation follows a layered model:
 
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 
-## What's new in v0.5.0
+## What's new in v0.6.0
 
-- Added OECD-aligned response contracts for the core read and review surface, including normalized `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence` payloads.
-- Added new response schemas in `docs/contracts/schemas/read/` so richer MCP tools now publish machine-readable `outputSchema` contracts.
-- Enriched the read path with reference parsing, merged AOP-level references, and AOP-DB stressor enrichment on `get_aop`.
-- Added explicit architecture documentation and Mermaid diagrams for the transport, tool, adapter, OECD-normalization, and offline QA layers.
-- Added an OECD target-schema document that audits current coverage and makes the remaining gaps explicit, especially KE essentiality and applicability evidence completeness.
+- Tightened `assess_aop_confidence` so key-event essentiality is only inferred when bounded text evidence and supporting path structure both exist; path structure alone is retained as context but no longer produces an essentiality score.
+- Added structured heuristic applicability evidence calls and rationale across the OECD-aligned read surface, including direct KE applicability, derived KER applicability, and aggregated AOP applicability summaries.
+- Verified the stricter essentiality behavior live against representative AOPs such as `AOP:232`, `AOP:517`, `AOP:545`, and `AOP:529`, all of which now remain `not_assessed` for essentiality when only structural support is present.
+- Expanded regression coverage for generic essentiality language so phrases like `essential roles` and `necessary for maintaining balance` do not trigger false OECD-style essentiality signals.
+- Preserved the earlier OECD-aligned contracts, schemas, and architecture documentation introduced in `v0.5.0`.
 
 ## Why this project exists
 
