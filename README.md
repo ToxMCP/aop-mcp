@@ -75,6 +75,7 @@ The current implementation follows a layered model:
 - `Fixture fallback + smoke tests` let the server degrade cleanly in offline development and keep the public MCP contract regression-tested.
 
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
+For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
 ## What's new in v0.6.0
 
@@ -172,6 +173,7 @@ Once the server is running:
 
 - HTTP MCP endpoint: `http://localhost:8003/mcp`
 - Health check: `http://localhost:8003/health`
+- Task walkthroughs: `docs/quickstarts/find-aop.md`, `docs/quickstarts/oecd-draft-authoring.md`, and `docs/quickstarts/publish.md`
 
 ## Verification (smoke test)
 
