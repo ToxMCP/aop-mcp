@@ -76,11 +76,13 @@ The current implementation follows a layered model:
 
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 
-## What's new in v0.4.3
+## What's new in v0.5.0
 
-- Added a small phenotype synonym layer for phrase-only KE assay search, so phenotype-style events such as `Accumulation, Triglyceride` can expand into nearby assay vocabulary like `steatosis` without pulling in broad free-text description noise.
-- Preserved the direct CTX gene assay path for gene-backed key events, while widening only the phrase-only branch with controlled phenotype expansions such as `fatty liver <-> steatosis`.
-- Verified the new behavior live: `KE:291` now returns assay candidates from the full CTX assay metadata set instead of a clean but uninformative empty result.
+- Added OECD-aligned response contracts for the core read and review surface, including normalized `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence` payloads.
+- Added new response schemas in `docs/contracts/schemas/read/` so richer MCP tools now publish machine-readable `outputSchema` contracts.
+- Enriched the read path with reference parsing, merged AOP-level references, and AOP-DB stressor enrichment on `get_aop`.
+- Added explicit architecture documentation and Mermaid diagrams for the transport, tool, adapter, OECD-normalization, and offline QA layers.
+- Added an OECD target-schema document that audits current coverage and makes the remaining gaps explicit, especially KE essentiality and applicability evidence completeness.
 
 ## Why this project exists
 

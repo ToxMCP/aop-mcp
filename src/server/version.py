@@ -9,4 +9,4 @@ def get_app_version() -> str:
     try:
         return version("aop-mcp-server")
     except PackageNotFoundError:
-        return "0.4.3"
+        return "0.5.0"
