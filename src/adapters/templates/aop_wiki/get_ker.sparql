@@ -1,8 +1,9 @@
 PREFIX dc: <http://purl.org/dc/elements/1.1/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?upstream ?downstream ?upstreamTitle ?downstreamTitle ?description ?plausibility ?empiricalSupport ?quantitativeUnderstanding ?gene ?aop ?aopTitle ?created ?modified
+SELECT ?upstream ?downstream ?upstreamTitle ?downstreamTitle ?description ?plausibility ?empiricalSupport ?quantitativeUnderstanding ?gene ?aop ?aopTitle ?created ?modified ?reference ?referenceLabel ?referenceText
 WHERE {{
   BIND(<{ker_iri}> AS ?ker)
   OPTIONAL {{
@@ -22,4 +23,10 @@ WHERE {{
   }}
   OPTIONAL {{ ?ker dcterms:created ?created }}
   OPTIONAL {{ ?ker dcterms:modified ?modified }}
+  OPTIONAL {{
+    ?ker dcterms:references ?reference .
+    OPTIONAL {{ ?reference dc:title ?referenceLabel }}
+    OPTIONAL {{ ?reference rdfs:label ?referenceLabel }}
+  }}
+  OPTIONAL {{ ?ker dcterms:bibliographicCitation ?referenceText }}
 }}

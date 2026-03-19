@@ -23,6 +23,7 @@ from src.tools.write import (
     KeyEventRelationshipPayload,
     StressorLinkPayload,
 )
+from src.tools import validate_payload
 
 
 class SearchAopsInput(BaseModel):
@@ -41,8 +42,19 @@ class GetAopInput(BaseModel):
 
 
 async def get_aop(params: GetAopInput) -> dict[str, Any]:
-    adapter = get_aop_wiki_adapter()
-    record = await adapter.get_aop(params.aop_id)
+    wiki_adapter = get_aop_wiki_adapter()
+    db_adapter = get_aop_db_adapter()
+    core_record, assessment_record, stressor_records = await asyncio.gather(
+        wiki_adapter.get_aop(params.aop_id),
+        wiki_adapter.get_aop_assessment(params.aop_id),
+        db_adapter.list_stressor_chemicals_for_aop(params.aop_id),
+    )
+    record = _normalize_aop_record(
+        core_record,
+        assessment_record=assessment_record,
+        stressor_records=stressor_records,
+    )
+    validate_payload(record, namespace="read", name="get_aop.response.schema")
     return record
 
 
@@ -54,7 +66,9 @@ class GetKeyEventInput(BaseModel):
 
 async def get_key_event(params: GetKeyEventInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
-    return await adapter.get_key_event(params.key_event_id)
+    record = _normalize_key_event_record(await adapter.get_key_event(params.key_event_id))
+    validate_payload(record, namespace="read", name="get_key_event.response.schema")
+    return record
 
 
 class ListKeyEventsInput(BaseModel):
@@ -83,7 +97,9 @@ class GetKerInput(BaseModel):
 
 async def get_ker(params: GetKerInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
-    return await adapter.get_ker(params.ker_id)
+    record = _normalize_ker_record(await adapter.get_ker(params.ker_id))
+    validate_payload(record, namespace="read", name="get_ker.response.schema")
+    return record
 
 
 class GetRelatedAopsInput(BaseModel):
@@ -136,6 +152,7 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
         supplemental_signals,
     )
     oecd_alignment = _build_oecd_alignment_summary(confidence_dimensions)
+    normalized_aop = _normalize_aop_record(aop, assessment_record=aop)
 
     rationale = [
         f"AOP contains {coverage['key_event_count']} key events and {coverage['ker_count']} KERs.",
@@ -150,23 +167,39 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
             f"{supplemental_signals['aop_level_evidence_signal']['heuristic_call'].replace('_', ' ')} support."
         )
 
-    return {
+    result = {
         "aop": {
-            **aop,
+            **normalized_aop,
             "key_event_count": coverage["key_event_count"],
             "ker_count": coverage["ker_count"],
         },
         "coverage": coverage,
+        "overall_applicability": _normalize_applicability_summary(applicability_summary),
         "applicability_summary": applicability_summary,
+        "biological_plausibility": confidence_dimensions["biological_plausibility"],
+        "empirical_support": confidence_dimensions["empirical_support"],
+        "quantitative_understanding": confidence_dimensions["quantitative_understanding"],
+        "essentiality_of_key_events": confidence_dimensions["essentiality_of_key_events"],
         "confidence_dimensions": confidence_dimensions,
         "supplemental_signals": supplemental_signals,
         "oecd_alignment": oecd_alignment,
+        "overall_call": heuristic_overall_call,
         "heuristic_overall_call": heuristic_overall_call,
         "rationale": rationale,
         "limitations": limitations,
         "key_events": key_event_summaries,
         "ker_assessments": ker_assessments,
+        "provenance": [
+            _make_provenance(
+                source="aop_wiki_rdf",
+                field="assessment_aggregation",
+                transformation="phase1_oecd_alignment_normalization",
+                confidence="moderate",
+            )
+        ],
     }
+    validate_payload(result, namespace="read", name="assess_aop_confidence.response.schema")
+    return result
 
 
 class FindPathsBetweenEventsInput(BaseModel):
@@ -899,6 +932,611 @@ def _summarize_key_event(record: dict[str, Any]) -> dict[str, Any]:
         "organ_context": record.get("organ_context", []),
         "cell_type_context": record.get("cell_type_context", []),
     }
+
+
+def _make_provenance(
+    *,
+    source: str,
+    field: str,
+    transformation: str | None = None,
+    confidence: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "source": source,
+        "field": field,
+        "transformation": transformation,
+        "confidence": confidence,
+    }
+
+
+def _default_iri_for_identifier(identifier: str | None) -> str | None:
+    if not identifier or ":" not in identifier:
+        return None
+    prefix, value = identifier.split(":", 1)
+    if not value:
+        return None
+    if prefix == "AOP":
+        return f"https://identifiers.org/aop/{value}"
+    if prefix == "KE":
+        return f"https://identifiers.org/aop.events/{value}"
+    if prefix == "KER":
+        return f"https://identifiers.org/aop.relationships/{value}"
+    return None
+
+
+def _normalize_link_record(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": record.get("id"),
+        "iri": record.get("iri") or _default_iri_for_identifier(record.get("id")),
+        "title": record.get("title"),
+    }
+
+
+def _is_identifier_like(value: str | None) -> bool:
+    if not value:
+        return False
+    return value.startswith(("http://", "https://")) or bool(re.match(r"^[A-Za-z][A-Za-z0-9_.-]*:[^\s]+$", value))
+
+
+def _build_ontology_term(
+    value: str | None,
+    *,
+    source_field: str,
+    source: str = "aop_wiki_rdf",
+    label: str | None = None,
+    transformation: str | None = None,
+    confidence: str | None = "moderate",
+) -> dict[str, Any] | None:
+    if not value:
+        return None
+    return {
+        "id": value if _is_identifier_like(value) else None,
+        "label": label if label is not None else (None if _is_identifier_like(value) else value),
+        "source_field": source_field,
+        "provenance": [
+            _make_provenance(
+                source=source,
+                field=source_field,
+                transformation=transformation,
+                confidence=confidence,
+            )
+        ],
+    }
+
+
+def _build_applicability_term(
+    value: str | None,
+    *,
+    source_field: str,
+    source: str = "aop_wiki_rdf",
+    label: str | None = None,
+    evidence_call: str = "not_reported",
+    rationale: str | None = None,
+) -> dict[str, Any] | None:
+    term = _build_ontology_term(
+        value,
+        source_field=source_field,
+        source=source,
+        label=label,
+        transformation="normalized_for_oecd_phase1",
+    )
+    if term is None:
+        return None
+    provenance = list(term["provenance"])
+    provenance.append(
+        _make_provenance(
+            source=source,
+            field=source_field,
+            transformation="applicability_term_wrapper",
+            confidence="moderate",
+        )
+    )
+    return {
+        "term": term,
+        "evidence_call": evidence_call,
+        "rationale": rationale,
+        "references": [],
+        "provenance": provenance,
+    }
+
+
+def _build_measurement_method_detail(
+    label: str | None,
+    *,
+    source_field: str = "measurement_methods",
+    source: str = "aop_wiki_rdf",
+) -> dict[str, Any] | None:
+    if not label:
+        return None
+    return {
+        "label": label,
+        "method_type": None,
+        "directness": "unknown",
+        "fit_for_purpose": "not_reported",
+        "repeatability": "not_reported",
+        "reproducibility": "not_reported",
+        "regulatory_acceptance": "unknown",
+        "references": [],
+        "provenance": [
+            _make_provenance(
+                source=source,
+                field=source_field,
+                transformation="measurement_label_only_phase1",
+                confidence="low",
+            )
+        ],
+    }
+
+
+def _normalize_reference_records(references: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    seen: set[tuple[str | None, str | None, str | None]] = set()
+    for item in references or []:
+        record = {
+            "label": item.get("label"),
+            "identifier": item.get("identifier"),
+            "source": item.get("source"),
+        }
+        dedupe_key = (record["identifier"], record["label"], record["source"])
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        normalized.append(record)
+    return normalized
+
+
+def _build_stressor_term(stressor: dict[str, Any]) -> dict[str, Any]:
+    chemical_identifier = stressor.get("chemical_iri") or (
+        f"CAS:{stressor['casrn']}" if stressor.get("casrn") else stressor.get("stressor_id")
+    )
+    label = stressor.get("label") or stressor.get("casrn")
+    return {
+        "id": chemical_identifier,
+        "label": label,
+        "source_field": "stressor_chemicals",
+        "stressor_id": stressor.get("stressor_id"),
+        "chemical_iri": stressor.get("chemical_iri"),
+        "casrn": stressor.get("casrn"),
+        "provenance": [
+            _make_provenance(
+                source="aop_db_sparql",
+                field="stressor_chemicals",
+                transformation="normalized_for_oecd_phase2",
+                confidence="moderate",
+            )
+        ],
+    }
+
+
+def _extract_title_segments(value: str | None) -> list[str]:
+    if not value:
+        return []
+    segments = [_segment.strip() for _segment in re.split(r"[,;]+", value) if _segment.strip()]
+    return segments
+
+
+def _infer_action_label(record: dict[str, Any]) -> str | None:
+    direction = record.get("direction_of_change")
+    if direction:
+        return str(direction)
+
+    candidates = [
+        *(_extract_title_segments(record.get("title"))[:1]),
+        str(record.get("short_name") or ""),
+    ]
+    for candidate in candidates:
+        normalized = candidate.strip().lower()
+        if not normalized:
+            continue
+        if "activation" in normalized:
+            return "activation"
+        if "inhibition" in normalized or "inhibit" in normalized:
+            return "inhibition"
+        if "repression" in normalized or "repress" in normalized:
+            return "repression"
+        if "decreas" in normalized or normalized.startswith("loss"):
+            return "decreased"
+        if "increas" in normalized or normalized.startswith("gain"):
+            return "increased"
+    return None
+
+
+def _action_term_from_record(record: dict[str, Any]) -> dict[str, Any] | None:
+    direction = record.get("direction_of_change")
+    if direction:
+        return _build_ontology_term(
+            str(direction),
+            source_field="direction_of_change",
+            transformation="normalized_for_oecd_phase2",
+        )
+
+    inferred = _infer_action_label(record)
+    if not inferred:
+        return None
+    return _build_ontology_term(
+        inferred,
+        source_field="title_or_short_name",
+        transformation="title_based_action_inference_phase2",
+        confidence="low",
+    )
+
+
+def _derive_title_based_object_terms(record: dict[str, Any]) -> list[dict[str, Any]]:
+    existing_labels = {
+        str(value).lower()
+        for value in (
+            *(record.get("gene_identifiers", []) or []),
+            *(record.get("protein_identifiers", []) or []),
+        )
+        if value
+    }
+    title = str(record.get("title") or "")
+    short_name = str(record.get("short_name") or "")
+    candidates: list[str] = []
+
+    title_segments = _extract_title_segments(title)
+    if len(title_segments) > 1:
+        candidates.extend(title_segments[1:])
+
+    short_candidate = re.sub(
+        r"\b(activation|inhibition|repression|increase|increased|decrease|decreased)\b",
+        "",
+        short_name,
+        flags=re.IGNORECASE,
+    ).strip(" -_,;")
+    if short_candidate and short_candidate.lower() not in {"", "activity"}:
+        candidates.append(short_candidate)
+
+    results: list[dict[str, Any]] = []
+    seen_labels: set[str] = set()
+    for candidate in candidates:
+        cleaned = re.sub(r"\s+", " ", candidate).strip()
+        if not cleaned:
+            continue
+        lowered = cleaned.lower()
+        if lowered in seen_labels or lowered in existing_labels:
+            continue
+        if len(cleaned) <= 2:
+            continue
+        seen_labels.add(lowered)
+        term = _build_ontology_term(
+            cleaned,
+            source_field="title_derived_biological_object",
+            transformation="title_segment_inference_phase2",
+            confidence="low",
+        )
+        if term:
+            results.append(term)
+    return results
+
+
+def _build_evidence_block(
+    text: str | None,
+    *,
+    source_field: str,
+    basis: str,
+    source: str = "aop_wiki_rdf",
+    heuristic_call: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "text": text,
+        "heuristic_call": heuristic_call or _extract_support_call(text),
+        "basis": basis,
+        "references": [],
+        "provenance": [
+            _make_provenance(
+                source=source,
+                field=source_field,
+                transformation="phase1_evidence_block_normalization",
+                confidence="moderate",
+            )
+        ],
+    }
+
+
+def _normalize_applicability_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "basis": summary.get("basis"),
+        "taxa": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="taxonomic_applicability")
+                for value in summary.get("taxonomic_applicability", [])
+            )
+            if item
+        ],
+        "life_stages": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="life_stage_applicability")
+                for value in summary.get("life_stage_applicability", [])
+            )
+            if item
+        ],
+        "sexes": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="sex_applicability")
+                for value in summary.get("sex_applicability", [])
+            )
+            if item
+        ],
+        "organs": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="organ_context")
+                for value in summary.get("organ_context", [])
+            )
+            if item
+        ],
+        "cell_types": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="cell_type_context")
+                for value in summary.get("cell_type_context", [])
+            )
+            if item
+        ],
+        "levels_of_biological_organization": [
+            item
+            for item in (
+                _build_ontology_term(
+                    value,
+                    source_field="level_of_biological_organization",
+                    transformation="normalized_for_oecd_phase1",
+                )
+                for value in summary.get("level_of_biological_organization", [])
+            )
+            if item
+        ],
+        "summary_rationale": None,
+        "provenance": [
+            _make_provenance(
+                source="derived_from_ke_metadata",
+                field="applicability_summary",
+                transformation="phase1_oecd_applicability_summary",
+                confidence="moderate",
+            )
+        ],
+    }
+
+
+def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(record)
+    normalized["iri"] = record.get("iri") or _default_iri_for_identifier(record.get("id"))
+    normalized["part_of_aops"] = [
+        _normalize_link_record(item) for item in record.get("part_of_aops", [])
+    ]
+    normalized["event_components"] = {
+        "biological_processes": [
+            item
+            for item in (
+                _build_ontology_term(
+                    value,
+                    source_field="biological_processes",
+                    transformation="normalized_for_oecd_phase1",
+                )
+                for value in record.get("biological_processes", [])
+            )
+            if item
+        ],
+        "biological_objects": [
+            item
+            for item in (
+                [
+                    _build_ontology_term(
+                        value,
+                        source_field="gene_identifiers",
+                        transformation="normalized_for_oecd_phase1",
+                    )
+                    for value in record.get("gene_identifiers", [])
+                ]
+                + [
+                    _build_ontology_term(
+                        value,
+                        source_field="protein_identifiers",
+                        transformation="normalized_for_oecd_phase1",
+                    )
+                    for value in record.get("protein_identifiers", [])
+                ]
+                + _derive_title_based_object_terms(record)
+            )
+            if item
+        ],
+        "action": _action_term_from_record(record),
+    }
+    normalized["biological_context"] = {
+        "organs": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="organ_context")
+                for value in record.get("organ_context", [])
+            )
+            if item
+        ],
+        "cell_types": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="cell_type_context")
+                for value in record.get("cell_type_context", [])
+            )
+            if item
+        ],
+        "level_of_biological_organization": _build_ontology_term(
+            record.get("level_of_biological_organization"),
+            source_field="level_of_biological_organization",
+            transformation="normalized_for_oecd_phase1",
+        ),
+    }
+    normalized["applicability"] = {
+        "taxa": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="taxonomic_applicability")
+                for value in record.get("taxonomic_applicability", [])
+            )
+            if item
+        ],
+        "life_stages": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="life_stage_applicability")
+                for value in [record.get("life_stage_applicability")]
+            )
+            if item
+        ],
+        "sexes": [
+            item
+            for item in (
+                _build_applicability_term(value, source_field="sex_applicability")
+                for value in [record.get("sex_applicability")]
+            )
+            if item
+        ],
+        "summary_rationale": None,
+        "provenance": [
+            _make_provenance(
+                source="aop_wiki_rdf",
+                field="applicability",
+                transformation="phase1_oecd_alignment_normalization",
+                confidence="moderate",
+            )
+        ],
+    }
+    normalized["measurement_method_details"] = [
+        item
+        for item in (
+            _build_measurement_method_detail(label)
+            for label in record.get("measurement_methods", [])
+        )
+        if item
+    ]
+    normalized["mie_specific"] = None
+    normalized["ao_specific"] = None
+    normalized["references"] = _normalize_reference_records(record.get("references"))
+    normalized["provenance"] = [
+        _make_provenance(
+            source="aop_wiki_rdf",
+            field="get_key_event",
+            transformation="phase1_oecd_alignment_normalization",
+            confidence="moderate",
+        )
+    ]
+    return normalized
+
+
+def _normalize_ker_record(record: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(record)
+    normalized["iri"] = record.get("iri") or _default_iri_for_identifier(record.get("id"))
+    normalized["upstream"] = _normalize_link_record(record.get("upstream", {}))
+    normalized["downstream"] = _normalize_link_record(record.get("downstream", {}))
+    normalized["referenced_aops"] = [
+        _normalize_link_record(item) for item in record.get("referenced_aops", [])
+    ]
+    normalized["applicability"] = {
+        "taxa": [],
+        "life_stages": [],
+        "sexes": [],
+        "summary_rationale": None,
+        "provenance": [
+            _make_provenance(
+                source="aop_wiki_rdf",
+                field="applicability",
+                transformation="not_available_in_current_rdf_export",
+                confidence="low",
+            )
+        ],
+    }
+    normalized["evidence_blocks"] = {
+        "biological_plausibility": _build_evidence_block(
+            record.get("biological_plausibility"),
+            source_field="biological_plausibility",
+            basis="Normalized from KER biological plausibility text.",
+        ),
+        "empirical_support": _build_evidence_block(
+            record.get("empirical_support"),
+            source_field="empirical_support",
+            basis="Normalized from KER empirical support text.",
+        ),
+        "quantitative_understanding": _build_evidence_block(
+            record.get("quantitative_understanding"),
+            source_field="quantitative_understanding",
+            basis="Normalized from KER quantitative understanding text.",
+        ),
+    }
+    normalized["references"] = _normalize_reference_records(record.get("references"))
+    normalized["provenance"] = [
+        _make_provenance(
+            source="aop_wiki_rdf",
+            field="get_ker",
+            transformation="phase1_oecd_alignment_normalization",
+            confidence="moderate",
+        )
+    ]
+    return normalized
+
+
+def _normalize_aop_record(
+    core_record: dict[str, Any],
+    *,
+    assessment_record: dict[str, Any] | None = None,
+    stressor_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    record = dict(core_record)
+    assessment_record = assessment_record or {}
+    record["iri"] = core_record.get("iri") or assessment_record.get("iri") or _default_iri_for_identifier(core_record.get("id"))
+    for key in ("created", "modified", "evidence_summary"):
+        if record.get(key) is None and assessment_record.get(key) is not None:
+            record[key] = assessment_record.get(key)
+    record["molecular_initiating_events"] = [
+        _normalize_link_record(item)
+        for item in assessment_record.get("molecular_initiating_events", [])
+    ]
+    record["adverse_outcomes"] = [
+        _normalize_link_record(item)
+        for item in assessment_record.get("adverse_outcomes", [])
+    ]
+    record["stressors"] = [_build_stressor_term(item) for item in (stressor_records or [])]
+    record["graph"] = None
+    record["overall_applicability"] = {
+        "basis": "Not yet exposed as a dedicated AOP-level field in the current RDF export. Placeholder retained for the OECD-aligned contract.",
+        "taxa": [],
+        "life_stages": [],
+        "sexes": [],
+        "organs": [],
+        "cell_types": [],
+        "levels_of_biological_organization": [],
+        "summary_rationale": None,
+        "provenance": [
+            _make_provenance(
+                source="aop_wiki_rdf",
+                field="overall_applicability",
+                transformation="placeholder_pending_aop_level_normalization",
+                confidence="low",
+            )
+        ],
+    }
+    record["references"] = _normalize_reference_records(
+        [
+            *(core_record.get("references") or []),
+            *(assessment_record.get("references") or []),
+        ]
+    )
+    record["provenance"] = [
+        _make_provenance(
+            source="aop_wiki_rdf",
+            field="get_aop",
+            transformation="phase1_oecd_alignment_normalization",
+            confidence="moderate",
+        ),
+        _make_provenance(
+            source="aop_db_sparql",
+            field="stressor_chemicals",
+            transformation="phase2_stressor_enrichment",
+            confidence="moderate" if stressor_records else "low",
+        ),
+    ]
+    return record
 
 
 def _summarize_ker(record: dict[str, Any]) -> dict[str, Any]:

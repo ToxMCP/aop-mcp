@@ -2,8 +2,9 @@ PREFIX dc: <http://purl.org/dc/elements/1.1/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX aopo: <http://aopkb.org/aop_ontology#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?title ?shortName ?status ?abstract ?evidence ?created ?modified ?mie ?mieTitle ?ao ?aoTitle
+SELECT ?title ?shortName ?status ?abstract ?evidence ?created ?modified ?mie ?mieTitle ?ao ?aoTitle ?reference ?referenceLabel ?referenceText
 WHERE {{
   BIND(<{aop_iri}> AS ?aop)
   OPTIONAL {{ ?aop dc:title ?title }}
@@ -21,5 +22,11 @@ WHERE {{
     ?aop aopo:has_adverse_outcome ?ao .
     OPTIONAL {{ ?ao dc:title ?aoTitle }}
   }}
+  OPTIONAL {{
+    ?aop dcterms:references ?reference .
+    OPTIONAL {{ ?reference dc:title ?referenceLabel }}
+    OPTIONAL {{ ?reference rdfs:label ?referenceLabel }}
+  }}
+  OPTIONAL {{ ?aop dcterms:bibliographicCitation ?referenceText }}
 }}
 LIMIT 100

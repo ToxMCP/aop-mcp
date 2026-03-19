@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "assess_aop_confidence.response",
+  "type": "object",
+  "required": [
+    "aop",
+    "coverage",
+    "overall_applicability",
+    "biological_plausibility",
+    "empirical_support",
+    "quantitative_understanding",
+    "essentiality_of_key_events",
+    "confidence_dimensions",
+    "supplemental_signals",
+    "oecd_alignment",
+    "overall_call",
+    "heuristic_overall_call",
+    "rationale",
+    "limitations",
+    "key_events",
+    "ker_assessments",
+    "provenance"
+  ],
+  "properties": {
+    "aop": {"type": "object"},
+    "coverage": {"type": "object"},
+    "overall_applicability": {
+      "type": "object",
+      "required": [
+        "basis",
+        "taxa",
+        "life_stages",
+        "sexes",
+        "organs",
+        "cell_types",
+        "levels_of_biological_organization",
+        "summary_rationale",
+        "provenance"
+      ],
+      "properties": {
+        "basis": {"type": ["string", "null"]},
+        "taxa": {"type": "array", "items": {"type": "object"}},
+        "life_stages": {"type": "array", "items": {"type": "object"}},
+        "sexes": {"type": "array", "items": {"type": "object"}},
+        "organs": {"type": "array", "items": {"type": "object"}},
+        "cell_types": {"type": "array", "items": {"type": "object"}},
+        "levels_of_biological_organization": {"type": "array", "items": {"type": "object"}},
+        "summary_rationale": {"type": ["string", "null"]},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "applicability_summary": {"type": "object"},
+    "biological_plausibility": {"$ref": "#/$defs/evidenceDimension"},
+    "empirical_support": {"$ref": "#/$defs/evidenceDimension"},
+    "quantitative_understanding": {"$ref": "#/$defs/evidenceDimension"},
+    "essentiality_of_key_events": {"$ref": "#/$defs/evidenceDimension"},
+    "confidence_dimensions": {"type": "object"},
+    "supplemental_signals": {"type": "object"},
+    "oecd_alignment": {"type": "object"},
+    "overall_call": {"type": "string"},
+    "heuristic_overall_call": {"type": "string"},
+    "rationale": {"type": "array", "items": {"type": "string"}},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "key_events": {"type": "array", "items": {"type": "object"}},
+    "ker_assessments": {"type": "array", "items": {"type": "object"}},
+    "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+  },
+  "$defs": {
+    "provenanceRecord": {
+      "type": "object",
+      "required": ["source", "field", "transformation", "confidence"],
+      "properties": {
+        "source": {"type": "string"},
+        "field": {"type": "string"},
+        "transformation": {"type": ["string", "null"]},
+        "confidence": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "evidenceDimension": {
+      "type": "object",
+      "required": ["heuristic_call", "coverage", "basis", "oecd_dimension"],
+      "properties": {
+        "heuristic_call": {"type": "string"},
+        "coverage": {"type": "object"},
+        "basis": {"type": "string"},
+        "oecd_dimension": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

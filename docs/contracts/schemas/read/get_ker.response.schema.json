@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "get_ker.response",
+  "type": "object",
+  "required": [
+    "id",
+    "iri",
+    "upstream",
+    "downstream",
+    "applicability",
+    "evidence_blocks",
+    "references",
+    "provenance"
+  ],
+  "properties": {
+    "id": {"type": "string"},
+    "iri": {"type": "string", "format": "uri"},
+    "title": {"type": ["string", "null"]},
+    "description": {"type": ["string", "null"]},
+    "biological_plausibility": {"type": ["string", "null"]},
+    "empirical_support": {"type": ["string", "null"]},
+    "quantitative_understanding": {"type": ["string", "null"]},
+    "created": {"type": ["string", "null"]},
+    "modified": {"type": ["string", "null"]},
+    "gene_identifiers": {"type": "array", "items": {"type": "string"}},
+    "referenced_aops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "iri"],
+        "properties": {
+          "id": {"type": ["string", "null"]},
+          "iri": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "shared_aop_count": {"type": "integer"},
+    "upstream": {"$ref": "#/$defs/eventLink"},
+    "downstream": {"$ref": "#/$defs/eventLink"},
+    "applicability": {
+      "type": "object",
+      "required": ["taxa", "life_stages", "sexes", "summary_rationale", "provenance"],
+      "properties": {
+        "taxa": {"type": "array", "items": {"type": "object"}},
+        "life_stages": {"type": "array", "items": {"type": "object"}},
+        "sexes": {"type": "array", "items": {"type": "object"}},
+        "summary_rationale": {"type": ["string", "null"]},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "evidence_blocks": {
+      "type": "object",
+      "required": ["biological_plausibility", "empirical_support", "quantitative_understanding"],
+      "properties": {
+        "biological_plausibility": {"$ref": "#/$defs/evidenceBlock"},
+        "empirical_support": {"$ref": "#/$defs/evidenceBlock"},
+        "quantitative_understanding": {"$ref": "#/$defs/evidenceBlock"}
+      },
+      "additionalProperties": false
+    },
+    "references": {"type": "array", "items": {"type": "object"}},
+    "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+  },
+  "$defs": {
+    "provenanceRecord": {
+      "type": "object",
+      "required": ["source", "field", "transformation", "confidence"],
+      "properties": {
+        "source": {"type": "string"},
+        "field": {"type": "string"},
+        "transformation": {"type": ["string", "null"]},
+        "confidence": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "eventLink": {
+      "type": "object",
+      "required": ["id", "iri", "title"],
+      "properties": {
+        "id": {"type": ["string", "null"]},
+        "iri": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "evidenceBlock": {
+      "type": "object",
+      "required": ["text", "heuristic_call", "basis", "references", "provenance"],
+      "properties": {
+        "text": {"type": ["string", "null"]},
+        "heuristic_call": {"type": "string"},
+        "basis": {"type": "string"},
+        "references": {"type": "array", "items": {"type": "object"}},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

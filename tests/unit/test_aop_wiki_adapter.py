@@ -81,6 +81,7 @@ async def test_get_aop_returns_metadata() -> None:
                             "shortName": {"value": "AOP42"},
                             "status": {"value": "OECD:Draft"},
                             "abstract": {"value": "Mechanistic description"},
+                            "reference": {"value": "https://doi.org/10.1000/example-aop"},
                         }
                     ]
                 }
@@ -96,6 +97,9 @@ async def test_get_aop_returns_metadata() -> None:
     assert record["short_name"] == "AOP42"
     assert record["status"] == "OECD:Draft"
     assert record["abstract"] == "Mechanistic description"
+    assert record["references"] == [
+        {"label": "https://doi.org/10.1000/example-aop", "identifier": "10.1000/example-aop", "source": "doi"}
+    ]
 
 
 @pytest.mark.asyncio
@@ -119,6 +123,7 @@ async def test_get_aop_assessment_returns_evidence_mie_and_ao() -> None:
                             "mieTitle": {"value": "NFE2/Nrf2 repression"},
                             "ao": {"value": "https://identifiers.org/aop.events/459"},
                             "aoTitle": {"value": "Increase, Liver steatosis"},
+                            "referenceText": {"value": "Assessment note DOI:10.1000/example"},
                         },
                         {
                             "mie": {"value": "https://identifiers.org/aop.events/1417"},
@@ -148,6 +153,13 @@ async def test_get_aop_assessment_returns_evidence_mie_and_ao() -> None:
             "id": "KE:459",
             "iri": "https://identifiers.org/aop.events/459",
             "title": "Increase, Liver steatosis",
+        }
+    ]
+    assert record["references"] == [
+        {
+            "label": "Assessment note DOI:10.1000/example",
+            "identifier": "10.1000/example",
+            "source": "doi",
         }
     ]
 
@@ -249,6 +261,7 @@ async def test_get_key_event_aggregates_oecd_style_fields() -> None:
                             "cellType": {"value": "http://purl.obolibrary.org/obo/CL_0000255"},
                             "aop": {"value": "https://identifiers.org/aop/517"},
                             "aopTitle": {"value": "PXR activation leads to liver steatosis"},
+                            "reference": {"value": "https://pubmed.ncbi.nlm.nih.gov/98765/"},
                         },
                         {
                             "measurement": {"value": "Measured by reporter assay."},
@@ -274,6 +287,9 @@ async def test_get_key_event_aggregates_oecd_style_fields() -> None:
     assert record["gene_identifiers"] == ["HGNC:7968", "HGNC:1663"]
     assert record["taxonomic_applicability"] == ["NCBITaxon:9606"]
     assert record["shared_aop_count"] == 2
+    assert record["references"] == [
+        {"label": "https://pubmed.ncbi.nlm.nih.gov/98765/", "identifier": "PMID:98765", "source": "pmid"}
+    ]
 
 
 @pytest.mark.asyncio
@@ -300,6 +316,7 @@ async def test_get_ker_returns_plausibility_evidence_and_quantitative_text() -> 
                             "modified": {"value": "2025-02-10T15:57:38"},
                             "aop": {"value": "https://identifiers.org/aop/517"},
                             "aopTitle": {"value": "PXR activation leads to liver steatosis"},
+                            "referenceText": {"value": "KER evidence PMID: 24680"},
                         },
                         {
                             "aop": {"value": "https://identifiers.org/aop/545"},
@@ -321,6 +338,9 @@ async def test_get_ker_returns_plausibility_evidence_and_quantitative_text() -> 
     assert record["empirical_support"] == "Temporal and dose concordance observed."
     assert record["quantitative_understanding"] == "Quantitative support is moderate."
     assert record["shared_aop_count"] == 2
+    assert record["references"] == [
+        {"label": "KER evidence PMID: 24680", "identifier": "PMID:24680", "source": "pmid"}
+    ]
 
 
 @pytest.mark.asyncio

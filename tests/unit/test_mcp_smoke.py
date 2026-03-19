@@ -60,6 +60,11 @@ def test_tools_list_includes_registered_tools() -> None:
         "create_draft_aop",
     }.issubset(tool_names)
 
+    by_name = {tool["name"]: tool for tool in tools}
+    assert by_name["get_key_event"]["outputSchema"]["title"] == "get_key_event.response"
+    assert by_name["get_ker"]["outputSchema"]["title"] == "get_ker.response"
+    assert by_name["assess_aop_confidence"]["outputSchema"]["title"] == "assess_aop_confidence.response"
+
 
 @pytest.mark.skip(reason="Requires live SPARQL endpoints; enable in environments with network access")
 def test_tools_call_search_aops_live() -> None:

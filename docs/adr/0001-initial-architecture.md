@@ -3,6 +3,8 @@
 ## Status
 Accepted (drafted 2025-11-05, pending review)
 
+Current implementation details now live in `docs/architecture.md`. This ADR remains the original architectural direction record; the newer document describes the current layered MCP structure, OECD-aligned read contracts, and adapter/test boundaries as implemented.
+
 ## Context
 The AOP MCP server must expose read/write tooling over AOP knowledge bases. The
 programme in `information.md` spans discovery tooling (search, map, evidence)

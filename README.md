@@ -14,7 +14,67 @@ Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any M
 
 ## Architecture
 
-![AOP MCP architecture](./assets/aop-mcp-architecture.jpg)
+```mermaid
+flowchart LR
+    subgraph Clients["Clients and Agents"]
+        Codex["Codex CLI / Desktop"]
+        Gemini["Gemini CLI"]
+        Claude["Claude Code"]
+        Scripts["Scripts / notebooks"]
+    end
+
+    subgraph API["FastAPI MCP Service"]
+        Router["HTTP entrypoints\n/health and /mcp"]
+        Registry["Tool registry\ninputSchema + outputSchema"]
+        Tools["Tool handlers\nread, review, assay, draft"]
+    end
+
+    subgraph Semantics["Semantic and Contract Layer"]
+        Normalizers["OECD-aligned normalizers\nontology terms, applicability,\nevidence blocks, provenance"]
+        Contracts["JSON Schemas\n/docs/contracts/schemas"]
+    end
+
+    subgraph Adapters["External Adapters"]
+        AOPWiki["AOP-Wiki RDF / SPARQL"]
+        AOPDB["AOP-DB SPARQL"]
+        CompTox["EPA CompTox\nDashboard + CTX APIs"]
+    end
+
+    subgraph Authoring["Draft and Authoring Path"]
+        Drafts["Draft graph store\nKE / KER / stressor edits"]
+        Validation["OECD draft validation\ncompleteness checks"]
+    end
+
+    subgraph Offline["Offline and QA Paths"]
+        Fixtures["Fixture fallback\nAOP_MCP_ENABLE_FIXTURE_FALLBACK=1"]
+        Tests["Pytest + MCP smoke\nschema regression checks"]
+    end
+
+    Clients --> Router
+    Router --> Registry
+    Registry --> Tools
+    Tools --> Normalizers
+    Normalizers --> Contracts
+    Tools --> AOPWiki
+    Tools --> AOPDB
+    Tools --> CompTox
+    Tools --> Drafts
+    Drafts --> Validation
+    Tools -. fixture mode .-> Fixtures
+    Contracts --> Tests
+    Fixtures --> Tests
+```
+
+The current implementation follows a layered model:
+
+- `FastAPI + JSON-RPC` expose `/mcp` and `/health`, and keep transport concerns separate from domain logic.
+- `Tool handlers` are the agent-facing API. They validate inputs, call adapters, and emit structured responses with JSON Schemas.
+- `Semantic normalizers` reshape upstream RDF/API payloads into OECD-aligned objects such as `event_components`, `applicability`, `evidence_blocks`, and `provenance`.
+- `Adapters` isolate AOP-Wiki, AOP-DB, and CompTox specifics so upstream changes do not leak into MCP contracts.
+- `Draft tooling` remains separate from the read/review path, which keeps pathway evidence, assay discovery, and authoring concerns from collapsing into one surface.
+- `Fixture fallback + smoke tests` let the server degrade cleanly in offline development and keep the public MCP contract regression-tested.
+
+See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 
 ## What's new in v0.4.3
 
@@ -52,21 +112,22 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 
 ## Table of contents
 
-1. [Quick start](#quick-start)
-2. [Configuration](#configuration)
-3. [Tool catalog](#tool-catalog)
-4. [Running the server](#running-the-server)
-5. [Integrating with coding agents](#integrating-with-coding-agents)
-6. [Output artifacts](#output-artifacts)
-7. [Security checklist](#security-checklist)
-8. [Current limitations](#current-limitations)
-9. [Development notes](#development-notes)
-10. [Contributing](#contributing)
-11. [Security policy](#security-policy)
-12. [Code of conduct](#code-of-conduct)
-13. [Citation](#citation)
-14. [Roadmap](#roadmap)
-15. [License](#license)
+1. [Architecture](#architecture)
+2. [Quick start](#quick-start)
+3. [Configuration](#configuration)
+4. [Tool catalog](#tool-catalog)
+5. [Running the server](#running-the-server)
+6. [Integrating with coding agents](#integrating-with-coding-agents)
+7. [Output artifacts](#output-artifacts)
+8. [Security checklist](#security-checklist)
+9. [Current limitations](#current-limitations)
+10. [Development notes](#development-notes)
+11. [Contributing](#contributing)
+12. [Security policy](#security-policy)
+13. [Code of conduct](#code-of-conduct)
+14. [Citation](#citation)
+15. [Roadmap](#roadmap)
+16. [License](#license)
 
 ---
 
@@ -309,6 +370,7 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 - `make contract` – regenerate/validate JSON Schema docs (if available in your tooling setup).
 - `python scripts/benchmarks.py` – baseline latency testing (extend with real workloads).
 - `docs/opensourcing-checklist.md` – final checks before switching repository visibility to public.
+- `docs/contracts/oecd-aligned-schema.md` – OECD-aligned target payload model and current coverage audit for `AOP`, `KE`, `KER`, and assessment outputs.
 - Keep docs in sync: update `docs/contracts/endpoint-matrix.md`, `docs/quickstarts/`, and schema files when payloads change.
 
 ---

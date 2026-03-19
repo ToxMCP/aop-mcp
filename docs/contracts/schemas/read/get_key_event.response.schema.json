@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "get_key_event.response",
+  "type": "object",
+  "required": [
+    "id",
+    "iri",
+    "event_components",
+    "biological_context",
+    "applicability",
+    "measurement_method_details",
+    "references",
+    "provenance"
+  ],
+  "properties": {
+    "id": {"type": "string"},
+    "iri": {"type": "string", "format": "uri"},
+    "title": {"type": ["string", "null"]},
+    "short_name": {"type": ["string", "null"]},
+    "description": {"type": ["string", "null"]},
+    "level_of_biological_organization": {"type": ["string", "null"]},
+    "direction_of_change": {"type": ["string", "null"]},
+    "sex_applicability": {"type": ["string", "null"]},
+    "life_stage_applicability": {"type": ["string", "null"]},
+    "measurement_methods": {"type": "array", "items": {"type": "string"}},
+    "taxonomic_applicability": {"type": "array", "items": {"type": "string"}},
+    "gene_identifiers": {"type": "array", "items": {"type": "string"}},
+    "protein_identifiers": {"type": "array", "items": {"type": "string"}},
+    "biological_processes": {"type": "array", "items": {"type": "string"}},
+    "cell_type_context": {"type": "array", "items": {"type": "string"}},
+    "organ_context": {"type": "array", "items": {"type": "string"}},
+    "part_of_aops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "iri"],
+        "properties": {
+          "id": {"type": ["string", "null"]},
+          "iri": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "shared_aop_count": {"type": "integer"},
+    "event_components": {
+      "type": "object",
+      "required": ["biological_processes", "biological_objects", "action"],
+      "properties": {
+        "biological_processes": {"type": "array", "items": {"$ref": "#/$defs/ontologyTerm"}},
+        "biological_objects": {"type": "array", "items": {"$ref": "#/$defs/ontologyTerm"}},
+        "action": {
+          "anyOf": [
+            {"$ref": "#/$defs/ontologyTerm"},
+            {"type": "null"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "biological_context": {
+      "type": "object",
+      "required": ["organs", "cell_types", "level_of_biological_organization"],
+      "properties": {
+        "organs": {"type": "array", "items": {"$ref": "#/$defs/applicabilityTerm"}},
+        "cell_types": {"type": "array", "items": {"$ref": "#/$defs/applicabilityTerm"}},
+        "level_of_biological_organization": {
+          "anyOf": [
+            {"$ref": "#/$defs/ontologyTerm"},
+            {"type": "null"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "applicability": {
+      "type": "object",
+      "required": ["taxa", "life_stages", "sexes", "summary_rationale", "provenance"],
+      "properties": {
+        "taxa": {"type": "array", "items": {"$ref": "#/$defs/applicabilityTerm"}},
+        "life_stages": {"type": "array", "items": {"$ref": "#/$defs/applicabilityTerm"}},
+        "sexes": {"type": "array", "items": {"$ref": "#/$defs/applicabilityTerm"}},
+        "summary_rationale": {"type": ["string", "null"]},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "measurement_method_details": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/measurementMethod"}
+    },
+    "mie_specific": {"type": ["object", "null"]},
+    "ao_specific": {"type": ["object", "null"]},
+    "references": {"type": "array", "items": {"type": "object"}},
+    "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+  },
+  "$defs": {
+    "ontologyTerm": {
+      "type": "object",
+      "required": ["id", "label", "source_field", "provenance"],
+      "properties": {
+        "id": {"type": ["string", "null"]},
+        "label": {"type": ["string", "null"]},
+        "source_field": {"type": "string"},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "provenanceRecord": {
+      "type": "object",
+      "required": ["source", "field", "transformation", "confidence"],
+      "properties": {
+        "source": {"type": "string"},
+        "field": {"type": "string"},
+        "transformation": {"type": ["string", "null"]},
+        "confidence": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "applicabilityTerm": {
+      "type": "object",
+      "required": ["term", "evidence_call", "rationale", "references", "provenance"],
+      "properties": {
+        "term": {"$ref": "#/$defs/ontologyTerm"},
+        "evidence_call": {"type": "string"},
+        "rationale": {"type": ["string", "null"]},
+        "references": {"type": "array", "items": {"type": "object"}},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "measurementMethod": {
+      "type": "object",
+      "required": [
+        "label",
+        "method_type",
+        "directness",
+        "fit_for_purpose",
+        "repeatability",
+        "reproducibility",
+        "regulatory_acceptance",
+        "references",
+        "provenance"
+      ],
+      "properties": {
+        "label": {"type": "string"},
+        "method_type": {"type": ["string", "null"]},
+        "directness": {"type": "string"},
+        "fit_for_purpose": {"type": "string"},
+        "repeatability": {"type": "string"},
+        "reproducibility": {"type": "string"},
+        "regulatory_acceptance": {"type": "string"},
+        "references": {"type": "array", "items": {"type": "object"}},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -604,6 +604,12 @@ class AOPDBAdapter:
             )
         return stressors
 
+    async def list_stressor_chemicals_for_aop(self, aop_id: str) -> list[dict[str, Any]]:
+        try:
+            return await self._list_stressor_chemicals_for_aop(aop_id)
+        except SparqlClientError:
+            return []
+
 
 def _derive_key_event_search_terms(key_event: dict[str, Any]) -> dict[str, list[str]]:
     title = str(key_event.get("title") or "")

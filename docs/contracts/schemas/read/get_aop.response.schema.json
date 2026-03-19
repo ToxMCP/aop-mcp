@@ -9,7 +9,66 @@
     "title": {"type": ["string", "null"]},
     "short_name": {"type": ["string", "null"]},
     "status": {"type": ["string", "null"]},
-    "abstract": {"type": ["string", "null"]}
+    "abstract": {"type": ["string", "null"]},
+    "created": {"type": ["string", "null"]},
+    "modified": {"type": ["string", "null"]},
+    "evidence_summary": {"type": ["string", "null"]},
+    "molecular_initiating_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "iri"],
+        "properties": {
+          "id": {"type": ["string", "null"]},
+          "iri": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "adverse_outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "iri"],
+        "properties": {
+          "id": {"type": ["string", "null"]},
+          "iri": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "stressors": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "graph": {
+      "type": ["object", "null"]
+    },
+    "overall_applicability": {
+      "type": "object",
+      "properties": {
+        "basis": {"type": ["string", "null"]},
+        "taxa": {"type": "array", "items": {"type": "object"}},
+        "life_stages": {"type": "array", "items": {"type": "object"}},
+        "sexes": {"type": "array", "items": {"type": "object"}},
+        "organs": {"type": "array", "items": {"type": "object"}},
+        "cell_types": {"type": "array", "items": {"type": "object"}},
+        "levels_of_biological_organization": {"type": "array", "items": {"type": "object"}},
+        "summary_rationale": {"type": ["string", "null"]},
+        "provenance": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": false
+    },
+    "references": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "provenance": {
+      "type": "array",
+      "items": {"type": "object"}
+    }
   },
   "additionalProperties": false
 }

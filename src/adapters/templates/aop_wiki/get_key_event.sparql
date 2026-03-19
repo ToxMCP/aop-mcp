@@ -1,8 +1,9 @@
 PREFIX dc: <http://purl.org/dc/elements/1.1/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX aopo: <http://aopkb.org/aop_ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?title ?shortName ?description ?level ?lifeStage ?cellType ?organ ?direction ?sex ?measurement ?biologicalProcess ?protein ?gene ?taxon ?aop ?aopTitle
+SELECT ?title ?shortName ?description ?level ?lifeStage ?cellType ?organ ?direction ?sex ?measurement ?biologicalProcess ?protein ?gene ?taxon ?aop ?aopTitle ?reference ?referenceLabel ?referenceText
 WHERE {{
   BIND(<{ke_iri}> AS ?ke)
   OPTIONAL {{ ?ke dc:title ?title }}
@@ -23,4 +24,10 @@ WHERE {{
     ?ke dcterms:isPartOf ?aop .
     OPTIONAL {{ ?aop dc:title ?aopTitle }}
   }}
+  OPTIONAL {{
+    ?ke dcterms:references ?reference .
+    OPTIONAL {{ ?reference dc:title ?referenceLabel }}
+    OPTIONAL {{ ?reference rdfs:label ?referenceLabel }}
+  }}
+  OPTIONAL {{ ?ke dcterms:bibliographicCitation ?referenceText }}
 }}

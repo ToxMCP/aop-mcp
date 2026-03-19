@@ -4,6 +4,7 @@ import pytest
 
 from src.server.tools import aop as aop_tools
 from src.services.draft_store import DraftStoreService, InMemoryDraftRepository
+from src.tools import validate_payload
 from src.tools.write import WriteTools
 
 
@@ -37,7 +38,11 @@ class StubWikiAdapter:
         ]
 
     async def get_aop(self, aop_id: str):
-        return {"id": aop_id, "title": "Example AOP"}
+        return {
+            "id": aop_id,
+            "title": "Example AOP",
+            "references": [{"label": "Core AOP reference", "identifier": "10.1000/core-aop", "source": "doi"}],
+        }
 
     async def get_aop_assessment(self, aop_id: str):
         assert aop_id == "AOP:232"
@@ -52,6 +57,7 @@ class StubWikiAdapter:
             "adverse_outcomes": [
                 {"id": "KE:3", "iri": "https://identifiers.org/aop.events/3", "title": "Adverse outcome"}
             ],
+            "references": [{"label": "Assessment reference", "identifier": "PMID:123456", "source": "pmid"}],
         }
 
     async def get_key_event(self, ke_id: str):
@@ -66,6 +72,7 @@ class StubWikiAdapter:
                 "level_of_biological_organization": "molecular",
                 "organ_context": ["UBERON:0002107"],
                 "cell_type_context": [],
+                "references": [{"label": "KE ref", "identifier": "10.1000/ke-1", "source": "doi"}],
             },
             "KE:2": {
                 "id": "KE:2",
@@ -77,6 +84,7 @@ class StubWikiAdapter:
                 "level_of_biological_organization": "cellular",
                 "organ_context": ["UBERON:0002107"],
                 "cell_type_context": ["CL:0000182"],
+                "references": [],
             },
             "KE:3": {
                 "id": "KE:3",
@@ -88,6 +96,7 @@ class StubWikiAdapter:
                 "level_of_biological_organization": "organ",
                 "organ_context": ["UBERON:0002107"],
                 "cell_type_context": [],
+                "references": [],
             },
         }
         return records[ke_id]
@@ -102,6 +111,7 @@ class StubWikiAdapter:
                 "biological_plausibility": "Strong mechanistic rationale.",
                 "empirical_support": "Moderate support from dose-response studies.",
                 "quantitative_understanding": "Moderate quantitative support.",
+                "references": [{"label": "KER ref", "identifier": "10.1000/ker-10", "source": "doi"}],
             },
             "KER:11": {
                 "id": "KER:11",
@@ -111,6 +121,7 @@ class StubWikiAdapter:
                 "biological_plausibility": "Strong support.",
                 "empirical_support": "Strong support.",
                 "quantitative_understanding": None,
+                "references": [],
             },
             "KER:12": {
                 "id": "KER:12",
@@ -120,6 +131,7 @@ class StubWikiAdapter:
                 "biological_plausibility": "Moderate support.",
                 "empirical_support": "Moderate support.",
                 "quantitative_understanding": "Low support.",
+                "references": [],
             },
         }
         return records[ker_id]
@@ -128,6 +140,19 @@ class StubWikiAdapter:
         assert aop_id == "AOP:232"
         assert limit == 5
         return [{"id": "AOP:517", "title": "Related", "shared_key_event_count": 3, "shared_ker_count": 1, "total_shared_elements": 4}]
+
+
+class StubDbAdapter:
+    async def list_stressor_chemicals_for_aop(self, aop_id: str):
+        assert aop_id == "AOP:232"
+        return [
+            {
+                "stressor_id": "https://identifiers.org/aop.stressor/1",
+                "label": "Perfluorooctanesulfonic acid",
+                "chemical_iri": "https://identifiers.org/cas/1763-23-1",
+                "casrn": "1763-23-1",
+            }
+        ]
 
 
 @pytest.mark.asyncio
@@ -165,6 +190,91 @@ async def test_get_related_aops_tool_wraps_source_aop(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_aop_tool_returns_oecd_phase1_fields(monkeypatch) -> None:
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubDbAdapter())
+
+    result = await aop_tools.get_aop(
+        aop_tools.GetAopInput(aop_id="AOP:232")
+    )
+
+    validate_payload(result, namespace="read", name="get_aop.response.schema")
+    assert result["id"] == "AOP:232"
+    assert result["molecular_initiating_events"][0]["id"] == "KE:1"
+    assert result["adverse_outcomes"][0]["id"] == "KE:3"
+    assert result["overall_applicability"]["basis"].startswith("Not yet exposed")
+    assert result["stressors"][0]["label"] == "Perfluorooctanesulfonic acid"
+    assert result["references"][0]["identifier"] == "10.1000/core-aop"
+    assert result["references"][1]["identifier"] == "PMID:123456"
+
+
+@pytest.mark.asyncio
+async def test_get_key_event_tool_returns_normalized_oecd_objects(monkeypatch) -> None:
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
+
+    result = await aop_tools.get_key_event(
+        aop_tools.GetKeyEventInput(key_event_id="KE:1")
+    )
+
+    validate_payload(result, namespace="read", name="get_key_event.response.schema")
+    assert result["event_components"]["action"] is None
+    assert result["biological_context"]["organs"][0]["term"]["id"] == "UBERON:0002107"
+    assert result["applicability"]["taxa"][0]["term"]["id"] == "NCBITaxon:9606"
+    assert result["measurement_method_details"][0]["label"] == "Reporter assay"
+    assert result["references"][0]["identifier"] == "10.1000/ke-1"
+
+
+@pytest.mark.asyncio
+async def test_get_ker_tool_returns_evidence_blocks(monkeypatch) -> None:
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
+
+    result = await aop_tools.get_ker(
+        aop_tools.GetKerInput(ker_id="KER:10")
+    )
+
+    validate_payload(result, namespace="read", name="get_ker.response.schema")
+    assert result["evidence_blocks"]["biological_plausibility"]["heuristic_call"] == "strong"
+    assert result["evidence_blocks"]["empirical_support"]["heuristic_call"] == "moderate"
+    assert result["applicability"]["taxa"] == []
+    assert result["references"][0]["identifier"] == "10.1000/ker-10"
+
+
+@pytest.mark.asyncio
+async def test_get_key_event_infers_action_and_title_object_terms(monkeypatch) -> None:
+    class TitleDerivedWikiAdapter:
+        async def get_key_event(self, ke_id: str):
+            assert ke_id == "KE:239"
+            return {
+                "id": "KE:239",
+                "title": "Activation, Pregnane-X receptor, NR1I2",
+                "short_name": "PXR activation",
+                "description": "Pregnane X receptor activation event.",
+                "measurement_methods": ["Reporter assay"],
+                "taxonomic_applicability": ["NCBITaxon:9606"],
+                "sex_applicability": None,
+                "life_stage_applicability": None,
+                "level_of_biological_organization": "molecular",
+                "organ_context": [],
+                "cell_type_context": [],
+                "gene_identifiers": [],
+                "protein_identifiers": [],
+                "biological_processes": [],
+                "part_of_aops": [],
+                "references": [],
+            }
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: TitleDerivedWikiAdapter())
+
+    result = await aop_tools.get_key_event(
+        aop_tools.GetKeyEventInput(key_event_id="KE:239")
+    )
+
+    assert result["event_components"]["action"]["label"] == "activation"
+    labels = [item["label"] for item in result["event_components"]["biological_objects"]]
+    assert "Pregnane-X receptor" in labels
+
+
+@pytest.mark.asyncio
 async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monkeypatch) -> None:
     monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
 
@@ -172,6 +282,7 @@ async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monk
         aop_tools.AssessAopConfidenceInput(aop_id="AOP:232")
     )
 
+    validate_payload(result, namespace="read", name="assess_aop_confidence.response.schema")
     assert result["aop"]["id"] == "AOP:232"
     assert result["coverage"]["key_event_count"] == 3
     assert result["coverage"]["kers_with_quantitative_understanding"] == 2
@@ -181,6 +292,7 @@ async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monk
     assert "overall_aop_evidence" not in result["confidence_dimensions"]
     assert result["supplemental_signals"]["aop_level_evidence_signal"]["heuristic_call"] == "moderate"
     assert result["oecd_alignment"]["status"] == "partial"
+    assert result["overall_call"] == "moderate"
     assert result["heuristic_overall_call"] == "moderate"
     assert any("essentiality" in item.lower() for item in result["limitations"])
     assert result["applicability_summary"]["taxonomic_applicability"] == ["NCBITaxon:9606"]

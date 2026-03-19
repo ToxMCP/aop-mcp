@@ -168,6 +168,88 @@ def _append_unique(values: list[str], value: str | None) -> None:
         values.append(value)
 
 
+def _append_unique_reference(values: list[dict[str, str | None]], reference: dict[str, str | None] | None) -> None:
+    if not reference:
+        return
+    dedupe_key = (reference.get("identifier"), reference.get("label"), reference.get("source"))
+    if any((item.get("identifier"), item.get("label"), item.get("source")) == dedupe_key for item in values):
+        return
+    values.append(reference)
+
+
+def _identifier_from_reference_uri(value: str | None) -> tuple[str | None, str | None]:
+    if not value:
+        return None, None
+    normalized = value.strip()
+    doi_prefixes = (
+        "https://doi.org/",
+        "http://doi.org/",
+        "https://dx.doi.org/",
+        "http://dx.doi.org/",
+        "https://identifiers.org/doi/",
+        "http://identifiers.org/doi/",
+    )
+    for prefix in doi_prefixes:
+        if normalized.lower().startswith(prefix.lower()):
+            return normalized[len(prefix):].rstrip(".,;)"), "doi"
+
+    pmid_patterns = [
+        (r"https?://pubmed\.ncbi\.nlm\.nih\.gov/(\d+)/?", "pmid"),
+        (r"https?://identifiers\.org/pubmed/(\d+)", "pmid"),
+        (r"https?://identifiers\.org/pmid/(\d+)", "pmid"),
+    ]
+    for pattern, source in pmid_patterns:
+        match = re.match(pattern, normalized, re.IGNORECASE)
+        if match:
+            return f"PMID:{match.group(1)}", source
+
+    if normalized.startswith(("http://", "https://")):
+        return normalized, "uri"
+    return normalized, "text"
+
+
+def _normalize_reference_record(
+    *,
+    reference: str | None = None,
+    label: str | None = None,
+    citation_text: str | None = None,
+) -> dict[str, str | None] | None:
+    normalized_citation = _normalize_text(citation_text)
+    normalized_reference = _normalize_text(reference)
+    normalized_label = _normalize_text(label)
+
+    if normalized_reference:
+        identifier, source = _identifier_from_reference_uri(normalized_reference)
+        return {
+            "label": normalized_label or normalized_reference,
+            "identifier": identifier,
+            "source": source,
+        }
+
+    if normalized_citation:
+        doi_match = re.search(r"\b10\.\S+\b", normalized_citation, re.IGNORECASE)
+        pmid_match = re.search(r"\bPMID[:\s]+(\d+)\b", normalized_citation, re.IGNORECASE)
+        if doi_match:
+            return {
+                "label": normalized_citation,
+                "identifier": doi_match.group(0).rstrip(".,;)"),
+                "source": "doi",
+            }
+        if pmid_match:
+            return {
+                "label": normalized_citation,
+                "identifier": f"PMID:{pmid_match.group(1)}",
+                "source": "pmid",
+            }
+        return {
+            "label": normalized_citation,
+            "identifier": None,
+            "source": "citation_text",
+        }
+
+    return None
+
+
 def _coalesce(record: dict[str, Any], key: str, value: str | None) -> None:
     if value is not None and record.get(key) is None:
         record[key] = value
@@ -235,6 +317,17 @@ class AOPWikiAdapter:
             "short_name": _binding_value(row, "shortName"),
             "status": _binding_value(row, "status"),
             "abstract": _binding_value(row, "abstract"),
+            "references": [
+                ref
+                for ref in (
+                    _normalize_reference_record(
+                        reference=_binding_value(row, "reference"),
+                        label=_binding_value(row, "referenceLabel"),
+                        citation_text=_binding_value(row, "referenceText"),
+                    ),
+                )
+                if ref
+            ],
         }
 
     async def get_aop_assessment(self, aop_id: str) -> dict[str, Any]:
@@ -257,6 +350,7 @@ class AOPWikiAdapter:
             "modified": None,
             "molecular_initiating_events": [],
             "adverse_outcomes": [],
+            "references": [],
         }
         seen_mies: set[str] = set()
         seen_aos: set[str] = set()
@@ -291,6 +385,15 @@ class AOPWikiAdapter:
                         "title": _normalize_text(_binding_value(row, "aoTitle")),
                     }
                 )
+
+            _append_unique_reference(
+                record["references"],
+                _normalize_reference_record(
+                    reference=_binding_value(row, "reference"),
+                    label=_binding_value(row, "referenceLabel"),
+                    citation_text=_binding_value(row, "referenceText"),
+                ),
+            )
 
         return record
 
@@ -340,6 +443,7 @@ class AOPWikiAdapter:
             "cell_type_context": [],
             "organ_context": [],
             "part_of_aops": [],
+            "references": [],
         }
         seen_aops: set[str] = set()
 
@@ -400,6 +504,15 @@ class AOPWikiAdapter:
                     }
                 )
 
+            _append_unique_reference(
+                record["references"],
+                _normalize_reference_record(
+                    reference=_binding_value(row, "reference"),
+                    label=_binding_value(row, "referenceLabel"),
+                    citation_text=_binding_value(row, "referenceText"),
+                ),
+            )
+
         record["shared_aop_count"] = len(record["part_of_aops"])
         return record
 
@@ -449,6 +562,7 @@ class AOPWikiAdapter:
             "referenced_aops": [],
             "upstream": {"id": None, "iri": None, "title": None},
             "downstream": {"id": None, "iri": None, "title": None},
+            "references": [],
         }
         seen_aops: set[str] = set()
 
@@ -499,6 +613,15 @@ class AOPWikiAdapter:
                         "title": _normalize_text(_binding_value(row, "aopTitle")),
                     }
                 )
+
+            _append_unique_reference(
+                record["references"],
+                _normalize_reference_record(
+                    reference=_binding_value(row, "reference"),
+                    label=_binding_value(row, "referenceLabel"),
+                    citation_text=_binding_value(row, "referenceText"),
+                ),
+            )
 
         if record["title"] is None:
             upstream_title = record["upstream"].get("title")

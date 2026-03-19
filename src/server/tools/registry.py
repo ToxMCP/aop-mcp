@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict
 from pydantic import BaseModel
 
 from src.server.mcp.protocol import ToolDescription
+from src.tools import load_schema
 
 
 class RegisteredTool:
@@ -76,6 +77,10 @@ class ToolRegistry:
 
 tool_registry = ToolRegistry()
 
+
+def _schema(namespace: str, name: str) -> dict[str, Any]:
+    return load_schema(namespace, name)
+
 # Register AOP tools
 from src.server.tools import aop  # noqa: E402  pylint: disable=wrong-import-position
 
@@ -85,18 +90,21 @@ tool_registry.register(
     description="Search Adverse Outcome Pathways by text query.",
     handler=aop.search_aops,
     input_model=aop.SearchAopsInput,
+    output_schema=_schema("read", "search_aops.response.schema"),
 )
 tool_registry.register(
     name="get_aop",
     description="Fetch a single AOP with metadata.",
     handler=aop.get_aop,
     input_model=aop.GetAopInput,
+    output_schema=_schema("read", "get_aop.response.schema"),
 )
 tool_registry.register(
     name="get_key_event",
     description="Fetch a single key event with OECD-style metadata fields.",
     handler=aop.get_key_event,
     input_model=aop.GetKeyEventInput,
+    output_schema=_schema("read", "get_key_event.response.schema"),
 )
 
 tool_registry.register(
@@ -104,6 +112,7 @@ tool_registry.register(
     description="List key events for an AOP.",
     handler=aop.list_key_events,
     input_model=aop.ListKeyEventsInput,
+    output_schema=_schema("read", "list_key_events.response.schema"),
 )
 
 tool_registry.register(
@@ -111,12 +120,14 @@ tool_registry.register(
     description="List key event relationships for an AOP.",
     handler=aop.list_kers,
     input_model=aop.ListKersInput,
+    output_schema=_schema("read", "list_kers.response.schema"),
 )
 tool_registry.register(
     name="get_ker",
     description="Fetch a single key event relationship with plausibility, evidence, and quantitative-support text.",
     handler=aop.get_ker,
     input_model=aop.GetKerInput,
+    output_schema=_schema("read", "get_ker.response.schema"),
 )
 tool_registry.register(
     name="get_related_aops",
@@ -129,6 +140,7 @@ tool_registry.register(
     description="Build an OECD-style heuristic confidence summary for an AOP from AOP-, KE-, and KER-level evidence text.",
     handler=aop.assess_aop_confidence,
     input_model=aop.AssessAopConfidenceInput,
+    output_schema=_schema("read", "assess_aop_confidence.response.schema"),
 )
 tool_registry.register(
     name="find_paths_between_events",
