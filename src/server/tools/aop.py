@@ -97,7 +97,18 @@ class GetKerInput(BaseModel):
 
 async def get_ker(params: GetKerInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
-    record = _normalize_ker_record(await adapter.get_ker(params.ker_id))
+    raw_record = await adapter.get_ker(params.ker_id)
+    upstream_id = raw_record.get("upstream", {}).get("id")
+    downstream_id = raw_record.get("downstream", {}).get("id")
+    upstream_record, downstream_record = await asyncio.gather(
+        _get_key_event_if_available(adapter, upstream_id),
+        _get_key_event_if_available(adapter, downstream_id),
+    )
+    record = _normalize_ker_record(
+        raw_record,
+        upstream_record=upstream_record,
+        downstream_record=downstream_record,
+    )
     validate_payload(record, namespace="read", name="get_ker.response.schema")
     return record
 
@@ -136,6 +147,8 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
     coverage = _build_assessment_coverage(key_event_details, ker_details)
     applicability_summary = _build_applicability_summary(key_event_details)
     confidence_dimensions = _build_confidence_dimensions(
+        aop,
+        key_event_details,
         ker_details,
     )
     supplemental_signals = _build_supplemental_signals(
@@ -174,7 +187,10 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
             "ker_count": coverage["ker_count"],
         },
         "coverage": coverage,
-        "overall_applicability": _normalize_applicability_summary(applicability_summary),
+        "overall_applicability": _normalize_applicability_summary(
+            applicability_summary,
+            key_event_details=key_event_details,
+        ),
         "applicability_summary": applicability_summary,
         "biological_plausibility": confidence_dimensions["biological_plausibility"],
         "empirical_support": confidence_dimensions["empirical_support"],
@@ -1040,6 +1056,48 @@ def _build_applicability_term(
     }
 
 
+def _get_reference_count(references: list[dict[str, Any]] | None) -> int:
+    return len(references or [])
+
+
+def _build_direct_applicability_term(
+    value: str | None,
+    *,
+    source_field: str,
+    references: list[dict[str, Any]] | None,
+    source: str = "aop_wiki_rdf",
+    label: str | None = None,
+) -> dict[str, Any] | None:
+    reference_count = _get_reference_count(references)
+    evidence_call = "moderate" if reference_count else "low"
+    rationale = (
+        "Structured applicability term asserted in AOP-Wiki KE metadata and the KE exposes supporting references. "
+        "The current RDF export does not expose applicability-specific evidence strength separately."
+        if reference_count
+        else "Structured applicability term asserted in AOP-Wiki KE metadata, but the current RDF export does not expose applicability-specific evidence strength or supporting references."
+    )
+    term = _build_applicability_term(
+        value,
+        source_field=source_field,
+        source=source,
+        label=label,
+        evidence_call=evidence_call,
+        rationale=rationale,
+    )
+    if term is None:
+        return None
+    term["references"] = list(references or [])
+    term["provenance"].append(
+        _make_provenance(
+            source=source,
+            field=source_field,
+            transformation="phase3_direct_applicability_support_heuristic",
+            confidence="moderate" if reference_count else "low",
+        )
+    )
+    return term
+
+
 def _build_measurement_method_detail(
     label: str | None,
     *,
@@ -1083,6 +1141,188 @@ def _normalize_reference_records(references: list[dict[str, Any]] | None) -> lis
         seen.add(dedupe_key)
         normalized.append(record)
     return normalized
+
+
+def _extract_record_values(record: dict[str, Any] | None, field: str) -> list[str]:
+    if not record:
+        return []
+    value = record.get(field)
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value if item]
+    return [str(value)] if value else []
+
+
+def _build_summary_applicability_terms(
+    key_event_details: list[dict[str, Any]],
+    *,
+    field: str,
+    source_field: str,
+) -> list[dict[str, Any]]:
+    total = len(key_event_details)
+    if total == 0:
+        return []
+
+    ordered_values: list[str] = []
+    seen_values: set[str] = set()
+    for record in key_event_details:
+        for value in _extract_record_values(record, field):
+            if value not in seen_values:
+                seen_values.add(value)
+                ordered_values.append(value)
+
+    results: list[dict[str, Any]] = []
+    for value in ordered_values:
+        supporting_records = [
+            record for record in key_event_details if value in _extract_record_values(record, field)
+        ]
+        supporting_reference_records = _normalize_reference_records(
+            [
+                reference
+                for record in supporting_records
+                for reference in record.get("references", [])
+            ]
+        )
+        support_count = len(supporting_records)
+        referenced_support_count = sum(
+            1 for record in supporting_records if _get_reference_count(record.get("references")) > 0
+        )
+        support_ratio = support_count / total
+        if support_count == total and referenced_support_count >= max(1, min(total, 2)):
+            evidence_call = "high"
+        elif support_ratio >= 0.5 or referenced_support_count > 0:
+            evidence_call = "moderate"
+        else:
+            evidence_call = "low"
+        rationale = (
+            f"Derived from {support_count}/{total} key events; {referenced_support_count} supporting key events expose references. "
+            "This is a consistency-based heuristic because the current RDF export does not expose a dedicated applicability strength field."
+        )
+        term = _build_applicability_term(
+            value,
+            source_field=source_field,
+            source="derived_from_ke_metadata",
+            evidence_call=evidence_call,
+            rationale=rationale,
+        )
+        if term is None:
+            continue
+        term["references"] = supporting_reference_records
+        term["provenance"].append(
+            _make_provenance(
+                source="derived_from_ke_metadata",
+                field=source_field,
+                transformation="phase3_summary_applicability_consistency_heuristic",
+                confidence="moderate" if evidence_call in {"high", "moderate"} else "low",
+            )
+        )
+        results.append(term)
+    return results
+
+
+def _build_shared_ker_applicability_terms(
+    upstream_record: dict[str, Any] | None,
+    downstream_record: dict[str, Any] | None,
+    *,
+    field: str,
+    source_field: str,
+) -> list[dict[str, Any]]:
+    if not upstream_record or not downstream_record:
+        return []
+
+    upstream_values = _extract_record_values(upstream_record, field)
+    downstream_values = set(_extract_record_values(downstream_record, field))
+    shared_values = [value for value in upstream_values if value in downstream_values]
+    supporting_references = _normalize_reference_records(
+        [
+            *(upstream_record.get("references", []) or []),
+            *(downstream_record.get("references", []) or []),
+        ]
+    )
+    reference_count = _get_reference_count(supporting_references)
+    results: list[dict[str, Any]] = []
+    for value in shared_values:
+        evidence_call = "moderate" if reference_count else "low"
+        rationale = (
+            "Derived from applicability terms shared by both upstream and downstream key events, with supporting references carried forward from the linked key events."
+            if reference_count
+            else "Derived from applicability terms shared by both upstream and downstream key events. The current RDF export does not expose direct KER-level applicability evidence strength."
+        )
+        term = _build_applicability_term(
+            value,
+            source_field=source_field,
+            source="derived_from_shared_ke_metadata",
+            evidence_call=evidence_call,
+            rationale=rationale,
+        )
+        if term is None:
+            continue
+        term["references"] = supporting_references
+        term["provenance"].append(
+            _make_provenance(
+                source="derived_from_shared_ke_metadata",
+                field=source_field,
+                transformation="phase3_ker_applicability_intersection",
+                confidence="moderate" if reference_count else "low",
+            )
+        )
+        results.append(term)
+    return results
+
+
+def _derive_ker_applicability(
+    upstream_record: dict[str, Any] | None,
+    downstream_record: dict[str, Any] | None,
+) -> dict[str, Any]:
+    taxa = _build_shared_ker_applicability_terms(
+        upstream_record,
+        downstream_record,
+        field="taxonomic_applicability",
+        source_field="taxonomic_applicability",
+    )
+    life_stages = _build_shared_ker_applicability_terms(
+        upstream_record,
+        downstream_record,
+        field="life_stage_applicability",
+        source_field="life_stage_applicability",
+    )
+    sexes = _build_shared_ker_applicability_terms(
+        upstream_record,
+        downstream_record,
+        field="sex_applicability",
+        source_field="sex_applicability",
+    )
+
+    if upstream_record and downstream_record:
+        summary_rationale = (
+            "Derived conservatively from applicability terms shared by both upstream and downstream key events because direct KER-level applicability fields are not exposed in the current RDF export."
+            if (taxa or life_stages or sexes)
+            else "No shared upstream/downstream applicability terms were available to derive a conservative KER-level applicability summary."
+        )
+        transformation = "phase3_ker_applicability_intersection"
+        confidence = "moderate" if (taxa or life_stages or sexes) else "low"
+    else:
+        summary_rationale = (
+            "Upstream or downstream key event applicability metadata was unavailable, so no KER-level applicability intersection could be derived."
+        )
+        transformation = "phase3_ker_applicability_unavailable"
+        confidence = "low"
+
+    return {
+        "taxa": taxa,
+        "life_stages": life_stages,
+        "sexes": sexes,
+        "summary_rationale": summary_rationale,
+        "provenance": [
+            _make_provenance(
+                source="derived_from_shared_ke_metadata",
+                field="applicability",
+                transformation=transformation,
+                confidence=confidence,
+            )
+        ],
+    }
 
 
 def _build_stressor_term(stressor: dict[str, Any]) -> dict[str, Any]:
@@ -1234,49 +1474,46 @@ def _build_evidence_block(
     }
 
 
-def _normalize_applicability_summary(summary: dict[str, Any]) -> dict[str, Any]:
+def _normalize_applicability_summary(
+    summary: dict[str, Any],
+    *,
+    key_event_details: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    key_event_details = key_event_details or []
+    total = len(key_event_details)
+    summary_rationale = (
+        f"Aggregated from {total} key events because dedicated AOP-level applicability is not consistently exposed in the current RDF export. "
+        "Evidence calls reflect cross-KE consistency and supporting references rather than a direct AOP-level applicability strength field."
+        if total
+        else None
+    )
     return {
         "basis": summary.get("basis"),
-        "taxa": [
-            item
-            for item in (
-                _build_applicability_term(value, source_field="taxonomic_applicability")
-                for value in summary.get("taxonomic_applicability", [])
-            )
-            if item
-        ],
-        "life_stages": [
-            item
-            for item in (
-                _build_applicability_term(value, source_field="life_stage_applicability")
-                for value in summary.get("life_stage_applicability", [])
-            )
-            if item
-        ],
-        "sexes": [
-            item
-            for item in (
-                _build_applicability_term(value, source_field="sex_applicability")
-                for value in summary.get("sex_applicability", [])
-            )
-            if item
-        ],
-        "organs": [
-            item
-            for item in (
-                _build_applicability_term(value, source_field="organ_context")
-                for value in summary.get("organ_context", [])
-            )
-            if item
-        ],
-        "cell_types": [
-            item
-            for item in (
-                _build_applicability_term(value, source_field="cell_type_context")
-                for value in summary.get("cell_type_context", [])
-            )
-            if item
-        ],
+        "taxa": _build_summary_applicability_terms(
+            key_event_details,
+            field="taxonomic_applicability",
+            source_field="taxonomic_applicability",
+        ),
+        "life_stages": _build_summary_applicability_terms(
+            key_event_details,
+            field="life_stage_applicability",
+            source_field="life_stage_applicability",
+        ),
+        "sexes": _build_summary_applicability_terms(
+            key_event_details,
+            field="sex_applicability",
+            source_field="sex_applicability",
+        ),
+        "organs": _build_summary_applicability_terms(
+            key_event_details,
+            field="organ_context",
+            source_field="organ_context",
+        ),
+        "cell_types": _build_summary_applicability_terms(
+            key_event_details,
+            field="cell_type_context",
+            source_field="cell_type_context",
+        ),
         "levels_of_biological_organization": [
             item
             for item in (
@@ -1289,12 +1526,12 @@ def _normalize_applicability_summary(summary: dict[str, Any]) -> dict[str, Any]:
             )
             if item
         ],
-        "summary_rationale": None,
+        "summary_rationale": summary_rationale,
         "provenance": [
             _make_provenance(
                 source="derived_from_ke_metadata",
                 field="applicability_summary",
-                transformation="phase1_oecd_applicability_summary",
+                transformation="phase3_oecd_applicability_summary",
                 confidence="moderate",
             )
         ],
@@ -1303,6 +1540,7 @@ def _normalize_applicability_summary(summary: dict[str, Any]) -> dict[str, Any]:
 
 def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(record)
+    normalized_references = _normalize_reference_records(record.get("references"))
     normalized["iri"] = record.get("iri") or _default_iri_for_identifier(record.get("id"))
     normalized["part_of_aops"] = [
         _normalize_link_record(item) for item in record.get("part_of_aops", [])
@@ -1349,7 +1587,11 @@ def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
         "organs": [
             item
             for item in (
-                _build_applicability_term(value, source_field="organ_context")
+                _build_direct_applicability_term(
+                    value,
+                    source_field="organ_context",
+                    references=normalized_references,
+                )
                 for value in record.get("organ_context", [])
             )
             if item
@@ -1357,7 +1599,11 @@ def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
         "cell_types": [
             item
             for item in (
-                _build_applicability_term(value, source_field="cell_type_context")
+                _build_direct_applicability_term(
+                    value,
+                    source_field="cell_type_context",
+                    references=normalized_references,
+                )
                 for value in record.get("cell_type_context", [])
             )
             if item
@@ -1372,7 +1618,11 @@ def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
         "taxa": [
             item
             for item in (
-                _build_applicability_term(value, source_field="taxonomic_applicability")
+                _build_direct_applicability_term(
+                    value,
+                    source_field="taxonomic_applicability",
+                    references=normalized_references,
+                )
                 for value in record.get("taxonomic_applicability", [])
             )
             if item
@@ -1380,7 +1630,11 @@ def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
         "life_stages": [
             item
             for item in (
-                _build_applicability_term(value, source_field="life_stage_applicability")
+                _build_direct_applicability_term(
+                    value,
+                    source_field="life_stage_applicability",
+                    references=normalized_references,
+                )
                 for value in [record.get("life_stage_applicability")]
             )
             if item
@@ -1388,17 +1642,30 @@ def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
         "sexes": [
             item
             for item in (
-                _build_applicability_term(value, source_field="sex_applicability")
+                _build_direct_applicability_term(
+                    value,
+                    source_field="sex_applicability",
+                    references=normalized_references,
+                )
                 for value in [record.get("sex_applicability")]
             )
             if item
         ],
-        "summary_rationale": None,
+        "summary_rationale": (
+            "Structured applicability terms were taken directly from KE metadata. "
+            "Evidence calls reflect source presence and KE-level references rather than a direct OECD applicability strength field."
+            if (
+                record.get("taxonomic_applicability")
+                or record.get("life_stage_applicability")
+                or record.get("sex_applicability")
+            )
+            else None
+        ),
         "provenance": [
             _make_provenance(
                 source="aop_wiki_rdf",
                 field="applicability",
-                transformation="phase1_oecd_alignment_normalization",
+                transformation="phase3_oecd_alignment_normalization",
                 confidence="moderate",
             )
         ],
@@ -1413,40 +1680,33 @@ def _normalize_key_event_record(record: dict[str, Any]) -> dict[str, Any]:
     ]
     normalized["mie_specific"] = None
     normalized["ao_specific"] = None
-    normalized["references"] = _normalize_reference_records(record.get("references"))
+    normalized["references"] = normalized_references
     normalized["provenance"] = [
         _make_provenance(
             source="aop_wiki_rdf",
             field="get_key_event",
-            transformation="phase1_oecd_alignment_normalization",
+            transformation="phase3_oecd_alignment_normalization",
             confidence="moderate",
         )
     ]
     return normalized
 
 
-def _normalize_ker_record(record: dict[str, Any]) -> dict[str, Any]:
+def _normalize_ker_record(
+    record: dict[str, Any],
+    *,
+    upstream_record: dict[str, Any] | None = None,
+    downstream_record: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     normalized = dict(record)
+    normalized_references = _normalize_reference_records(record.get("references"))
     normalized["iri"] = record.get("iri") or _default_iri_for_identifier(record.get("id"))
     normalized["upstream"] = _normalize_link_record(record.get("upstream", {}))
     normalized["downstream"] = _normalize_link_record(record.get("downstream", {}))
     normalized["referenced_aops"] = [
         _normalize_link_record(item) for item in record.get("referenced_aops", [])
     ]
-    normalized["applicability"] = {
-        "taxa": [],
-        "life_stages": [],
-        "sexes": [],
-        "summary_rationale": None,
-        "provenance": [
-            _make_provenance(
-                source="aop_wiki_rdf",
-                field="applicability",
-                transformation="not_available_in_current_rdf_export",
-                confidence="low",
-            )
-        ],
-    }
+    normalized["applicability"] = _derive_ker_applicability(upstream_record, downstream_record)
     normalized["evidence_blocks"] = {
         "biological_plausibility": _build_evidence_block(
             record.get("biological_plausibility"),
@@ -1464,12 +1724,12 @@ def _normalize_ker_record(record: dict[str, Any]) -> dict[str, Any]:
             basis="Normalized from KER quantitative understanding text.",
         ),
     }
-    normalized["references"] = _normalize_reference_records(record.get("references"))
+    normalized["references"] = normalized_references
     normalized["provenance"] = [
         _make_provenance(
             source="aop_wiki_rdf",
             field="get_ker",
-            transformation="phase1_oecd_alignment_normalization",
+            transformation="phase3_oecd_alignment_normalization",
             confidence="moderate",
         )
     ]
@@ -1611,6 +1871,8 @@ def _build_applicability_summary(key_event_details: list[dict[str, Any]]) -> dic
 
 
 def _build_confidence_dimensions(
+    aop: dict[str, Any],
+    key_event_details: list[dict[str, Any]],
     ker_details: list[dict[str, Any]],
 ) -> dict[str, Any]:
     total = len(ker_details)
@@ -1649,12 +1911,11 @@ def _build_confidence_dimensions(
             "basis": "Aggregated from KER quantitative understanding text.",
             "oecd_dimension": True,
         },
-        "essentiality_of_key_events": {
-            "heuristic_call": "not_assessed",
-            "coverage": {"present": 0, "total": total},
-            "basis": "Key-event essentiality is not directly surfaced in the current RDF export, so this tool does not assign an essentiality score.",
-            "oecd_dimension": True,
-        },
+        "essentiality_of_key_events": _build_essentiality_dimension(
+            aop,
+            key_event_details,
+            ker_details,
+        ),
     }
 
 
@@ -1709,9 +1970,16 @@ def _build_assessment_limitations(
     applicability_summary: dict[str, Any],
     supplemental_signals: dict[str, Any],
 ) -> list[str]:
-    limitations = [
-        "Key-event essentiality is not directly surfaced in the current RDF export, so this assessment does not assign an OECD essentiality score.",
-    ]
+    essentiality_call = confidence_dimensions["essentiality_of_key_events"]["heuristic_call"]
+    limitations = []
+    if essentiality_call == "not_assessed":
+        limitations.append(
+            "Key-event essentiality is not directly surfaced in the current RDF export, and no bounded heuristic cue was available to score it."
+        )
+    else:
+        limitations.append(
+            "Key-event essentiality is inferred heuristically from free-text cues and pathway structure because a dedicated RDF essentiality field is not currently exposed."
+        )
     if supplemental_signals["aop_level_evidence_signal"]["heuristic_call"] == "not_reported":
         limitations.append(
             "No supplemental AOP-level evidence text was available, so the assessment relies on the OECD core dimensions that are exposed in KE/KER metadata."
@@ -1735,15 +2003,223 @@ def _build_oecd_alignment_summary(confidence_dimensions: dict[str, Any]) -> dict
     missing_dimensions = [
         dimension_name
         for dimension_name, dimension in confidence_dimensions.items()
-        if dimension.get("heuristic_call") == "not_assessed"
+        if dimension.get("heuristic_call") in {"not_assessed", "not_reported"}
     ]
     return {
-        "status": "partial" if missing_dimensions else "core_dimensions_available",
+        "status": "partial",
         "core_dimensions": list(confidence_dimensions.keys()),
         "missing_dimensions": missing_dimensions,
         "notes": [
             "Overall OECD confidence is defined by biological plausibility, empirical support, quantitative understanding, and KE essentiality.",
-            "This tool currently approximates the first three dimensions from KER text and reports KE essentiality as unavailable when the RDF export does not expose it.",
+            "This tool approximates biological plausibility, empirical support, and quantitative understanding from KER text.",
+            "KE essentiality is only reported directly when bounded textual or pathway heuristics are available; the current RDF export does not expose a dedicated structured essentiality field.",
+        ],
+    }
+
+
+async def _get_key_event_if_available(adapter: Any, key_event_id: str | None) -> dict[str, Any] | None:
+    if not key_event_id:
+        return None
+    return await adapter.get_key_event(key_event_id)
+
+
+def _enumerate_mie_to_ao_paths(
+    mie_ids: list[str],
+    ao_ids: list[str],
+    ker_details: list[dict[str, Any]],
+    *,
+    max_paths: int = 64,
+) -> list[list[str]]:
+    target_ids = set(ao_ids)
+    adjacency: dict[str, list[str]] = {}
+    event_ids: set[str] = set()
+    for record in ker_details:
+        upstream_id = record.get("upstream", {}).get("id")
+        downstream_id = record.get("downstream", {}).get("id")
+        if not upstream_id or not downstream_id:
+            continue
+        adjacency.setdefault(upstream_id, []).append(downstream_id)
+        event_ids.add(upstream_id)
+        event_ids.add(downstream_id)
+
+    max_depth = max(1, len(event_ids) + 1)
+    paths: list[list[str]] = []
+
+    def dfs(current_id: str, visited: set[str], path: list[str]) -> None:
+        if len(paths) >= max_paths or len(path) > max_depth:
+            return
+        if current_id in target_ids:
+            paths.append(list(path))
+            return
+        for next_id in adjacency.get(current_id, []):
+            if next_id in visited:
+                continue
+            visited.add(next_id)
+            path.append(next_id)
+            dfs(next_id, visited, path)
+            path.pop()
+            visited.remove(next_id)
+
+    for mie_id in mie_ids:
+        dfs(mie_id, {mie_id}, [mie_id])
+        if len(paths) >= max_paths:
+            break
+    return paths
+
+
+def _extract_essentiality_text_signal(texts: list[str | None]) -> tuple[str, int]:
+    strong_hits = 0
+    moderate_hits = 0
+    for text in texts:
+        if not text:
+            continue
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+", text.lower()):
+            normalized = sentence.strip()
+            if not normalized:
+                continue
+            if re.search(r"\bkey event essentiality\b", normalized):
+                strong_hits += 1
+                continue
+            if re.search(
+                r"\b(essential|necessary|required)\s+for\b.{0,80}\b(downstream|adverse outcome|response|effect|outcome|phenotype|steatosis|accumulation)\b",
+                normalized,
+            ):
+                strong_hits += 1
+                continue
+            if (
+                re.search(
+                    r"\b(abolish|abrogate|prevent|block|eliminate)\w*\b.{0,30}\b(downstream|adverse outcome|response|effect|outcome|phenotype|steatosis|accumulation)\b",
+                    normalized,
+                )
+                or re.search(
+                    r"\b(downstream|adverse outcome|response|effect|outcome|phenotype|steatosis|accumulation)\b.{0,30}\b(abolish|abrogate|prevent|block|eliminate)\w*\b",
+                    normalized,
+                )
+            ):
+                strong_hits += 1
+                continue
+            if (
+                re.search(
+                    r"\b(attenuat|reduc|partial)\w*\b.{0,20}\b(downstream|adverse outcome|response|effect|outcome|phenotype|steatosis|accumulation)\b",
+                    normalized,
+                )
+                or re.search(
+                    r"\b(downstream|adverse outcome|response|effect|outcome|phenotype|steatosis|accumulation)\b.{0,20}\b(attenuat|reduc|partial)\w*\b",
+                    normalized,
+                )
+                or "supports essentiality" in normalized
+            ):
+                moderate_hits += 1
+    if strong_hits:
+        return "strong", strong_hits
+    if moderate_hits:
+        return "moderate", moderate_hits
+    return "not_reported", 0
+
+
+def _build_essentiality_dimension(
+    aop: dict[str, Any],
+    key_event_details: list[dict[str, Any]],
+    ker_details: list[dict[str, Any]],
+) -> dict[str, Any]:
+    mie_ids = [
+        item.get("id")
+        for item in aop.get("molecular_initiating_events", [])
+        if item.get("id")
+    ]
+    ao_ids = [
+        item.get("id")
+        for item in aop.get("adverse_outcomes", [])
+        if item.get("id")
+    ]
+    if not mie_ids or not ao_ids:
+        return {
+            "heuristic_call": "not_assessed",
+            "coverage": {"present": 0, "total": len(key_event_details)},
+            "basis": "MIE or AO anchors were unavailable, so no bounded KE-essentiality heuristic could be derived from pathway structure.",
+            "oecd_dimension": True,
+            "provenance": [
+                _make_provenance(
+                    source="derived_from_aop_structure",
+                    field="essentiality_of_key_events",
+                    transformation="phase3_essentiality_unavailable",
+                    confidence="low",
+                )
+            ],
+        }
+
+    paths = _enumerate_mie_to_ao_paths(mie_ids, ao_ids, ker_details)
+    all_path_nodes = [
+        {
+            node
+            for node in path[1:-1]
+            if node not in set(mie_ids) and node not in set(ao_ids)
+        }
+        for path in paths
+    ]
+    shared_internal_key_events = (
+        sorted(set.intersection(*all_path_nodes)) if all_path_nodes else []
+    )
+    text_signal, cue_count = _extract_essentiality_text_signal(
+        [
+            aop.get("evidence_summary"),
+            *(record.get("biological_plausibility") for record in ker_details),
+            *(record.get("empirical_support") for record in ker_details),
+            *(record.get("quantitative_understanding") for record in ker_details),
+        ]
+    )
+
+    if text_signal == "strong" and paths:
+        heuristic_call = "moderate"
+        basis = (
+            f"Derived heuristically from {cue_count} essentiality-like text cue(s) plus {len(paths)} observed MIE-to-AO path(s). "
+            "The current RDF export does not expose a dedicated KE-essentiality field, so this remains a conservative heuristic."
+        )
+        confidence = "moderate"
+    elif text_signal == "moderate" and paths:
+        heuristic_call = "low"
+        basis = (
+            f"Derived heuristically from {cue_count} moderate essentiality-like text cue(s) across {len(paths)} observed MIE-to-AO path(s). "
+            "This is weaker than a direct OECD essentiality assessment."
+        )
+        confidence = "low"
+    elif shared_internal_key_events:
+        heuristic_call = "not_assessed"
+        basis = (
+            f"No explicit essentiality wording was surfaced, although {len(shared_internal_key_events)} internal key event(s) lie on every observed MIE-to-AO path. "
+            "Path structure alone is retained as context but is not sufficient to assign an OECD-style essentiality score."
+        )
+        confidence = "low"
+    else:
+        heuristic_call = "not_assessed"
+        basis = (
+            "Key-event essentiality is not directly surfaced in the current RDF export, and no bounded combination of text evidence plus path support was available to score it."
+        )
+        confidence = "low"
+
+    return {
+        "heuristic_call": heuristic_call,
+        "coverage": {
+            "present": cue_count if cue_count else len(shared_internal_key_events),
+            "total": len(key_event_details),
+        },
+        "basis": basis,
+        "oecd_dimension": True,
+        "heuristic_inputs": {
+            "text_signal": text_signal,
+            "cue_count": cue_count,
+            "path_count": len(paths),
+            "shared_internal_key_events": shared_internal_key_events,
+            "mie_count": len(mie_ids),
+            "ao_count": len(ao_ids),
+        },
+        "provenance": [
+            _make_provenance(
+                source="derived_from_aop_structure",
+                field="essentiality_of_key_events",
+                transformation="phase3_essentiality_text_and_path_heuristic",
+                confidence=confidence,
+            )
         ],
     }
 

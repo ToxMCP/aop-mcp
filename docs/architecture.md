@@ -177,8 +177,8 @@ This matters because live SPARQL and CompTox availability is variable. The contr
 
 ## Known architectural gaps
 
-- KE essentiality is still not sourced from live RDF, so OECD assessment remains partial
-- applicability evidence calls are scaffolded but mostly default to `not_reported`
+- KE essentiality is still not sourced from a dedicated live RDF field, so the OECD assessment only reports it when bounded text evidence and path support both exist; structure alone is retained as context rather than scored as essentiality
+- applicability evidence calls are now structured, but they remain heuristic because the RDF export does not expose explicit applicability-strength fields
 - graph/network representation is still distributed across tools rather than exposed as a first-class AOP graph object
 - performance for broad federated queries still depends heavily on upstream SPARQL behavior
 

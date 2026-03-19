@@ -219,7 +219,10 @@ async def test_get_key_event_tool_returns_normalized_oecd_objects(monkeypatch) -
     validate_payload(result, namespace="read", name="get_key_event.response.schema")
     assert result["event_components"]["action"] is None
     assert result["biological_context"]["organs"][0]["term"]["id"] == "UBERON:0002107"
+    assert result["biological_context"]["organs"][0]["evidence_call"] == "moderate"
     assert result["applicability"]["taxa"][0]["term"]["id"] == "NCBITaxon:9606"
+    assert result["applicability"]["taxa"][0]["evidence_call"] == "moderate"
+    assert result["applicability"]["summary_rationale"] is not None
     assert result["measurement_method_details"][0]["label"] == "Reporter assay"
     assert result["references"][0]["identifier"] == "10.1000/ke-1"
 
@@ -235,7 +238,9 @@ async def test_get_ker_tool_returns_evidence_blocks(monkeypatch) -> None:
     validate_payload(result, namespace="read", name="get_ker.response.schema")
     assert result["evidence_blocks"]["biological_plausibility"]["heuristic_call"] == "strong"
     assert result["evidence_blocks"]["empirical_support"]["heuristic_call"] == "moderate"
-    assert result["applicability"]["taxa"] == []
+    assert result["applicability"]["taxa"][0]["term"]["id"] == "NCBITaxon:9606"
+    assert result["applicability"]["life_stages"][0]["term"]["label"] == "adult"
+    assert result["applicability"]["sexes"] == []
     assert result["references"][0]["identifier"] == "10.1000/ker-10"
 
 
@@ -296,6 +301,93 @@ async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monk
     assert result["heuristic_overall_call"] == "moderate"
     assert any("essentiality" in item.lower() for item in result["limitations"])
     assert result["applicability_summary"]["taxonomic_applicability"] == ["NCBITaxon:9606"]
+    assert result["overall_applicability"]["taxa"][0]["evidence_call"] == "moderate"
+    assert result["overall_applicability"]["summary_rationale"] is not None
+
+
+@pytest.mark.asyncio
+async def test_assess_aop_confidence_derives_bounded_essentiality_heuristic(monkeypatch) -> None:
+    class EssentialityWikiAdapter(StubWikiAdapter):
+        async def list_kers(self, aop_id: str):
+            assert aop_id == "AOP:232"
+            return [
+                {
+                    "id": "KER:10",
+                    "upstream": {"id": "KE:1", "iri": "https://identifiers.org/aop.events/1"},
+                    "downstream": {"id": "KE:2", "iri": "https://identifiers.org/aop.events/2"},
+                },
+                {
+                    "id": "KER:11",
+                    "upstream": {"id": "KE:2", "iri": "https://identifiers.org/aop.events/2"},
+                    "downstream": {"id": "KE:3", "iri": "https://identifiers.org/aop.events/3"},
+                },
+            ]
+
+        async def get_aop_assessment(self, aop_id: str):
+            record = await super().get_aop_assessment(aop_id)
+            record["evidence_summary"] = (
+                "Blocking the intermediate event prevented the downstream adverse outcome and "
+                "supports key event essentiality."
+            )
+            return record
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: EssentialityWikiAdapter())
+
+    result = await aop_tools.assess_aop_confidence(
+        aop_tools.AssessAopConfidenceInput(aop_id="AOP:232")
+    )
+
+    assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_call"] == "moderate"
+    assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_inputs"]["path_count"] == 1
+    assert any("heuristically" in item.lower() for item in result["limitations"])
+
+
+@pytest.mark.asyncio
+async def test_assess_aop_confidence_does_not_score_essentiality_from_path_structure_alone(monkeypatch) -> None:
+    class StructuralOnlyWikiAdapter(StubWikiAdapter):
+        async def list_kers(self, aop_id: str):
+            assert aop_id == "AOP:232"
+            return [
+                {
+                    "id": "KER:10",
+                    "upstream": {"id": "KE:1", "iri": "https://identifiers.org/aop.events/1"},
+                    "downstream": {"id": "KE:2", "iri": "https://identifiers.org/aop.events/2"},
+                },
+                {
+                    "id": "KER:11",
+                    "upstream": {"id": "KE:2", "iri": "https://identifiers.org/aop.events/2"},
+                    "downstream": {"id": "KE:3", "iri": "https://identifiers.org/aop.events/3"},
+                },
+            ]
+
+        async def get_aop_assessment(self, aop_id: str):
+            record = await super().get_aop_assessment(aop_id)
+            record["evidence_summary"] = "Overall support is moderate."
+            return record
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StructuralOnlyWikiAdapter())
+
+    result = await aop_tools.assess_aop_confidence(
+        aop_tools.AssessAopConfidenceInput(aop_id="AOP:232")
+    )
+
+    assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_call"] == "not_assessed"
+    assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_inputs"]["path_count"] == 1
+    assert "not sufficient" in result["confidence_dimensions"]["essentiality_of_key_events"]["basis"]
+
+
+def test_extract_essentiality_text_signal_avoids_generic_essential_language() -> None:
+    signal, cue_count = aop_tools._extract_essentiality_text_signal(
+        [
+            "The genes they modulate play essential roles in lipid homeostasis.",
+            "GPAT enzymes are necessary for maintaining the balance between lipid storage and fatty acid oxidation.",
+            "Lipids are not able to be eliminated as efficiently and can begin to accumulate in the liver.",
+            "Opposite directions can cause reduced expression of other isoforms while steatosis is discussed elsewhere in the paragraph.",
+        ]
+    )
+
+    assert signal == "not_reported"
+    assert cue_count == 0
 
 
 @pytest.mark.asyncio

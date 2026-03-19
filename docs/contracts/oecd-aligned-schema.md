@@ -205,7 +205,7 @@ Status legend:
 | KE identity and description | `get_key_event` | complete | Core identity, title, short name, description exist. |
 | Event components | `biological_processes`, `gene_identifiers`, `protein_identifiers`, `direction_of_change` | partial | Raw pieces exist, but not grouped as `event_components` with ontology semantics. |
 | Biological context | `cell_type_context`, `organ_context`, `level_of_biological_organization` | partial | Present, but not normalized into applicability-aware objects. |
-| Applicability terms | `taxonomic_applicability`, `sex_applicability`, `life_stage_applicability` | partial | Terms exist, but no per-term evidence calls, rationale, or provenance. |
+| Applicability terms | `taxonomic_applicability`, `sex_applicability`, `life_stage_applicability` | partial | Terms now carry heuristic evidence calls, rationale, references, and provenance, but the upstream RDF still does not expose explicit applicability-strength fields. |
 | Measurement methods | `measurement_methods` | partial | Labels only; no directness or quality metadata. |
 | MIE/AO-specific content | not exposed | missing | Needed for full OECD shape. |
 | References | `get_key_event` | partial | References are now exposed when present in RDF, but coverage is source-dependent and not yet linked to richer citation metadata. |
@@ -217,7 +217,7 @@ Status legend:
 | --- | --- | --- | --- |
 | KER identity and pair | `get_ker` | complete | Upstream/downstream linkage is present. |
 | KER narrative | `description` | complete | Description is exposed. |
-| Applicability | not exposed in first-class form | missing | OECD expects KER biological domain of applicability. |
+| Applicability | derived from shared upstream/downstream KE applicability | partial | KER applicability is now derived conservatively from shared KE applicability terms, but it is still not exposed directly as a first-class upstream RDF field. |
 | Biological plausibility | `biological_plausibility` | partial | Text is present, but not structured as a reusable evidence block with references/provenance. |
 | Empirical support | `empirical_support` | partial | Same issue as above. |
 | Quantitative understanding | `quantitative_understanding` | partial | Same issue as above. |
@@ -229,8 +229,8 @@ Status legend:
 | Target area | Current source | Status | Notes |
 | --- | --- | --- | --- |
 | OECD core dimensions | `confidence_dimensions` | partial | Correct dimensions are separated, but they are heuristic aggregations over sparse text. |
-| Essentiality of KEs | hard-coded `not_assessed` | missing | This is the largest current OECD gap. |
-| Overall applicability | `applicability_summary` | partial | Derived from KE metadata rather than AOP- and KER-level applicability. |
+| Essentiality of KEs | bounded text-plus-path heuristic on `assess_aop_confidence` | partial | The tool now derives a conservative heuristic only when essentiality-like text cues and supporting path structure both exist, but there is still no dedicated structured essentiality field in the upstream RDF export. |
+| Overall applicability | `applicability_summary` | partial | Derived from KE metadata with structured heuristic evidence calls rather than a dedicated AOP- and KER-level applicability field. |
 | Rationales and limitations | `rationale`, `limitations` | complete | Good start, but should eventually reference explicit OECD guiding questions. |
 | OECD alignment status | `oecd_alignment` | complete | Correctly warns when the output is only partial. |
 | Provenance for derived calls | implicit only | missing | Aggregation logic is in code, not carried as first-class provenance in payloads. |

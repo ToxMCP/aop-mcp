@@ -300,8 +300,9 @@ Example `tools/call` payloads:
 
 ## Current limitations
 
-- `assess_aop_confidence` is OECD-aligned, not OECD-complete. Key-event essentiality is still reported as `not_assessed` because the current RDF export does not expose it directly.
+- `assess_aop_confidence` is OECD-aligned, not OECD-complete. Key-event essentiality is only inferred when bounded text evidence and supporting path structure both exist; path structure alone is retained as context but does not produce an essentiality score. The current RDF export still does not expose a dedicated structured essentiality field.
 - Quantitative understanding is sparse in many live AOP-Wiki records, so confidence outputs often remain partial even when the tool is behaving correctly.
+- Applicability evidence calls are now structured on the read path, but they are still heuristic. They reflect source presence, cross-KE consistency, and supporting references rather than an explicit OECD applicability-strength field from upstream RDF.
 - `search_assays_for_key_event` is a discovery helper, not a curated KE-to-assay ontology mapping or a full assay fit-for-purpose evaluator.
 - Query-driven assay workflows depend on upstream AOP-DB stressor links and CompTox coverage. Relevant AOPs without mapped stressors or bioactivity data can legitimately return no assay candidates.
 - Phrase-only KE assay search now includes a small curated phenotype synonym layer, but that vocabulary is intentionally narrow. When the phenotype or endpoint wording is not present upstream and not covered by the curated expansions, the tool can still return no hits even though the full CTX dataset was searched.
