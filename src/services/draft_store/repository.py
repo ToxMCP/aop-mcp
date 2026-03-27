@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from copy import deepcopy
 from typing import Dict, Iterable, Protocol
 
 from .model import (
@@ -38,30 +38,32 @@ class InMemoryDraftRepository(DraftRepository):
     def create_draft(self, draft: Draft) -> Draft:
         if draft.draft_id in self._drafts:
             raise ValueError(f"Draft '{draft.draft_id}' already exists")
-        self._drafts[draft.draft_id] = draft
-        return draft
+        stored = deepcopy(draft)
+        self._drafts[draft.draft_id] = stored
+        return deepcopy(stored)
 
     def get_draft(self, draft_id: str) -> Draft | None:
         draft = self._drafts.get(draft_id)
         if draft is None:
             return None
-        return replace(draft, versions=list(draft.versions))
+        return deepcopy(draft)
 
     def list_drafts(self) -> Iterable[Draft]:
         for draft in self._drafts.values():
-            yield replace(draft, versions=list(draft.versions))
+            yield deepcopy(draft)
 
     def append_version(self, draft_id: str, version: DraftVersion) -> Draft:
         draft = self._drafts.get(draft_id)
         if draft is None:
             raise KeyError(f"Draft '{draft_id}' not found")
 
+        stored_version = deepcopy(version)
         if draft.versions:
             previous = draft.versions[-1]
-            version.metadata.previous_checksum = previous.metadata.checksum
-        version.metadata.checksum = compute_graph_checksum(version.graph)
-        draft.add_version(version)
-        return replace(draft, versions=list(draft.versions))
+            stored_version.metadata.previous_checksum = previous.metadata.checksum
+        stored_version.metadata.checksum = compute_graph_checksum(stored_version.graph)
+        draft.add_version(stored_version)
+        return deepcopy(draft)
 
 
 def initialize_version(
@@ -74,4 +76,3 @@ def initialize_version(
     metadata.checksum = checksum
     diff = diff_graphs(GraphSnapshot(), graph)
     return DraftVersion(version_id=version_id, graph=graph, metadata=metadata, diff=diff)
-

@@ -7,6 +7,7 @@ from src.services.draft_store import (
     GraphRelationship,
     VersionMetadata,
     DraftVersion,
+    compute_graph_checksum,
     diff_graphs,
     InMemoryDraftRepository,
     initialize_version,
@@ -56,3 +57,72 @@ def test_repository_appends_version_and_updates_audit_chain() -> None:
     assert stored is not None
     assert len(stored.versions) == 2
     assert stored.versions[-1].metadata.previous_checksum == stored.versions[0].metadata.checksum
+
+
+def test_repository_get_draft_returns_deep_copy() -> None:
+    repo = InMemoryDraftRepository()
+    draft = Draft(draft_id="draft-1", title="Example", status="draft")
+    repo.create_draft(draft)
+
+    v1 = initialize_version("draft-1", "v1", make_snapshot(), VersionMetadata(author="alice", summary="initial"))
+    repo.append_version("draft-1", v1)
+
+    copy = repo.get_draft("draft-1")
+    assert copy is not None
+    copy.versions[0].graph.entities["KE:1"].attributes = {"label": "mutated"}
+
+    stored = repo.get_draft("draft-1")
+    assert stored is not None
+    assert stored.versions[0].graph.entities["KE:1"].attributes == {"label": "Event"}
+
+
+def test_repository_append_version_isolated_from_caller_mutation() -> None:
+    repo = InMemoryDraftRepository()
+    draft = Draft(draft_id="draft-1", title="Example", status="draft")
+    repo.create_draft(draft)
+
+    v1 = initialize_version("draft-1", "v1", make_snapshot(), VersionMetadata(author="alice", summary="initial"))
+    repo.append_version("draft-1", v1)
+
+    snapshot_v2 = make_snapshot()
+    snapshot_v2.entities["KE:1"].attributes = {"label": "Event", "status": "review"}
+    v2 = DraftVersion(
+        version_id="v2",
+        graph=snapshot_v2,
+        metadata=VersionMetadata(author="bob", summary="status update"),
+        diff=diff_graphs(v1.graph, snapshot_v2),
+    )
+    repo.append_version("draft-1", v2)
+    v2.graph.entities["KE:1"].attributes = {"label": "tampered"}
+
+    stored = repo.get_draft("draft-1")
+    assert stored is not None
+    assert stored.versions[-1].graph.entities["KE:1"].attributes == {
+        "label": "Event",
+        "status": "review",
+    }
+
+
+def test_compute_graph_checksum_is_stable_for_nested_mapping_order() -> None:
+    graph_a = GraphSnapshot(
+        entities={
+            "KE:1": GraphEntity(
+                identifier="KE:1",
+                type="KeyEvent",
+                attributes={"nested": {"a": 1, "b": 2}},
+            )
+        },
+        relationships={},
+    )
+    graph_b = GraphSnapshot(
+        entities={
+            "KE:1": GraphEntity(
+                identifier="KE:1",
+                type="KeyEvent",
+                attributes={"nested": {"b": 2, "a": 1}},
+            )
+        },
+        relationships={},
+    )
+
+    assert compute_graph_checksum(graph_a) == compute_graph_checksum(graph_b)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -153,7 +154,6 @@ async def dispatch_request(request: JSONRPCRequest) -> Any:
             result = await tool_registry.call_tool(name, arguments)
             # MCP spec requires "text" content type, not "json"
             # If tool has output_schema, also include structuredContent
-            import json
             response = {
                 "content": [{"type": "text", "text": json.dumps(result, indent=2)}]
             }

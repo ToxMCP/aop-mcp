@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "list_assays_for_query.response",
+  "$defs": {
+    "singleAopDiagnostics": {
+      "type": "object",
+      "required": [
+        "aop_id",
+        "comptox_api_key_configured",
+        "stressor_count",
+        "chemical_match_count",
+        "bioactivity_hit_count",
+        "returned_assay_count",
+        "empty_reason",
+        "warnings"
+      ],
+      "properties": {
+        "aop_id": {"type": "string"},
+        "comptox_api_key_configured": {"type": "boolean"},
+        "stressor_count": {"type": "integer", "minimum": 0},
+        "chemical_match_count": {"type": "integer", "minimum": 0},
+        "bioactivity_hit_count": {"type": "integer", "minimum": 0},
+        "returned_assay_count": {"type": "integer", "minimum": 0},
+        "empty_reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "missing_comptox_api_key",
+            "no_linked_stressors",
+            "no_comptox_chemical_match",
+            "no_bioactivity_hits_after_filtering"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": ["query", "selected_aops", "results", "diagnostics"],
+  "properties": {
+    "diagnostics": {
+      "type": "object",
+      "required": [
+        "query",
+        "matched_aop_count",
+        "selected_aop_count",
+        "returned_assay_count",
+        "per_aop",
+        "warnings"
+      ],
+      "properties": {
+        "query": {"type": "string"},
+        "matched_aop_count": {"type": "integer", "minimum": 0},
+        "selected_aop_count": {"type": "integer", "minimum": 0},
+        "returned_assay_count": {"type": "integer", "minimum": 0},
+        "per_aop": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/singleAopDiagnostics"}
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "query": {"type": "string"},
+    "selected_aops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {"type": "string"},
+          "iri": {"type": ["string", "null"], "format": "uri"},
+          "title": {"type": ["string", "null"]},
+          "short_name": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "aeid",
+          "assay_name",
+          "assay_component_endpoint_name",
+          "assay_component_endpoint_desc",
+          "assay_function_type",
+          "target_family",
+          "target_family_sub",
+          "gene_symbols",
+          "max_hitcall",
+          "supporting_aops",
+          "aop_support_count",
+          "supporting_chemicals",
+          "chemical_support_count"
+        ],
+        "properties": {
+          "aeid": {"type": "integer"},
+          "assay_name": {"type": ["string", "null"]},
+          "assay_component_endpoint_name": {"type": ["string", "null"]},
+          "assay_component_endpoint_desc": {"type": ["string", "null"]},
+          "assay_function_type": {"type": ["string", "null"]},
+          "target_family": {"type": ["string", "null"]},
+          "target_family_sub": {"type": ["string", "null"]},
+          "gene_symbols": {"type": "array", "items": {"type": "string"}},
+          "max_hitcall": {"type": "number"},
+          "supporting_aops": {"type": "array", "items": {"type": "string"}},
+          "aop_support_count": {"type": "integer"},
+          "supporting_chemicals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "dtxsid",
+                "casrn",
+                "preferred_name",
+                "max_hitcall",
+                "best_activity_cutoff",
+                "aop_ids",
+                "stressor_ids",
+                "stressor_labels"
+              ],
+              "properties": {
+                "dtxsid": {"type": ["string", "null"]},
+                "casrn": {"type": ["string", "null"]},
+                "preferred_name": {"type": ["string", "null"]},
+                "max_hitcall": {"type": "number"},
+                "best_activity_cutoff": {"type": ["number", "null"]},
+                "aop_ids": {"type": "array", "items": {"type": "string"}},
+                "stressor_ids": {"type": "array", "items": {"type": "string"}},
+                "stressor_labels": {"type": "array", "items": {"type": "string"}}
+              },
+              "additionalProperties": false
+            }
+          },
+          "chemical_support_count": {"type": "integer"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

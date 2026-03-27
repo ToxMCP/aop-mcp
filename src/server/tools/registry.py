@@ -134,6 +134,7 @@ tool_registry.register(
     description="Find AOPs related to a source AOP through shared key events or KERs.",
     handler=aop.get_related_aops,
     input_model=aop.GetRelatedAopsInput,
+    output_schema=_schema("read", "get_related_aops.response.schema"),
 )
 tool_registry.register(
     name="assess_aop_confidence",
@@ -147,6 +148,7 @@ tool_registry.register(
     description="Find directed KE/KER paths between two events within a selected AOP.",
     handler=aop.find_paths_between_events,
     input_model=aop.FindPathsBetweenEventsInput,
+    output_schema=_schema("read", "find_paths_between_events.response.schema"),
 )
 
 tool_registry.register(
@@ -154,41 +156,63 @@ tool_registry.register(
     description="Map a chemical to related AOPs using AOP-DB and CompTox.",
     handler=aop.map_chemical_to_aops,
     input_model=aop.MapChemicalInput,
+    output_schema=_schema("read", "map_chemical_to_aops.response.schema"),
 )
 
 tool_registry.register(
     name="map_assay_to_aops",
-    description="Map an assay identifier to related AOPs.",
+    description="Given an assay identifier, return related AOPs. Do not pass AOP IDs.",
     handler=aop.map_assay_to_aops,
     input_model=aop.MapAssayInput,
+    output_schema=_schema("read", "map_assay_to_aops.response.schema"),
 )
 
 tool_registry.register(
     name="search_assays_for_key_event",
-    description="Search CompTox assays using gene and phrase terms derived from a selected key event.",
+    description="Given a key event, return candidate assays using KE-derived gene and phrase terms. This is a discovery helper, not a curated KE-to-assay mapping.",
     handler=aop.search_assays_for_key_event,
     input_model=aop.SearchAssaysForKeyEventInput,
+    output_schema=_schema("read", "search_assays_for_key_event.response.schema"),
 )
 
 tool_registry.register(
     name="list_assays_for_aop",
-    description="List assay candidates for an AOP using linked stressor chemicals and CompTox bioactivity.",
+    description="List assay candidates for one AOP using linked stressor chemicals and CompTox bioactivity, with diagnostics explaining empty results.",
     handler=aop.list_assays_for_aop,
     input_model=aop.ListAssaysForAopInput,
+    output_schema=_schema("read", "list_assays_for_aop.response.schema"),
+)
+
+tool_registry.register(
+    name="get_assays_for_aop",
+    description="Given one AOP identifier, return assay candidates. Use this when you have an AOP ID and want assays.",
+    handler=aop.get_assays_for_aop,
+    input_model=aop.GetAssaysForAopInput,
+    output_schema=_schema("read", "list_assays_for_aop.response.schema"),
 )
 
 tool_registry.register(
     name="list_assays_for_aops",
-    description="Aggregate and deduplicate assay candidates across multiple AOPs.",
+    description="Aggregate and deduplicate assay candidates across multiple AOPs, with per-AOP diagnostics for empty results.",
     handler=aop.list_assays_for_aops,
     input_model=aop.ListAssaysForAopsInput,
+    output_schema=_schema("read", "list_assays_for_aops.response.schema"),
+)
+
+tool_registry.register(
+    name="get_assays_for_aops",
+    description="Given multiple AOP identifiers, return aggregated assay candidates. Use this when you have a list of AOP IDs.",
+    handler=aop.get_assays_for_aops,
+    input_model=aop.GetAssaysForAopsInput,
+    output_schema=_schema("read", "list_assays_for_aops.response.schema"),
 )
 
 tool_registry.register(
     name="list_assays_for_query",
-    description="Search AOPs by phenotype or mechanism query and aggregate assay candidates across the selected AOP set.",
+    description="Given a phenotype or mechanism query, search AOPs and return aggregated assay candidates with query and per-AOP diagnostics.",
     handler=aop.list_assays_for_query,
     input_model=aop.ListAssaysForQueryInput,
+    output_schema=_schema("read", "list_assays_for_query.response.schema"),
 )
 
 tool_registry.register(
@@ -196,6 +220,7 @@ tool_registry.register(
     description="Export aggregated assay candidates as CSV or TSV from a query or explicit AOP list.",
     handler=aop.export_assays_table,
     input_model=aop.ExportAssaysTableInput,
+    output_schema=_schema("read", "export_assays_table.response.schema"),
 )
 
 tool_registry.register(
@@ -203,6 +228,7 @@ tool_registry.register(
     description="Normalize applicability parameters (species, sex, life stage).",
     handler=aop.get_applicability,
     input_model=aop.GetApplicabilityInput,
+    output_schema=_schema("semantic", "get_applicability.response.schema"),
 )
 
 tool_registry.register(
@@ -210,6 +236,7 @@ tool_registry.register(
     description="Build an evidence matrix from KER facets.",
     handler=aop.get_evidence_matrix,
     input_model=aop.EvidenceMatrixInput,
+    output_schema=_schema("semantic", "get_evidence_matrix.response.schema"),
 )
 
 tool_registry.register(
@@ -217,6 +244,7 @@ tool_registry.register(
     description="Create a new draft AOP for write-path workflows.",
     handler=aop.create_draft_aop,
     input_model=aop.CreateDraftInputModel,
+    output_schema=_schema("write", "create_draft_aop.response.schema"),
 )
 
 tool_registry.register(
@@ -224,6 +252,7 @@ tool_registry.register(
     description="Add or update a key event within a draft.",
     handler=aop.add_or_update_ke,
     input_model=aop.KeyEventInputModel,
+    output_schema=_schema("write", "update_draft.response.schema"),
 )
 
 tool_registry.register(
@@ -231,6 +260,7 @@ tool_registry.register(
     description="Add or update a key event relationship within a draft.",
     handler=aop.add_or_update_ker,
     input_model=aop.KerInputModel,
+    output_schema=_schema("write", "update_draft.response.schema"),
 )
 
 tool_registry.register(
@@ -238,10 +268,12 @@ tool_registry.register(
     description="Link a stressor to a draft entity.",
     handler=aop.link_stressor,
     input_model=aop.StressorLinkInputModel,
+    output_schema=_schema("write", "update_draft.response.schema"),
 )
 tool_registry.register(
     name="validate_draft_oecd",
     description="Validate a draft against OECD AOP handbook-style completeness expectations.",
     handler=aop.validate_draft_oecd,
     input_model=aop.ValidateDraftOecdInput,
+    output_schema=_schema("write", "validate_draft_oecd.response.schema"),
 )

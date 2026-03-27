@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 import re
 from typing import Any
@@ -112,6 +113,11 @@ _PHENOTYPE_PHRASE_EXPANSIONS = {
     "lipid accumulation": ["steatosis"],
     "neutral lipid accumulation": ["steatosis"],
 }
+
+_ASSAY_EMPTY_REASON_MISSING_COMPTOX_API_KEY = "missing_comptox_api_key"
+_ASSAY_EMPTY_REASON_NO_LINKED_STRESSORS = "no_linked_stressors"
+_ASSAY_EMPTY_REASON_NO_COMPTOX_CHEMICAL_MATCH = "no_comptox_chemical_match"
+_ASSAY_EMPTY_REASON_NO_BIOACTIVITY_HITS = "no_bioactivity_hits_after_filtering"
 
 _GENE_ALIAS_RULES = [
     {
@@ -224,7 +230,7 @@ class AOPDBAdapter:
         chemicals = []
         if self.comptox:
             try:
-                chemicals = self.comptox.get_chemicals_in_assay(assay_id)
+                chemicals = await self._call_comptox("get_chemicals_in_assay", assay_id)
             except Exception:
                 # Fallback or ignore if CompTox fails
                 pass
@@ -269,35 +275,87 @@ class AOPDBAdapter:
         limit: int = 25,
         min_hitcall: float = 0.9,
     ) -> list[dict[str, Any]]:
+        results, _diagnostics = await self._list_assays_for_aop_with_diagnostics(
+            aop_id,
+            limit=limit,
+            min_hitcall=min_hitcall,
+        )
+        return results
+
+    async def list_assays_for_aop_with_diagnostics(
+        self,
+        aop_id: str,
+        *,
+        limit: int = 25,
+        min_hitcall: float = 0.9,
+    ) -> dict[str, Any]:
+        results, diagnostics = await self._list_assays_for_aop_with_diagnostics(
+            aop_id,
+            limit=limit,
+            min_hitcall=min_hitcall,
+        )
+        return {"results": results, "diagnostics": diagnostics}
+
+    async def _list_assays_for_aop_with_diagnostics(
+        self,
+        aop_id: str,
+        *,
+        limit: int = 25,
+        min_hitcall: float = 0.9,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if not aop_id:
             raise ValueError("aop_id is required")
+        diagnostics = {
+            "aop_id": aop_id,
+            "comptox_api_key_configured": bool(self.comptox and self.comptox.has_api_key),
+            "stressor_count": 0,
+            "chemical_match_count": 0,
+            "bioactivity_hit_count": 0,
+            "returned_assay_count": 0,
+            "empty_reason": None,
+            "warnings": [],
+        }
         if not self.comptox or not self.comptox.has_api_key:
-            raise ValueError("CompTox API key is required for AOP assay candidate lookup")
+            diagnostics["empty_reason"] = _ASSAY_EMPTY_REASON_MISSING_COMPTOX_API_KEY
+            diagnostics["warnings"].append(
+                "CompTox API key is not configured; use AOP identifiers with get_assays_for_aop or get_assays_for_aops only after CompTox access is available."
+            )
+            return [], diagnostics
 
         stressors = await self._list_stressor_chemicals_for_aop(aop_id)
+        diagnostics["stressor_count"] = len(stressors)
         if not stressors:
-            return []
+            diagnostics["empty_reason"] = _ASSAY_EMPTY_REASON_NO_LINKED_STRESSORS
+            diagnostics["warnings"].append(
+                "No linked stressor chemicals were found for this AOP in AOP-DB."
+            )
+            return [], diagnostics
 
         assay_candidates: dict[int, dict[str, Any]] = {}
+        matched_dtxsids: set[str] = set()
+        missing_search_value_count = 0
         for stressor in stressors[:10]:
             search_value = stressor["casrn"] or stressor["label"]
             if not search_value:
+                missing_search_value_count += 1
                 continue
 
-            chemical_matches = self.comptox.search_equal(search_value)
+            chemical_matches = await self._call_comptox("search_equal", search_value)
             if not chemical_matches:
                 continue
             chemical = chemical_matches[0]
             dtxsid = chemical.get("dtxsid")
             if not dtxsid:
                 continue
+            matched_dtxsids.add(dtxsid)
 
             best_hits_by_aeid: dict[int, dict[str, Any]] = {}
-            for hit in self.comptox.bioactivity_data_by_dtxsid(dtxsid):
+            for hit in await self._call_comptox("bioactivity_data_by_dtxsid", dtxsid):
                 aeid = hit.get("aeid")
                 hitcall = float(hit.get("hitc") or 0.0)
                 if aeid is None or hitcall < min_hitcall:
                     continue
+                diagnostics["bioactivity_hit_count"] += 1
                 aeid_int = int(aeid)
                 current = best_hits_by_aeid.get(aeid_int)
                 if current is None or hitcall > float(current.get("hitc") or 0.0):
@@ -345,6 +403,12 @@ class AOPDBAdapter:
                     }
                 )
 
+        diagnostics["chemical_match_count"] = len(matched_dtxsids)
+        if missing_search_value_count:
+            diagnostics["warnings"].append(
+                "Some linked stressors lacked a searchable CAS RN or label and were skipped."
+            )
+
         ranked_candidates = sorted(
             assay_candidates.values(),
             key=lambda item: (item["support_count"], item["max_hitcall"], -(item["aeid"])),
@@ -352,7 +416,7 @@ class AOPDBAdapter:
         )[:limit]
 
         for candidate in ranked_candidates:
-            assay = self.comptox.assay_by_aeid(candidate["aeid"]) or {}
+            assay = await self._call_comptox("assay_by_aeid", candidate["aeid"]) or {}
             genes = assay.get("gene") or []
             candidate["assay_name"] = assay.get("assayName")
             candidate["assay_component_endpoint_name"] = assay.get("assayComponentEndpointName")
@@ -365,7 +429,19 @@ class AOPDBAdapter:
             )
             candidate.pop("_seen_dtxsids", None)
 
-        return ranked_candidates
+        diagnostics["returned_assay_count"] = len(ranked_candidates)
+        if diagnostics["returned_assay_count"] == 0:
+            if diagnostics["chemical_match_count"] == 0:
+                diagnostics["empty_reason"] = _ASSAY_EMPTY_REASON_NO_COMPTOX_CHEMICAL_MATCH
+                diagnostics["warnings"].append(
+                    "No CompTox chemical matches were found for the linked stressors."
+                )
+            elif diagnostics["bioactivity_hit_count"] == 0:
+                diagnostics["empty_reason"] = _ASSAY_EMPTY_REASON_NO_BIOACTIVITY_HITS
+                diagnostics["warnings"].append(
+                    "CompTox chemical matches were found, but no bioactivity hits met the min_hitcall filter."
+                )
+        return ranked_candidates, diagnostics
 
     async def list_assays_for_aops(
         self,
@@ -375,17 +451,35 @@ class AOPDBAdapter:
         per_aop_limit: int = 15,
         min_hitcall: float = 0.9,
     ) -> list[dict[str, Any]]:
+        report = await self.list_assays_for_aops_with_diagnostics(
+            aop_ids,
+            limit=limit,
+            per_aop_limit=per_aop_limit,
+            min_hitcall=min_hitcall,
+        )
+        return report["results"]
+
+    async def list_assays_for_aops_with_diagnostics(
+        self,
+        aop_ids: list[str],
+        *,
+        limit: int = 25,
+        per_aop_limit: int = 15,
+        min_hitcall: float = 0.9,
+    ) -> dict[str, Any]:
         normalized_aop_ids = list(dict.fromkeys(aop_ids))
         if not normalized_aop_ids:
             raise ValueError("At least one aop_id is required")
 
         aggregated_candidates: dict[int, dict[str, Any]] = {}
+        per_aop_diagnostics: list[dict[str, Any]] = []
         for aop_id in normalized_aop_ids:
-            assay_rows = await self.list_assays_for_aop(
+            assay_rows, aop_diagnostics = await self._list_assays_for_aop_with_diagnostics(
                 aop_id,
                 limit=per_aop_limit,
                 min_hitcall=min_hitcall,
             )
+            per_aop_diagnostics.append(aop_diagnostics)
             for row in assay_rows:
                 aeid = row["aeid"]
                 candidate = aggregated_candidates.setdefault(
@@ -477,7 +571,26 @@ class AOPDBAdapter:
                 item["aeid"],
             )
         )
-        return materialized_candidates[:limit]
+        results = materialized_candidates[:limit]
+
+        warnings: list[str] = []
+        if len(normalized_aop_ids) != len(aop_ids):
+            warnings.append("Duplicate AOP identifiers were deduplicated before aggregation.")
+        if any(item["empty_reason"] is not None for item in per_aop_diagnostics):
+            warnings.append(
+                "One or more AOPs returned no assay candidates; inspect diagnostics.per_aop for details."
+            )
+
+        return {
+            "results": results,
+            "diagnostics": {
+                "requested_aop_ids": list(aop_ids),
+                "processed_aop_ids": normalized_aop_ids,
+                "returned_assay_count": len(results),
+                "per_aop": per_aop_diagnostics,
+                "warnings": warnings,
+            },
+        }
 
     async def search_assays_for_key_event(
         self,
@@ -510,7 +623,8 @@ class AOPDBAdapter:
 
         used_measurement_fallback = False
         try:
-            results = self.comptox.search_assay_catalog(
+            results = await self._call_comptox(
+                "search_assay_catalog",
                 gene_symbols=derived_search_terms["gene_symbols"],
                 phrases=derived_search_terms["phrases"],
                 preferred_taxa=_preferred_taxa_from_key_event(key_event),
@@ -555,8 +669,8 @@ class AOPDBAdapter:
         query = self._templates.render("map_assay_to_aops", {"assay_id": assay_id})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_db", "map_assay_to_aops")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_db", "map_assay_to_aops", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         results: list[dict[str, Any]] = []
         for row in bindings:
@@ -573,13 +687,27 @@ class AOPDBAdapter:
             )
         return results
 
-    def _load_fixture(self, namespace: str, name: str) -> dict[str, Any]:
+    def _load_fixture(
+        self,
+        namespace: str,
+        name: str,
+        *,
+        error: SparqlClientError | None = None,
+    ) -> dict[str, Any]:
         if not self.enable_fixture_fallback:
-            raise
+            if error is not None:
+                raise error
+            raise SparqlClientError("Fixture fallback requested without an underlying SPARQL error")
         try:
             return load_fixture(namespace, name)
         except FixtureNotFoundError as exc:  # pragma: no cover - defensive fallback
             raise SparqlClientError(str(exc)) from exc
+
+    async def _call_comptox(self, method_name: str, /, *args: Any, **kwargs: Any) -> Any:
+        if not self.comptox:
+            raise ValueError("CompTox client is required for this operation")
+        method = getattr(self.comptox, method_name)
+        return await asyncio.to_thread(method, *args, **kwargs)
 
     async def _list_stressor_chemicals_for_aop(self, aop_id: str) -> list[dict[str, Any]]:
         query = self._templates.render("list_stressor_chemicals_for_aop", {"aop_iri": _aop_iri(aop_id)})

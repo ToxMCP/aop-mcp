@@ -278,8 +278,8 @@ class AOPWikiAdapter:
         )
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "search_aops")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "search_aops", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         results: list[dict[str, Any]] = []
         seen_identifiers: set[str] = set()
@@ -304,8 +304,8 @@ class AOPWikiAdapter:
         query = self._templates.render("get_aop", {"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "get_aop")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "get_aop", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         if not bindings:
             return {"id": _iri_to_curie(iri), "iri": iri}
@@ -335,8 +335,8 @@ class AOPWikiAdapter:
         query = self._templates.render("get_aop_assessment", {"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "get_aop_assessment")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "get_aop_assessment", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         record: dict[str, Any] = {
             "id": _iri_to_curie(iri),
@@ -402,8 +402,8 @@ class AOPWikiAdapter:
         query = self._templates.render("list_key_events", {"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "list_key_events")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "list_key_events", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         items: list[dict[str, Any]] = []
         for row in bindings:
@@ -422,8 +422,8 @@ class AOPWikiAdapter:
         query = self._templates.render("get_key_event", {"ke_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "get_key_event")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "get_key_event", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         record: dict[str, Any] = {
             "id": _iri_to_curie(iri),
@@ -521,8 +521,8 @@ class AOPWikiAdapter:
         query = self._templates.render("list_kers", {"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "list_kers")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "list_kers", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         items: list[dict[str, Any]] = []
         for row in bindings:
@@ -545,8 +545,8 @@ class AOPWikiAdapter:
         query = self._templates.render("get_ker", {"ker_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "get_ker")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "get_ker", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         record: dict[str, Any] = {
             "id": _iri_to_curie(iri),
@@ -636,8 +636,8 @@ class AOPWikiAdapter:
         query = self._templates.render("get_related_aops", {"aop_iri": iri, "limit": limit})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
-        except SparqlClientError:
-            payload = self._load_fixture("aop_wiki", "get_related_aops")
+        except SparqlClientError as exc:
+            payload = self._load_fixture("aop_wiki", "get_related_aops", error=exc)
         bindings = payload.get("results", {}).get("bindings", [])
         results: list[dict[str, Any]] = []
         for row in bindings:
@@ -679,9 +679,17 @@ class AOPWikiAdapter:
         suffix = ker_id.split(":", 1)[1] if ker_id.upper().startswith("KER:") else ker_id
         return f"https://identifiers.org/aop.relationships/{suffix}"
 
-    def _load_fixture(self, namespace: str, name: str) -> dict[str, Any]:
+    def _load_fixture(
+        self,
+        namespace: str,
+        name: str,
+        *,
+        error: SparqlClientError | None = None,
+    ) -> dict[str, Any]:
         if not self.enable_fixture_fallback:
-            raise
+            if error is not None:
+                raise error
+            raise SparqlClientError("Fixture fallback requested without an underlying SPARQL error")
         try:
             return load_fixture(namespace, name)
         except FixtureNotFoundError as exc:  # pragma: no cover - defensive fallback

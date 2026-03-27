@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "find_paths_between_events.response",
+  "type": "object",
+  "required": ["aop_id", "source_event_id", "target_event_id", "path_count", "results"],
+  "properties": {
+    "aop_id": {"type": "string"},
+    "source_event_id": {"type": "string"},
+    "target_event_id": {"type": "string"},
+    "path_count": {"type": "integer"},
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_path", "ker_path"],
+        "properties": {
+          "event_path": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "title"],
+              "properties": {
+                "id": {"type": "string"},
+                "title": {"type": ["string", "null"]}
+              },
+              "additionalProperties": false
+            }
+          },
+          "ker_path": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "upstream_event_id", "downstream_event_id"],
+              "properties": {
+                "id": {"type": ["string", "null"]},
+                "upstream_event_id": {"type": "string"},
+                "downstream_event_id": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

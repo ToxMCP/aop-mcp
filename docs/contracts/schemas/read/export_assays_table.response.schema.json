@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "export_assays_table.response",
+  "type": "object",
+  "required": ["format", "filename", "row_count", "selected_aops", "content"],
+  "properties": {
+    "format": {"type": "string", "enum": ["csv", "tsv"]},
+    "filename": {"type": "string"},
+    "row_count": {"type": "integer"},
+    "selected_aops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {"type": "string"},
+          "iri": {"type": ["string", "null"], "format": "uri"},
+          "title": {"type": ["string", "null"]},
+          "short_name": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "content": {"type": "string"}
+  },
+  "additionalProperties": false
+}

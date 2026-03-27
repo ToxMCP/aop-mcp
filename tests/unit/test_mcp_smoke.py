@@ -55,6 +55,9 @@ def test_tools_list_includes_registered_tools() -> None:
         "get_related_aops",
         "assess_aop_confidence",
         "find_paths_between_events",
+        "map_assay_to_aops",
+        "get_assays_for_aop",
+        "get_assays_for_aops",
         "search_assays_for_key_event",
         "validate_draft_oecd",
         "create_draft_aop",
@@ -64,6 +67,14 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["get_key_event"]["outputSchema"]["title"] == "get_key_event.response"
     assert by_name["get_ker"]["outputSchema"]["title"] == "get_ker.response"
     assert by_name["assess_aop_confidence"]["outputSchema"]["title"] == "assess_aop_confidence.response"
+    assert by_name["get_assays_for_aop"]["outputSchema"]["title"] == "list_assays_for_aop.response"
+    assert by_name["get_assays_for_aops"]["outputSchema"]["title"] == "list_assays_for_aops.response"
+    assert all("title" in tool["outputSchema"] for tool in tools)
+    assert by_name["map_assay_to_aops"]["description"].startswith(
+        "Given an assay identifier, return related AOPs. Do not pass AOP IDs."
+    )
+    assert "Given one AOP identifier" in by_name["get_assays_for_aop"]["description"]
+    assert "Given multiple AOP identifiers" in by_name["get_assays_for_aops"]["description"]
     add_ke_schema = by_name["add_or_update_ke"]["inputSchema"]
     essentiality_ref = add_ke_schema["$defs"]["KeyEventAttributesInputModel"]["properties"]["essentiality"]["anyOf"][0]["$ref"]
     essentiality_schema = add_ke_schema["$defs"][essentiality_ref.split("/")[-1]]
@@ -75,6 +86,7 @@ def test_tools_list_includes_registered_tools() -> None:
         "not_reported",
         "not_assessed",
     ]
+    assert by_name["validate_draft_oecd"]["outputSchema"]["title"] == "validate_draft_oecd.response"
 
 
 @pytest.mark.skip(reason="Requires live SPARQL endpoints; enable in environments with network access")
@@ -130,6 +142,34 @@ def test_tools_call_returns_error_for_unknown_tool() -> None:
     assert response.status_code == 404
     data = response.json()
     assert data["error"]["code"] == -32601  # METHOD_NOT_FOUND
+
+
+def test_tools_call_map_assay_to_aops_rejects_explicit_aop_curie() -> None:
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "map_assay_to_aops",
+            "arguments": {"assay_id": "AOP:34"},
+        },
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["error"]["code"] == -32602
+    assert "get_assays_for_aop" in data["error"]["message"]
+
+
+def test_tools_call_map_assay_to_aops_rejects_explicit_aop_iri() -> None:
+    response = _call_rpc(
+        "tools/call",
+        params={
+            "name": "map_assay_to_aops",
+            "arguments": {"assay_id": "https://identifiers.org/aop/34"},
+        },
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["error"]["code"] == -32602
+    assert "get_assays_for_aops" in data["error"]["message"]
 
 
 def test_tools_call_add_or_update_ke_accepts_governed_essentiality_and_validator_reports_coverage() -> None:

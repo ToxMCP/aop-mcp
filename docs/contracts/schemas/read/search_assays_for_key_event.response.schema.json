@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "search_assays_for_key_event.response",
+  "type": "object",
+  "required": ["key_event", "derived_search_terms", "limitations", "results"],
+  "properties": {
+    "key_event": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "title": {"type": ["string", "null"]},
+        "short_name": {"type": ["string", "null"]},
+        "description": {"type": ["string", "null"]},
+        "measurement_methods": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "derived_search_terms": {
+      "type": "object",
+      "required": ["gene_symbols", "phrases"],
+      "properties": {
+        "gene_symbols": {"type": "array", "items": {"type": "string"}},
+        "phrases": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "aeid",
+          "assay_name",
+          "gene_symbols",
+          "match_score",
+          "match_basis",
+          "matched_terms",
+          "source"
+        ],
+        "properties": {
+          "aeid": {"type": ["integer", "null"]},
+          "assay_name": {"type": ["string", "null"]},
+          "assay_component_endpoint_name": {"type": ["string", "null"]},
+          "assay_component_endpoint_desc": {"type": ["string", "null"]},
+          "assay_function_type": {"type": ["string", "null"]},
+          "target_family": {"type": ["string", "null"]},
+          "target_family_sub": {"type": ["string", "null"]},
+          "target_type": {"type": ["string", "null"]},
+          "taxon_name": {"type": ["string", "null"]},
+          "gene_symbols": {"type": "array", "items": {"type": "string"}},
+          "applicability_match": {"type": ["string", "null"]},
+          "matched_taxa": {"type": "array", "items": {"type": "string"}},
+          "match_score": {"type": "number"},
+          "match_basis": {"type": "array", "items": {"type": "string"}},
+          "matched_terms": {"type": "array", "items": {"type": "string"}},
+          "multi_conc_assay_chemical_count_active": {"type": ["integer", "null"]},
+          "multi_conc_assay_chemical_count_total": {"type": ["integer", "null"]},
+          "single_conc_assay_chemical_count_active": {"type": ["integer", "null"]},
+          "single_conc_assay_chemical_count_total": {"type": ["integer", "null"]},
+          "source": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Dict, Iterable, Mapping
+from typing import Any, Dict, Iterable, Mapping
 
 
 def _utcnow() -> datetime:
@@ -146,7 +147,7 @@ def compute_graph_checksum(graph: GraphSnapshot) -> str:
         hasher.update(entity.type.encode("utf-8"))
         for key in sorted(entity.attributes):
             hasher.update(key.encode("utf-8"))
-            hasher.update(repr(entity.attributes[key]).encode("utf-8"))
+            hasher.update(_canonical_json(entity.attributes[key]).encode("utf-8"))
 
     for identifier in sorted(graph.relationships):
         rel = graph.relationships[identifier]
@@ -156,9 +157,37 @@ def compute_graph_checksum(graph: GraphSnapshot) -> str:
         hasher.update(rel.target.encode("utf-8"))
         for key in sorted(rel.attributes):
             hasher.update(key.encode("utf-8"))
-            hasher.update(repr(rel.attributes[key]).encode("utf-8"))
+            hasher.update(_canonical_json(rel.attributes[key]).encode("utf-8"))
 
     return hasher.hexdigest()
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(
+        _canonicalize(value),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+
+
+def _canonicalize(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            str(key): _canonicalize(val)
+            for key, val in sorted(value.items(), key=lambda item: str(item[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_canonicalize(item) for item in value]
+    if isinstance(value, set):
+        normalized_items = [_canonicalize(item) for item in value]
+        return sorted(
+            normalized_items,
+            key=lambda item: json.dumps(item, sort_keys=True, separators=(",", ":"), ensure_ascii=True),
+        )
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return repr(value)
 
 
 def snapshot_from_iterables(
@@ -169,4 +198,3 @@ def snapshot_from_iterables(
         entities={entity.identifier: entity for entity in entities},
         relationships={rel.identifier: rel for rel in relationships},
     )
-

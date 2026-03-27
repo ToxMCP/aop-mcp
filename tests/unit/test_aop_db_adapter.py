@@ -125,6 +125,10 @@ class StubCompTox:
         }
 
 
+class NoApiKeyCompTox:
+    has_api_key = False
+
+
 @pytest.mark.asyncio
 async def test_list_assays_for_aop_returns_ranked_candidates() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
@@ -176,6 +180,138 @@ async def test_list_assays_for_aop_returns_ranked_candidates() -> None:
             ],
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_list_assays_for_aop_with_diagnostics_reports_pipeline_counts() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": {
+                    "bindings": [
+                        {
+                            "stressor": {"value": "https://identifiers.org/aop.stressor/771"},
+                            "stressorLabel": {"value": "Perfluorooctanesulfonic acid"},
+                            "chemicalEntity": {"value": "https://identifiers.org/cas/1763-23-1"},
+                        }
+                    ]
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=StubCompTox())
+        report = await adapter.list_assays_for_aop_with_diagnostics(
+            "AOP:529",
+            limit=10,
+            min_hitcall=0.9,
+        )
+
+    assert report["results"][0]["aeid"] == 2309
+    assert report["diagnostics"] == {
+        "aop_id": "AOP:529",
+        "comptox_api_key_configured": True,
+        "stressor_count": 1,
+        "chemical_match_count": 1,
+        "bioactivity_hit_count": 1,
+        "returned_assay_count": 1,
+        "empty_reason": None,
+        "warnings": [],
+    }
+
+
+@pytest.mark.asyncio
+async def test_list_assays_for_aop_with_diagnostics_reports_missing_api_key() -> None:
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=NoApiKeyCompTox())
+        report = await adapter.list_assays_for_aop_with_diagnostics("AOP:529")
+
+    assert report["results"] == []
+    assert report["diagnostics"]["empty_reason"] == "missing_comptox_api_key"
+    assert report["diagnostics"]["comptox_api_key_configured"] is False
+
+
+@pytest.mark.asyncio
+async def test_list_assays_for_aop_with_diagnostics_reports_no_linked_stressors() -> None:
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=StubCompTox())
+        report = await adapter.list_assays_for_aop_with_diagnostics("AOP:529")
+
+    assert report["results"] == []
+    assert report["diagnostics"]["stressor_count"] == 0
+    assert report["diagnostics"]["empty_reason"] == "no_linked_stressors"
+
+
+@pytest.mark.asyncio
+async def test_list_assays_for_aop_with_diagnostics_reports_no_comptox_match() -> None:
+    class NoChemicalMatchCompTox(StubCompTox):
+        def search_equal(self, value: str):
+            return []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": {
+                    "bindings": [
+                        {
+                            "stressor": {"value": "https://identifiers.org/aop.stressor/771"},
+                            "stressorLabel": {"value": "Perfluorooctanesulfonic acid"},
+                            "chemicalEntity": {"value": "https://identifiers.org/cas/1763-23-1"},
+                        }
+                    ]
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=NoChemicalMatchCompTox())
+        report = await adapter.list_assays_for_aop_with_diagnostics("AOP:529")
+
+    assert report["results"] == []
+    assert report["diagnostics"]["chemical_match_count"] == 0
+    assert report["diagnostics"]["empty_reason"] == "no_comptox_chemical_match"
+
+
+@pytest.mark.asyncio
+async def test_list_assays_for_aop_with_diagnostics_reports_no_bioactivity_hits() -> None:
+    class NoBioactivityHitsCompTox(StubCompTox):
+        def bioactivity_data_by_dtxsid(self, dtxsid: str):
+            return [{"aeid": 2309, "hitc": 0.5, "coff": 20.0}]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": {
+                    "bindings": [
+                        {
+                            "stressor": {"value": "https://identifiers.org/aop.stressor/771"},
+                            "stressorLabel": {"value": "Perfluorooctanesulfonic acid"},
+                            "chemicalEntity": {"value": "https://identifiers.org/cas/1763-23-1"},
+                        }
+                    ]
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=NoBioactivityHitsCompTox())
+        report = await adapter.list_assays_for_aop_with_diagnostics(
+            "AOP:529",
+            min_hitcall=0.9,
+        )
+
+    assert report["results"] == []
+    assert report["diagnostics"]["chemical_match_count"] == 1
+    assert report["diagnostics"]["bioactivity_hit_count"] == 0
+    assert report["diagnostics"]["empty_reason"] == "no_bioactivity_hits_after_filtering"
 
 
 @pytest.mark.asyncio
@@ -282,6 +418,48 @@ async def test_list_assays_for_aops_aggregates_by_aeid() -> None:
         "Perfluorooctanoic acid",
     ]
     assert [record["aeid"] for record in records[:3]] == [2309, 5000, 4000]
+
+
+@pytest.mark.asyncio
+async def test_list_assays_for_aops_with_diagnostics_tracks_per_aop_results() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        query = request.content.decode("utf-8")
+        if "<https://identifiers.org/aop/529>" in query:
+            return httpx.Response(
+                200,
+                json={
+                    "results": {
+                        "bindings": [
+                            {
+                                "stressor": {"value": "https://identifiers.org/aop.stressor/771"},
+                                "stressorLabel": {"value": "Perfluorooctanesulfonic acid"},
+                                "chemicalEntity": {"value": "https://identifiers.org/cas/1763-23-1"},
+                            }
+                        ]
+                    }
+                },
+            )
+        if "<https://identifiers.org/aop/517>" in query:
+            return httpx.Response(200, json={"results": {"bindings": []}})
+        raise AssertionError(f"Unexpected query: {query}")
+
+    transport = httpx.MockTransport(handler)
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=StubCompTox())
+        report = await adapter.list_assays_for_aops_with_diagnostics(
+            ["AOP:529", "AOP:517", "AOP:529"],
+            limit=10,
+            per_aop_limit=10,
+            min_hitcall=0.9,
+        )
+
+    assert report["results"][0]["aeid"] == 2309
+    assert report["diagnostics"]["requested_aop_ids"] == ["AOP:529", "AOP:517", "AOP:529"]
+    assert report["diagnostics"]["processed_aop_ids"] == ["AOP:529", "AOP:517"]
+    assert report["diagnostics"]["returned_assay_count"] == 1
+    assert report["diagnostics"]["per_aop"][0]["empty_reason"] is None
+    assert report["diagnostics"]["per_aop"][1]["empty_reason"] == "no_linked_stressors"
+    assert "Duplicate AOP identifiers were deduplicated before aggregation." in report["diagnostics"]["warnings"]
 
 
 @pytest.mark.asyncio

@@ -10,7 +10,6 @@
         "type": "object",
         "required": ["aop", "assay_id"],
         "properties": {
-          "assay_id": {"type": "string"},
           "aop": {
             "type": "object",
             "required": ["id", "iri", "title"],
@@ -18,6 +17,15 @@
               "id": {"type": "string"},
               "iri": {"type": "string", "format": "uri"},
               "title": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          },
+          "assay_id": {"type": "string"},
+          "chemical_context": {
+            "type": ["object", "null"],
+            "properties": {
+              "dtxsid": {"type": ["string", "null"]},
+              "name": {"type": ["string", "null"]}
             },
             "additionalProperties": false
           }

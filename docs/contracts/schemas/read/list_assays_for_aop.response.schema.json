@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "list_assays_for_aop.response",
+  "type": "object",
+  "required": ["results", "diagnostics"],
+  "properties": {
+    "diagnostics": {
+      "type": "object",
+      "required": [
+        "aop_id",
+        "comptox_api_key_configured",
+        "stressor_count",
+        "chemical_match_count",
+        "bioactivity_hit_count",
+        "returned_assay_count",
+        "empty_reason",
+        "warnings"
+      ],
+      "properties": {
+        "aop_id": {"type": "string"},
+        "comptox_api_key_configured": {"type": "boolean"},
+        "stressor_count": {"type": "integer", "minimum": 0},
+        "chemical_match_count": {"type": "integer", "minimum": 0},
+        "bioactivity_hit_count": {"type": "integer", "minimum": 0},
+        "returned_assay_count": {"type": "integer", "minimum": 0},
+        "empty_reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "missing_comptox_api_key",
+            "no_linked_stressors",
+            "no_comptox_chemical_match",
+            "no_bioactivity_hits_after_filtering"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "aeid",
+          "assay_name",
+          "assay_component_endpoint_name",
+          "assay_component_endpoint_desc",
+          "assay_function_type",
+          "target_family",
+          "target_family_sub",
+          "gene_symbols",
+          "support_count",
+          "max_hitcall",
+          "supporting_chemicals"
+        ],
+        "properties": {
+          "aeid": {"type": "integer"},
+          "assay_name": {"type": ["string", "null"]},
+          "assay_component_endpoint_name": {"type": ["string", "null"]},
+          "assay_component_endpoint_desc": {"type": ["string", "null"]},
+          "assay_function_type": {"type": ["string", "null"]},
+          "target_family": {"type": ["string", "null"]},
+          "target_family_sub": {"type": ["string", "null"]},
+          "gene_symbols": {"type": "array", "items": {"type": "string"}},
+          "support_count": {"type": "integer"},
+          "max_hitcall": {"type": "number"},
+          "supporting_chemicals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "dtxsid",
+                "casrn",
+                "preferred_name",
+                "stressor_id",
+                "stressor_label",
+                "hitcall",
+                "activity_cutoff"
+              ],
+              "properties": {
+                "dtxsid": {"type": ["string", "null"]},
+                "casrn": {"type": ["string", "null"]},
+                "preferred_name": {"type": ["string", "null"]},
+                "stressor_id": {"type": ["string", "null"]},
+                "stressor_label": {"type": ["string", "null"]},
+                "hitcall": {"type": "number"},
+                "activity_cutoff": {"type": ["number", "null"]}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

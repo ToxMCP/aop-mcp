@@ -14,11 +14,13 @@ Current MCP tool surface exposed by `POST /mcp`.
 - `assess_aop_confidence`: Build a partial OECD-aligned heuristic confidence summary from KE/KER evidence text, plus supplemental AOP-level context.
 - `find_paths_between_events`: Find directed KE/KER paths between two events within a selected AOP.
 - `map_chemical_to_aops`: Map a chemical identifier to related AOPs using AOP-DB and CompTox.
-- `map_assay_to_aops`: Map an assay identifier to related AOPs.
-- `list_assays_for_aop`: Resolve assay candidates for one AOP from linked stressor chemicals and CompTox bioactivity.
+- `map_assay_to_aops`: Given an assay identifier, return related AOPs. Do not pass AOP IDs.
+- `list_assays_for_aop`: Resolve assay candidates for one AOP from linked stressor chemicals and CompTox bioactivity, with diagnostics explaining empty results.
+- `get_assays_for_aop`: Alias for `list_assays_for_aop` when you already have one AOP identifier and want assays.
 - `search_assays_for_key_event`: Rank CompTox assays from gene and phrase terms derived from a selected key event, with direct CTX gene lookup, full-assay phrase search, narrow phenotype synonym expansion for phrase-only events, title-biased term extraction, alias expansion, taxonomic preference hints, and AOP-Wiki fallback extraction.
-- `list_assays_for_aops`: Aggregate and deduplicate assay candidates across multiple AOPs.
-- `list_assays_for_query`: Search AOPs by phenotype or mechanism query and aggregate assay candidates for the selected AOP set.
+- `list_assays_for_aops`: Aggregate and deduplicate assay candidates across multiple AOPs, with per-AOP diagnostics for empty results.
+- `get_assays_for_aops`: Alias for `list_assays_for_aops` when you already have a list of AOP identifiers and want assays.
+- `list_assays_for_query`: Search AOPs by phenotype or mechanism query and aggregate assay candidates for the selected AOP set, with query and per-AOP diagnostics.
 - `export_assays_table`: Export aggregated assay candidates as `csv` or `tsv` from either a query or explicit AOP list.
 - `get_applicability`: Normalize applicability parameters such as species, sex, and life stage.
 - `get_evidence_matrix`: Build an evidence matrix from KER facets.
@@ -36,6 +38,11 @@ Current MCP tool surface exposed by `POST /mcp`.
 - Tool schemas are exposed through MCP `tools/list` and validated by the server before tool execution.
 - Response contracts live under `docs/contracts/schemas/`.
 - Use `search_aops` for discovery and `get_aop` for fetching a known identifier.
+- Assay tool routing:
+  - assay -> AOPs: `map_assay_to_aops`
+  - AOP -> assays: `get_assays_for_aop`, `get_assays_for_aops`
+  - phenotype/query -> assays: `list_assays_for_query`
+  - key event -> candidate assays: `search_assays_for_key_event`
 - Use `search_assays_for_key_event` as a first-pass KE/MIE assay search; it is KE-derived target matching rather than a curated ontology mapping. Gene-backed KEs use direct CTX gene assay endpoints first, while phrase-only KEs search the full CTX assay metadata set with a narrow phenotype synonym layer before falling back to AOP-Wiki measurement methods.
 - `get_key_event` and `search_assays_for_key_event` advertise `key_event_id` in MCP `tools/list`; legacy `ke_id` input remains accepted for compatibility.
 - In `assess_aop_confidence`, OECD core dimensions are exposed under `confidence_dimensions`; AOP-level free-text evidence is reported separately under `supplemental_signals`.

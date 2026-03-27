@@ -217,12 +217,21 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | --- | --- | --- |
 | AOP discovery | `search_aops`, `get_aop`, `list_key_events`, `list_kers` | Federated AOP-Wiki queries with pagination, schema validation, and improved ranking for phenotype searches. |
 | OECD review helpers | `get_key_event`, `get_ker`, `get_related_aops`, `assess_aop_confidence`, `find_paths_between_events` | Exposes richer KE/KER metadata, shared-AOP discovery, partial OECD-aligned heuristic confidence summaries, and directed path traversal for review and network analysis workflows. |
-| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop`, `search_assays_for_key_event` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays, including KE-derived assay search with direct CTX gene lookup, full-assay phrase search, narrow phenotype synonym expansion, title-biased term extraction, alias normalization, taxonomic preference hints, and AOP-Wiki fallback extraction. |
-| Assay aggregation | `list_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs and exports the ranked assay table as `csv` or `tsv`. |
+| Cross-mapping | `map_chemical_to_aops`, `map_assay_to_aops`, `list_assays_for_aop`, `get_assays_for_aop`, `search_assays_for_key_event` | Links AOP-Wiki and AOP-DB stressor data to CompTox identifiers and bioactivity assays. `map_assay_to_aops` is assay -> AOP only; use the AOP-to-assay tools when you already have AOP IDs. |
+| Assay aggregation | `list_assays_for_aops`, `get_assays_for_aops`, `list_assays_for_query`, `export_assays_table` | Deduplicates assay evidence across multiple AOPs, surfaces diagnostics for empty assay lookups, and exports the ranked assay table as `csv` or `tsv`. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
 | Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `validate_draft_oecd` | In-memory draft graph edits with provenance plus OECD-style completeness checks, including governed KE-level `essentiality` coverage before review/publish. |
 
 Every response is validated against JSON Schemas in `docs/contracts/schemas/`. Refer to `docs/contracts/tool-catalog.md` for full definitions and examples.
+
+### Which assay tool should I use?
+
+| Goal | Tool | Input you should pass |
+| --- | --- | --- |
+| Start from an assay and find linked pathways | `map_assay_to_aops` | An assay identifier such as an AEID or assay name, not an AOP ID |
+| Start from one or more AOPs and retrieve assay candidates | `get_assays_for_aop`, `get_assays_for_aops` | One AOP ID or a list of AOP IDs |
+| Start from a phenotype or mechanism query | `list_assays_for_query` | A text query such as `liver steatosis` |
+| Start from a key event or MIE | `search_assays_for_key_event` | A `key_event_id` such as `KE:239` |
 
 ### Example assay curation flow
 
@@ -231,6 +240,12 @@ For a phenotype-driven workflow such as steatosis assay curation:
 1. Call `search_aops` with a phenotype query such as `liver steatosis`.
 2. Inspect the returned AOP set or pass the same query to `list_assays_for_query`.
 3. Export the aggregated assay candidates with `export_assays_table` when you need a table for downstream review.
+
+For an explicit AOP-ID workflow such as “retrieve assay candidates for AOP:34 and AOP:232”:
+
+1. Call `get_assays_for_aops` with the AOP ID list.
+2. Inspect the top-level `diagnostics` object to see how many AOPs were processed and whether any returned no assays.
+3. Inspect `diagnostics.per_aop` when `results` is empty or thinner than expected to distinguish missing CompTox access, no linked stressors, no CompTox chemical matches, and no bioactivity hits after filtering.
 
 For a curated KE or MIE workflow:
 
@@ -258,6 +273,18 @@ For an OECD-style draft workflow with explicit KE essentiality capture:
 4. Call `validate_draft_oecd` before review. Explicit `essentiality.evidence_call` values of `not_assessed` or `not_reported` still count as coverage, as long as a rationale is present.
 
 Example `tools/call` payloads:
+
+```json
+{
+  "name": "get_assays_for_aops",
+  "arguments": {
+    "aop_ids": ["AOP:34", "AOP:232", "AOP:591"],
+    "limit": 25,
+    "per_aop_limit": 15,
+    "min_hitcall": 0.95
+  }
+}
+```
 
 ```json
 {

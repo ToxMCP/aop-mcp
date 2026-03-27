@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "get_related_aops.response",
+  "type": "object",
+  "required": ["aop", "results"],
+  "properties": {
+    "aop": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "iri": {"type": ["string", "null"], "format": "uri"},
+        "title": {"type": ["string", "null"]},
+        "short_name": {"type": ["string", "null"]},
+        "status": {"type": ["string", "null"]},
+        "abstract": {"type": ["string", "null"]},
+        "references": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": false
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "shared_key_event_count",
+          "shared_ker_count",
+          "total_shared_elements"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "iri": {"type": ["string", "null"], "format": "uri"},
+          "title": {"type": ["string", "null"]},
+          "shared_key_event_count": {"type": "integer"},
+          "shared_ker_count": {"type": "integer"},
+          "total_shared_elements": {"type": "integer"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

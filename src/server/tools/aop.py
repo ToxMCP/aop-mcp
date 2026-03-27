@@ -36,7 +36,9 @@ class SearchAopsInput(BaseModel):
 async def search_aops(params: SearchAopsInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
     results = await adapter.search_aops(text=params.text, limit=params.limit)
-    return {"results": results}
+    payload = {"results": results}
+    validate_payload(payload, namespace="read", name="search_aops.response.schema")
+    return payload
 
 
 class GetAopInput(BaseModel):
@@ -80,7 +82,9 @@ class ListKeyEventsInput(BaseModel):
 async def list_key_events(params: ListKeyEventsInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
     items = await adapter.list_key_events(params.aop_id)
-    return {"results": items}
+    payload = {"results": items}
+    validate_payload(payload, namespace="read", name="list_key_events.response.schema")
+    return payload
 
 
 class ListKersInput(BaseModel):
@@ -90,7 +94,9 @@ class ListKersInput(BaseModel):
 async def list_kers(params: ListKersInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
     items = await adapter.list_kers(params.aop_id)
-    return {"results": items}
+    payload = {"results": items}
+    validate_payload(payload, namespace="read", name="list_kers.response.schema")
+    return payload
 
 
 class GetKerInput(BaseModel):
@@ -124,7 +130,9 @@ async def get_related_aops(params: GetRelatedAopsInput) -> dict[str, Any]:
     adapter = get_aop_wiki_adapter()
     source_aop = await adapter.get_aop(params.aop_id)
     related = await adapter.get_related_aops(params.aop_id, limit=params.limit)
-    return {"aop": source_aop, "results": related}
+    payload = {"aop": source_aop, "results": related}
+    validate_payload(payload, namespace="read", name="get_related_aops.response.schema")
+    return payload
 
 
 class AssessAopConfidenceInput(BaseModel):
@@ -285,13 +293,15 @@ async def find_paths_between_events(params: FindPathsBetweenEventsInput) -> dict
             dfs(downstream_id, visited | {downstream_id}, [*ker_path, edge])
 
     dfs(source_event_id, {source_event_id}, [])
-    return {
+    payload = {
         "aop_id": _normalize_aop_element_id(params.aop_id),
         "source_event_id": source_event_id,
         "target_event_id": target_event_id,
         "path_count": len(paths),
         "results": paths,
     }
+    validate_payload(payload, namespace="read", name="find_paths_between_events.response.schema")
+    return payload
 
 
 class MapChemicalInput(BaseModel):
@@ -313,17 +323,35 @@ async def map_chemical_to_aops(params: MapChemicalInput) -> dict[str, Any]:
         cas=params.cas,
         name=params.name,
     )
-    return {"results": records}
+    payload = {"results": records}
+    validate_payload(payload, namespace="read", name="map_chemical_to_aops.response.schema")
+    return payload
 
 
 class MapAssayInput(BaseModel):
     assay_id: str
 
+    @model_validator(mode="after")
+    def reject_explicit_aop_identifiers(self) -> "MapAssayInput":
+        assay_id = self.assay_id.strip()
+        if re.fullmatch(r"(?i)aop:\d+", assay_id) or re.fullmatch(
+            r"(?i)https?://(?:www\.)?identifiers\.org/aop/\d+/?",
+            assay_id,
+        ):
+            raise ValueError(
+                "map_assay_to_aops expects an assay identifier, not an AOP identifier. "
+                "Use get_assays_for_aop for one AOP ID or get_assays_for_aops for multiple AOP IDs."
+            )
+        self.assay_id = assay_id
+        return self
+
 
 async def map_assay_to_aops(params: MapAssayInput) -> dict[str, Any]:
     adapter = get_aop_db_adapter()
     records = await adapter.map_assay_to_aops(params.assay_id)
-    return {"results": records}
+    payload = {"results": records}
+    validate_payload(payload, namespace="read", name="map_assay_to_aops.response.schema")
+    return payload
 
 
 class SearchAssaysForKeyEventInput(BaseModel):
@@ -342,10 +370,12 @@ async def search_assays_for_key_event(params: SearchAssaysForKeyEventInput) -> d
         key_event,
         limit=params.limit,
     )
-    return {
+    payload = {
         "key_event": key_event,
         **assay_search,
     }
+    validate_payload(payload, namespace="read", name="search_assays_for_key_event.response.schema")
+    return payload
 
 
 class ListAssaysForAopInput(BaseModel):
@@ -356,12 +386,23 @@ class ListAssaysForAopInput(BaseModel):
 
 async def list_assays_for_aop(params: ListAssaysForAopInput) -> dict[str, Any]:
     adapter = get_aop_db_adapter()
-    records = await adapter.list_assays_for_aop(
+    payload = await adapter.list_assays_for_aop_with_diagnostics(
         params.aop_id,
         limit=params.limit,
         min_hitcall=params.min_hitcall,
     )
-    return {"results": records}
+    validate_payload(payload, namespace="read", name="list_assays_for_aop.response.schema")
+    return payload
+
+
+class GetAssaysForAopInput(ListAssaysForAopInput):
+    pass
+
+
+async def get_assays_for_aop(params: GetAssaysForAopInput) -> dict[str, Any]:
+    return await list_assays_for_aop(
+        ListAssaysForAopInput.model_validate(params.model_dump())
+    )
 
 
 class ListAssaysForAopsInput(BaseModel):
@@ -379,13 +420,24 @@ class ListAssaysForAopsInput(BaseModel):
 
 async def list_assays_for_aops(params: ListAssaysForAopsInput) -> dict[str, Any]:
     adapter = get_aop_db_adapter()
-    records = await adapter.list_assays_for_aops(
+    payload = await adapter.list_assays_for_aops_with_diagnostics(
         params.aop_ids,
         limit=params.limit,
         per_aop_limit=params.per_aop_limit,
         min_hitcall=params.min_hitcall,
     )
-    return {"results": records}
+    validate_payload(payload, namespace="read", name="list_assays_for_aops.response.schema")
+    return payload
+
+
+class GetAssaysForAopsInput(ListAssaysForAopsInput):
+    pass
+
+
+async def get_assays_for_aops(params: GetAssaysForAopsInput) -> dict[str, Any]:
+    return await list_assays_for_aops(
+        ListAssaysForAopsInput.model_validate(params.model_dump())
+    )
 
 
 class ListAssaysForQueryInput(BaseModel):
@@ -398,7 +450,7 @@ class ListAssaysForQueryInput(BaseModel):
 
 
 async def list_assays_for_query(params: ListAssaysForQueryInput) -> dict[str, Any]:
-    selected_aops, records = await _resolve_assays_from_query(
+    selected_aops, records, diagnostics = await _resolve_assays_from_query_with_diagnostics(
         params.query,
         search_limit=params.search_limit,
         aop_limit=params.aop_limit,
@@ -406,11 +458,14 @@ async def list_assays_for_query(params: ListAssaysForQueryInput) -> dict[str, An
         per_aop_limit=params.per_aop_limit,
         min_hitcall=params.min_hitcall,
     )
-    return {
+    payload = {
         "query": params.query,
         "selected_aops": selected_aops,
         "results": records,
+        "diagnostics": diagnostics,
     }
+    validate_payload(payload, namespace="read", name="list_assays_for_query.response.schema")
+    return payload
 
 
 class ExportAssaysTableInput(BaseModel):
@@ -452,13 +507,15 @@ async def export_assays_table(params: ExportAssaysTableInput) -> dict[str, Any]:
             min_hitcall=params.min_hitcall,
         )
 
-    return {
+    payload = {
         "format": params.format,
         "filename": _build_export_filename(params.format, query=params.query, aop_ids=params.aop_ids or []),
         "row_count": len(records),
         "selected_aops": selected_aops,
         "content": _serialize_assay_rows(records, params.format),
     }
+    validate_payload(payload, namespace="read", name="export_assays_table.response.schema")
+    return payload
 
 
 async def _resolve_assays_from_query(
@@ -485,6 +542,54 @@ async def _resolve_assays_from_query(
         min_hitcall=min_hitcall,
     )
     return selected_aops, records
+
+
+async def _resolve_assays_from_query_with_diagnostics(
+    query: str,
+    *,
+    search_limit: int,
+    aop_limit: int,
+    limit: int,
+    per_aop_limit: int,
+    min_hitcall: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    wiki_adapter = get_aop_wiki_adapter()
+    search_results = await wiki_adapter.search_aops(text=query, limit=search_limit)
+    selected_aops = search_results[:aop_limit]
+    selected_aop_ids = [row["id"] for row in selected_aops if row.get("id")]
+
+    diagnostics = {
+        "query": query,
+        "matched_aop_count": len(search_results),
+        "selected_aop_count": len(selected_aops),
+        "returned_assay_count": 0,
+        "per_aop": [],
+        "warnings": [],
+    }
+    if len(selected_aops) < len(search_results):
+        diagnostics["warnings"].append(
+            f"Selected the top {len(selected_aops)} AOP matches from {len(search_results)} query results."
+        )
+    if len(selected_aop_ids) < len(selected_aops):
+        diagnostics["warnings"].append(
+            "Some selected AOP search results did not include an identifier and were skipped during assay lookup."
+        )
+    if not selected_aop_ids:
+        diagnostics["warnings"].append("No AOP identifiers were available for assay lookup.")
+        return selected_aops, [], diagnostics
+
+    db_adapter = get_aop_db_adapter()
+    assay_report = await db_adapter.list_assays_for_aops_with_diagnostics(
+        selected_aop_ids,
+        limit=limit,
+        per_aop_limit=per_aop_limit,
+        min_hitcall=min_hitcall,
+    )
+    diagnostics["returned_assay_count"] = len(assay_report["results"])
+    diagnostics["per_aop"] = assay_report["diagnostics"]["per_aop"]
+    diagnostics["warnings"].extend(assay_report["diagnostics"]["warnings"])
+    diagnostics["warnings"] = list(dict.fromkeys(diagnostics["warnings"]))
+    return selected_aops, assay_report["results"], diagnostics
 
 
 def _build_export_filename(format_name: str, *, query: str | None, aop_ids: list[str]) -> str:
@@ -977,7 +1082,7 @@ async def validate_draft_oecd(params: ValidateDraftOecdInput) -> dict[str, Any]:
     warning_count = sum(1 for check in checks if check["status"] == "fail" and check["severity"] == "warning")
     score = max(0, 100 - error_count * 20 - warning_count * 5)
 
-    return {
+    payload = {
         "draft_id": draft.draft_id,
         "version_id": version.version_id,
         "summary": {
@@ -988,6 +1093,8 @@ async def validate_draft_oecd(params: ValidateDraftOecdInput) -> dict[str, Any]:
         },
         "results": checks,
     }
+    validate_payload(payload, namespace="write", name="validate_draft_oecd.response.schema")
+    return payload
 
 
 def _summarize_key_event(record: dict[str, Any]) -> dict[str, Any]:
