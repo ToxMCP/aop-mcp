@@ -77,13 +77,14 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
-## What's new in v0.7.0
+## What's new in v0.8.0
 
-- Added a governed KE-level `attributes.essentiality` contract on the draft write path, with controlled `evidence_call` values, required rationale text, and optional references/provenance.
-- Extended `validate_draft_oecd` with `ke_essentiality_shape` and `ke_essentiality_coverage`, so explicit `not_assessed` and `not_reported` KE judgments are tracked as valid draft coverage instead of being silently omitted.
-- Updated MCP schema discoverability so `tools/list` now exposes the nested `essentiality` input model for `add_or_update_ke`, and invalid payloads fail cleanly with `400` / `-32602` at the JSON-RPC boundary.
-- Added `docs/quickstarts/oecd-draft-authoring.md` plus README links and examples for OECD-style draft authoring with governed KE essentiality capture.
-- Expanded test coverage across write tools, OECD draft validation, and MCP smoke paths; the full suite now passes with `130 passed, 1 skipped`.
+- Hardened the draft audit path: draft reads now return isolated copies, appended versions are protected from caller mutation, and checksum generation is stable for nested mappings.
+- Expanded MCP contract coverage with explicit response schemas and runtime validation across the newer read/review and draft-validation tool surface.
+- Improved assay tool UX: `map_assay_to_aops` now rejects explicit AOP IDs with a steering error, and the new alias tools `get_assays_for_aop` and `get_assays_for_aops` make the AOP-to-assay workflow easier to discover.
+- Added assay diagnostics to `list_assays_for_aop`, `list_assays_for_aops`, and `list_assays_for_query`, so empty results now distinguish missing CompTox access, missing linked stressors, missing CompTox chemical matches, and missing bioactivity hits after filtering.
+- Updated the README and tool catalog with an explicit “Which assay tool should I use?” guide and AOP-ID examples matching common assay-candidate retrieval workflows.
+- Expanded regression coverage across assay adapters, schema validation, MCP smoke tests, and draft-store integrity checks; the full suite now passes with `148 passed, 1 skipped`.
 
 ## Why this project exists
 
