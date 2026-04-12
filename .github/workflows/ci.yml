@@ -6,6 +6,58 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    env:
+      AOP_MCP_ENABLE_FIXTURE_FALLBACK: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Check tracked files for secrets
+        run: python scripts/check_no_secrets.py
+
+      - name: Verify source tree compiles
+        run: python -m compileall src tests scripts
+
+  runtime-contract:
+    name: Runtime Contract
+    runs-on: ubuntu-latest
+
+    env:
+      AOP_MCP_ENABLE_FIXTURE_FALLBACK: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Validate schema-heavy regression surface
+        run: |
+          pytest tests/unit/test_schema_validation.py tests/unit/test_mcp_smoke.py -q
+
   test:
     runs-on: ubuntu-latest
     strategy:
