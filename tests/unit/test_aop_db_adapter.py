@@ -796,16 +796,12 @@ async def test_discover_orphan_stressors_for_aop_prioritizes_specific_non_backgr
 
 
 @pytest.mark.asyncio
-async def test_discover_orphan_stressors_for_aop_times_out_assay_chemical_fetches_with_warning(
+async def test_discover_orphan_stressors_for_aop_reports_failed_assay_chemical_fetches_with_warning(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
     async with make_client(transport) as client:
-        adapter = AOPDBAdapter(
-            client,
-            comptox_client=StubCompTox(),
-            orphan_assay_chemical_timeout_seconds=0.01,
-        )
+        adapter = AOPDBAdapter(client, comptox_client=StubCompTox())
 
         async def fake_list_stressors(aop_id: str) -> list[dict[str, str]]:
             assert aop_id == "AOP:529"
@@ -857,14 +853,7 @@ async def test_discover_orphan_stressors_for_aop_times_out_assay_chemical_fetche
         async def fake_call_comptox(method_name: str, *args: object) -> list[dict[str, str]]:
             assert method_name == "get_chemicals_in_assay"
             assert args == ("303",)
-            await asyncio.sleep(0.05)
-            return [
-                {
-                    "dtxsid": "DTXSID0009999",
-                    "casrn": "999-99-9",
-                    "preferredName": "Late candidate",
-                }
-            ]
+            raise CompToxError("simulated assay lookup failure")
 
         monkeypatch.setattr(adapter, "_list_stressor_chemicals_for_aop", fake_list_stressors)
         monkeypatch.setattr(adapter, "_build_curated_chemical_index", fake_build_curated_index)
@@ -890,6 +879,50 @@ async def test_discover_orphan_stressors_for_aop_times_out_assay_chemical_fetche
         "did not return any active chemicals from CompTox" in warning
         for warning in report["diagnostics"]["warnings"]
     )
+
+
+@pytest.mark.asyncio
+async def test_build_curated_chemical_index_bounds_comptox_resolution_concurrency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"results": {"bindings": []}}))
+    async with make_client(transport) as client:
+        adapter = AOPDBAdapter(client, comptox_client=StubCompTox(), comptox_concurrency_limit=2)
+
+        in_flight = 0
+        max_in_flight = 0
+
+        async def fake_call_comptox(method_name: str, *args: object) -> list[dict[str, str]]:
+            nonlocal in_flight, max_in_flight
+            assert method_name == "search_equal"
+            in_flight += 1
+            max_in_flight = max(max_in_flight, in_flight)
+            await asyncio.sleep(0.01)
+            in_flight -= 1
+            value = str(args[0])
+            return [
+                {
+                    "dtxsid": f"DTXSID_{value}",
+                    "casrn": value if "-" in value else None,
+                    "preferredName": value if "-" not in value else f"Chemical {value}",
+                }
+            ]
+
+        monkeypatch.setattr(adapter, "_call_comptox", fake_call_comptox)
+
+        index, resolved_count, warnings = await adapter._build_curated_chemical_index(
+            [
+                {"casrn": "111-11-1", "label": "Alpha candidate"},
+                {"casrn": "222-22-2", "label": "Beta candidate"},
+                {"casrn": "333-33-3", "label": "Gamma candidate"},
+            ]
+        )
+
+    assert max_in_flight <= 2
+    assert resolved_count == 6
+    assert "DTXSID_111-11-1" in index["dtxsids"]
+    assert "alphacandidate" in index["names"]
+    assert warnings == []
 
 
 @pytest.mark.asyncio

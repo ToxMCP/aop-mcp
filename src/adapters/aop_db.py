@@ -181,7 +181,7 @@ class AOPDBAdapter:
         comptox_client: CompToxClient | None = None,
         hgnc_client: HgncClient | None = None,
         enable_fixture_fallback: bool = True,
-        orphan_assay_chemical_timeout_seconds: float = 12.0,
+        comptox_concurrency_limit: int = 8,
     ) -> None:
         self.client = client
         self.cache_ttl_seconds = cache_ttl_seconds
@@ -189,7 +189,7 @@ class AOPDBAdapter:
         self.comptox = comptox_client
         self.hgnc = hgnc_client
         self.enable_fixture_fallback = enable_fixture_fallback
-        self.orphan_assay_chemical_timeout_seconds = orphan_assay_chemical_timeout_seconds
+        self.comptox_concurrency_limit = max(1, comptox_concurrency_limit)
 
     async def map_chemical_to_aops(
         self,
@@ -687,11 +687,14 @@ class AOPDBAdapter:
 
         scanned_assays = self._rank_assays_for_orphan_scanning(assay_rows)[:assay_limit]
         diagnostics["scanned_assay_count"] = len(scanned_assays)
-        assay_chemical_tasks = [
-            self._fetch_orphan_assay_chemicals(assay_row["aeid"])
-            for assay_row in scanned_assays
-        ]
-        assay_chemical_results = await asyncio.gather(*assay_chemical_tasks, return_exceptions=True)
+        assay_chemical_results = await self._gather_bounded(
+            [
+                self._fetch_orphan_assay_chemicals(assay_row["aeid"])
+                for assay_row in scanned_assays
+            ],
+            limit=self.comptox_concurrency_limit,
+            return_exceptions=True,
+        )
 
         orphan_candidates: dict[str, dict[str, Any]] = {}
         candidate_aliases: dict[str, str] = {}
@@ -825,10 +828,7 @@ class AOPDBAdapter:
         return sorted(assay_rows, key=sort_key)
 
     async def _fetch_orphan_assay_chemicals(self, aeid: int | str) -> list[dict[str, Any]] | list[Any]:
-        return await asyncio.wait_for(
-            self._call_comptox("get_chemicals_in_assay", str(aeid)),
-            timeout=self.orphan_assay_chemical_timeout_seconds,
-        )
+        return await self._call_comptox("get_chemicals_in_assay", str(aeid))
 
     async def discover_orphan_stressors_for_aops_with_diagnostics(
         self,
@@ -1156,6 +1156,24 @@ class AOPDBAdapter:
         method = getattr(self.comptox, method_name)
         return await asyncio.to_thread(method, *args, **kwargs)
 
+    async def _gather_bounded(
+        self,
+        coroutines: list[Any],
+        *,
+        limit: int,
+        return_exceptions: bool = False,
+    ) -> list[Any]:
+        semaphore = asyncio.Semaphore(max(1, limit))
+
+        async def run(coroutine: Any) -> Any:
+            async with semaphore:
+                return await coroutine
+
+        return await asyncio.gather(
+            *(run(coroutine) for coroutine in coroutines),
+            return_exceptions=return_exceptions,
+        )
+
     async def _resolve_hgnc_gene_symbols(self, identifiers: list[str]) -> list[str]:
         if not self.hgnc:
             return []
@@ -1204,11 +1222,14 @@ class AOPDBAdapter:
             )
             return index, 0, warnings
 
-        search_tasks = [
-            self._call_comptox("search_equal", search_value)
-            for search_value in search_values
-        ]
-        search_results = await asyncio.gather(*search_tasks, return_exceptions=True)
+        search_results = await self._gather_bounded(
+            [
+                self._call_comptox("search_equal", search_value)
+                for search_value in search_values
+            ],
+            limit=self.comptox_concurrency_limit,
+            return_exceptions=True,
+        )
         resolved_dtxsids: set[str] = set()
         for search_value, search_result in zip(search_values, search_results, strict=False):
             if isinstance(search_result, Exception):
