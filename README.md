@@ -9,8 +9,8 @@
 > Part of **ToxMCP** Suite → https://github.com/ToxMCP/toxmcp
 
 
-**Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, semantics, and draft authoring.**  
-Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, and draft workflows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
+**Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, scientific review, and draft-to-publication workflows.**  
+Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, quantitative review helpers, and draft review/export flows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
 
 ## Architecture
 
@@ -95,9 +95,9 @@ AOP research depends on stitching together heterogeneous sources (AOP-Wiki, AOP-
 
 The AOP MCP server wraps those workflows in a **secure, programmable interface**:
 
-- **Unified MCP surface** – discovery, semantics, authoring, and job utilities share a single tool catalog exposed over JSON-RPC.
+- **Unified MCP surface** – discovery, semantics, scientific review, draft authoring, and handoff utilities share a single tool catalog exposed over JSON-RPC.
 - **Semantic guardrails** – applicability/evidence helpers normalize identifiers and validate responses against JSON Schema.
-- **Draft-to-publish path** – create drafts, edit key events and KERs, attach stressors, and feed publish planners without leaving MCP.
+- **Draft-to-publish path** – create drafts, edit key events and KERs, run topology/evidence review, export publication-style artifacts, and feed publish planners without leaving MCP.
 
 > Already using the O-QT MCP server? This project mirrors that experience with domain adapters tuned for AOP evidence and authoring.
 
@@ -108,12 +108,13 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 | Capability | Description |
 | --- | --- |
 | 🧬 **AOP discovery adapters** | Schema-validated tooling for AOP-Wiki, AOP-DB, and CompTox federation with improved phenotype search ranking, synonym expansion, and curated AOP retrieval. |
-| 🧪 **Assay curation workflows** | Reverse AOP-to-assay lookup, KE-centered CompTox assay search with direct CTX gene lookup, phrase-only full-assay fallback, narrow phenotype synonym expansion, alias normalization, and taxonomic reranking, plus multi-AOP aggregation and query-driven assay selection. |
+| 🧪 **Assay and chemical discovery** | Reverse AOP-to-assay lookup, KE-centered CompTox assay search with HGNC-backed gene resolution, phrase-only assay fallback, specificity-aware ranking, multi-AOP aggregation, orphan stressor discovery, and query-driven assay or chemical triage. |
 | 🧭 **Semantic services** | CURIE normalization, applicability helper, and evidence matrix builder; enforced via JSON Schema responses. |
-| ✍️ **Draft authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support, plus governed KE-level `essentiality` capture for OECD-style draft review. |
-| 📦 **Artifacts & audit** | Structured logging, audit bundles, metrics for SPARQL/cache, draft edits, and direct assay table export in `csv`/`tsv`. |
+| 🔬 **Scientific review** | OECD-oriented KE/KER review helpers, citation concordance, conservative taxonomic LCA inference, supplemental assay-cutoff ordering checks, and confidence review surfaces that combine narrative and assay-derived signals. |
+| ✍️ **Draft review and authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support, plus topology validation, directional concordance review, evidence-gap analysis, quantitative KER review, and chemical trace overlays. |
+| 📦 **Artifacts and handoff** | Export review bundles as JSON or Markdown, save indexed local review artifacts, build publication-style reports, produce Linear-ready document payloads, and export assay tables in `csv`/`tsv`. |
 | ⚙️ **Configurable transports** | FastAPI JSON-RPC service with configurable endpoints, retries, and observability hooks. |
-| 🤖 **Agent friendly** | Verified with Codex CLI, Gemini CLI, and Claude Code; includes quick-start snippets and smoke scripts. |
+| 🤖 **Agent friendly** | Verified with Codex CLI, Gemini CLI, and Claude Code; includes quick-start snippets, live scientific examples, and an end-to-end MCP smoke script. |
 
 ---
 
@@ -154,9 +155,7 @@ uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
 
 # 4) verify
 curl -s http://localhost:8003/health | jq .
-curl -s http://localhost:8003/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq .
+BASE_URL=http://localhost:8003 ./scripts/test_mcp_endpoints.sh
 ```
 
 ## Quick start
@@ -181,13 +180,26 @@ Once the server is running:
 
 ## Verification (smoke test)
 
-Once the server is running:
+Once the server is running, use the scripted smoke run first:
 
 ```bash
-# health
-curl -s http://localhost:8003/health | jq .
+BASE_URL=http://localhost:8003 ./scripts/test_mcp_endpoints.sh
+```
 
-# list MCP tools
+That smoke script validates the modern draft-review workflow end to end, including:
+
+- `tools/list`
+- draft creation and editing
+- `review_draft_bundle`
+- `export_draft_review_artifact`
+- `save_draft_review_artifact`
+- `list_saved_draft_review_artifacts`
+- `plan_linear_draft_review_document`
+
+If you only want a lightweight manual probe, the basic health and tool-list checks still work:
+
+```bash
+curl -s http://localhost:8003/health | jq .
 curl -s http://localhost:8003/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq .
