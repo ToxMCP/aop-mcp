@@ -66,6 +66,7 @@
           "target_family": {"type": ["string", "null"]},
           "target_family_sub": {"type": ["string", "null"]},
           "gene_symbols": {"type": "array", "items": {"type": "string"}},
+          "specificity_score": {"type": ["number", "null"]},
           "support_count": {"type": "integer"},
           "max_hitcall": {"type": "number"},
           "supporting_chemicals": {

@@ -60,7 +60,7 @@ All MCP protocol methods now work correctly:
 
 1. ✅ **initialize**: Returns proper `protocolVersion`, `serverInfo`, and `capabilities`
 2. ✅ **initialized**: Returns empty object `{}`
-3. ✅ **tools/list**: Returns all 12 available tools
+3. ✅ **tools/list**: Returns the current MCP tool catalog
 4. ✅ **prompts/list**: Returns empty prompts array
 5. ✅ **tools/call**: Successfully invokes tools and returns results
 6. ✅ **Error handling**: Properly returns JSON-RPC error codes for invalid methods/tools
@@ -71,6 +71,11 @@ A comprehensive test script is available at `scripts/test_mcp_endpoints.sh`:
 chmod +x scripts/test_mcp_endpoints.sh
 ./scripts/test_mcp_endpoints.sh
 ```
+
+The smoke script validates the active draft-review workflow, including
+`review_draft_bundle`, `export_draft_review_artifact`,
+`save_draft_review_artifact`, `list_saved_draft_review_artifacts`, and
+`plan_linear_draft_review_document`.
 
 ## Server Configuration
 

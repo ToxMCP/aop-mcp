@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "discover_orphan_stressors_for_aop.response",
+  "type": "object",
+  "required": ["results", "diagnostics"],
+  "properties": {
+    "diagnostics": {
+      "type": "object",
+      "required": [
+        "aop_id",
+        "comptox_api_key_configured",
+        "curated_stressor_count",
+        "curated_chemical_match_count",
+        "assay_candidate_count",
+        "scanned_assay_count",
+        "assay_chemical_hit_count",
+        "returned_candidate_count",
+        "empty_reason",
+        "warnings"
+      ],
+      "properties": {
+        "aop_id": {"type": "string"},
+        "comptox_api_key_configured": {"type": "boolean"},
+        "curated_stressor_count": {"type": "integer", "minimum": 0},
+        "curated_chemical_match_count": {"type": "integer", "minimum": 0},
+        "assay_candidate_count": {"type": "integer", "minimum": 0},
+        "scanned_assay_count": {"type": "integer", "minimum": 0},
+        "assay_chemical_hit_count": {"type": "integer", "minimum": 0},
+        "returned_candidate_count": {"type": "integer", "minimum": 0},
+        "empty_reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "missing_comptox_api_key",
+            "no_linked_stressors",
+            "no_comptox_chemical_match",
+            "no_bioactivity_hits_after_filtering",
+            "no_assay_candidates",
+            "no_assay_chemical_hits",
+            "no_orphan_candidates_after_excluding_curated_chemicals"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "dtxsid",
+          "casrn",
+          "preferred_name",
+          "supporting_assay_count",
+          "best_assay_rank",
+          "max_specificity_score",
+          "supporting_assays"
+        ],
+        "properties": {
+          "dtxsid": {"type": ["string", "null"]},
+          "casrn": {"type": ["string", "null"]},
+          "preferred_name": {"type": ["string", "null"]},
+          "supporting_assay_count": {"type": "integer", "minimum": 1},
+          "best_assay_rank": {"type": "integer", "minimum": 1},
+          "max_specificity_score": {"type": ["number", "null"]},
+          "supporting_assays": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["aeid", "assay_name", "rank", "specificity_score"],
+              "properties": {
+                "aeid": {"type": "integer"},
+                "assay_name": {"type": ["string", "null"]},
+                "rank": {"type": "integer", "minimum": 1},
+                "specificity_score": {"type": ["number", "null"]}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

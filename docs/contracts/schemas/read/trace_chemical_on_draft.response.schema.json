@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "trace_chemical_on_draft.response",
+  "type": "object",
+  "required": [
+    "draft_id",
+    "version_id",
+    "draft",
+    "chemical",
+    "summary",
+    "key_events",
+    "relationships",
+    "limitations"
+  ],
+  "properties": {
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"},
+    "draft": {
+      "type": "object",
+      "required": ["aop_entity_id", "title", "adverse_outcome"],
+      "properties": {
+        "aop_entity_id": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "adverse_outcome": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "chemical": {
+      "type": "object",
+      "required": ["query", "dtxsid", "preferred_name", "casrn", "inchikey", "matched_by"],
+      "properties": {
+        "query": {
+          "type": "object",
+          "required": ["dtxsid", "cas", "inchikey", "name"],
+          "properties": {
+            "dtxsid": {"type": ["string", "null"]},
+            "cas": {"type": ["string", "null"]},
+            "inchikey": {"type": ["string", "null"]},
+            "name": {"type": ["string", "null"]}
+          },
+          "additionalProperties": false
+        },
+        "dtxsid": {"type": ["string", "null"]},
+        "preferred_name": {"type": ["string", "null"]},
+        "casrn": {"type": ["string", "null"]},
+        "inchikey": {"type": ["string", "null"]},
+        "matched_by": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "key_event_count",
+        "relationship_count",
+        "traced_key_event_count",
+        "active_key_event_count",
+        "inactive_key_event_count",
+        "no_matching_bioactivity_key_event_count",
+        "unmapped_key_event_count",
+        "chemical_bioactivity_assay_count"
+      ],
+      "properties": {
+        "key_event_count": {"type": "integer"},
+        "relationship_count": {"type": "integer"},
+        "traced_key_event_count": {"type": "integer"},
+        "active_key_event_count": {"type": "integer"},
+        "inactive_key_event_count": {"type": "integer"},
+        "no_matching_bioactivity_key_event_count": {"type": "integer"},
+        "unmapped_key_event_count": {"type": "integer"},
+        "chemical_bioactivity_assay_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "key_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "event_type",
+          "event_role",
+          "activity_state",
+          "active",
+          "assay_candidate_count",
+          "matching_assay_count",
+          "active_assay_count",
+          "max_hitcall",
+          "best_activity_cutoff",
+          "derived_search_terms",
+          "top_assays",
+          "limitations"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": ["string", "null"]},
+          "event_type": {"type": ["string", "null"]},
+          "event_role": {"type": ["string", "null"]},
+          "activity_state": {
+            "type": "string",
+            "enum": ["active", "inactive", "no_matching_bioactivity", "no_assay_candidates"]
+          },
+          "active": {"type": "boolean"},
+          "assay_candidate_count": {"type": "integer"},
+          "matching_assay_count": {"type": "integer"},
+          "active_assay_count": {"type": "integer"},
+          "max_hitcall": {"type": ["number", "null"]},
+          "best_activity_cutoff": {"type": ["number", "null"]},
+          "derived_search_terms": {"type": "object"},
+          "top_assays": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "aeid",
+                "assay_name",
+                "match_score",
+                "rank_score",
+                "specificity_score",
+                "source",
+                "matched_terms",
+                "match_basis",
+                "gene_symbols",
+                "hitcall",
+                "activity_cutoff",
+                "active"
+              ],
+              "properties": {
+                "aeid": {"type": ["integer", "null"]},
+                "assay_name": {"type": ["string", "null"]},
+                "match_score": {"type": ["number", "null"]},
+                "rank_score": {"type": ["number", "null"]},
+                "specificity_score": {"type": ["number", "null"]},
+                "source": {"type": ["string", "null"]},
+                "matched_terms": {"type": "array", "items": {"type": "string"}},
+                "match_basis": {"type": "array", "items": {"type": "string"}},
+                "gene_symbols": {"type": "array", "items": {"type": "string"}},
+                "hitcall": {"type": ["number", "null"]},
+                "activity_cutoff": {"type": ["number", "null"]},
+                "active": {"type": "boolean"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "limitations": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "target", "type", "plausibility", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "type": {"type": "string"},
+          "plausibility": {"type": ["string", "null"]},
+          "status": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

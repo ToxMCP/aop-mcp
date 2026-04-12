@@ -161,6 +161,64 @@ class StubDbAdapter:
         ]
 
 
+class StubQuantitativeCompTox:
+    has_api_key = True
+
+    def search_equal(self, value: str):
+        assert value in {"1763-23-1", "Perfluorooctanesulfonic acid"}
+        return [
+            {
+                "dtxsid": "DTXSID3031864",
+                "preferredName": "Perfluorooctanesulfonic acid",
+                "casrn": "1763-23-1",
+            }
+        ]
+
+    def bioactivity_data_by_dtxsid(self, dtxsid: str):
+        assert dtxsid == "DTXSID3031864"
+        return [
+            {"aeid": 101, "hitc": 0.98, "coff": 10.0},
+            {"aeid": 202, "hitc": 0.97, "coff": 20.0},
+            {"aeid": 303, "hitc": 0.96, "coff": 40.0},
+        ]
+
+
+class StubQuantitativeDbAdapter(StubDbAdapter):
+    def __init__(self) -> None:
+        self.comptox = StubQuantitativeCompTox()
+
+    async def search_assays_for_key_event(
+        self,
+        key_event: dict[str, object],
+        *,
+        limit: int = 25,
+    ):
+        aeids = {
+            "KE:1": 101,
+            "KE:2": 202,
+            "KE:3": 303,
+        }
+        return {
+            "derived_search_terms": {
+                "gene_symbols": [],
+                "phrases": [],
+            },
+            "limitations": [],
+            "results": [
+                {
+                    "aeid": aeids[key_event["id"]],
+                    "assay_name": f"AEID_{aeids[key_event['id']]}",
+                    "match_score": 200,
+                    "rank_score": 210.0,
+                    "specificity_score": 0.7,
+                    "match_basis": ["stub"],
+                    "matched_terms": [key_event["id"]],
+                    "source": "stub",
+                }
+            ],
+        }
+
+
 @pytest.mark.asyncio
 async def test_find_paths_between_events_returns_multiple_paths(monkeypatch) -> None:
     monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
@@ -247,7 +305,97 @@ async def test_get_ker_tool_returns_evidence_blocks(monkeypatch) -> None:
     assert result["applicability"]["taxa"][0]["term"]["id"] == "NCBITaxon:9606"
     assert result["applicability"]["life_stages"][0]["term"]["label"] == "adult"
     assert result["applicability"]["sexes"] == []
+    assert result["citation_concordance"]["heuristic_call"] == "low"
+    assert result["citation_concordance"]["shared_reference_count"] == 0
+    assert result["assay_cutoff_ordering"]["heuristic_call"] == "not_reported"
     assert result["references"][0]["identifier"] == "10.1000/ker-10"
+
+
+@pytest.mark.asyncio
+async def test_get_ker_tool_surfaces_shared_reference_citation_concordance(monkeypatch) -> None:
+    class CitationConcordanceWikiAdapter(StubWikiAdapter):
+        async def get_key_event(self, ke_id: str):
+            record = dict(await super().get_key_event(ke_id))
+            if ke_id == "KE:1":
+                record["references"] = [
+                    {"label": "KE ref", "identifier": "10.1000/ke-1", "source": "doi"},
+                    {"label": "Shared study", "identifier": "PMID:999999", "source": "pmid"},
+                ]
+            elif ke_id == "KE:2":
+                record["references"] = [
+                    {"label": "Shared study", "identifier": "PMID:999999", "source": "pmid"},
+                    {"label": "Independent study", "identifier": "10.1000/ke-2", "source": "doi"},
+                ]
+            return record
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: CitationConcordanceWikiAdapter())
+
+    result = await aop_tools.get_ker(
+        aop_tools.GetKerInput(ker_id="KER:10")
+    )
+
+    validate_payload(result, namespace="read", name="get_ker.response.schema")
+    assert result["citation_concordance"]["heuristic_call"] == "moderate"
+    assert result["citation_concordance"]["shared_reference_count"] == 1
+    assert result["citation_concordance"]["shared_references"][0]["identifier"] == "PMID:999999"
+
+
+@pytest.mark.asyncio
+async def test_get_ker_tool_infers_taxonomic_lca_when_species_do_not_exactly_overlap(monkeypatch) -> None:
+    class TaxonomicLcaWikiAdapter(StubWikiAdapter):
+        async def get_key_event(self, ke_id: str):
+            record = dict(await super().get_key_event(ke_id))
+            if ke_id == "KE:1":
+                record["taxonomic_applicability"] = ["NCBITaxon:9606"]
+            elif ke_id == "KE:2":
+                record["taxonomic_applicability"] = ["NCBITaxon:10090"]
+            return record
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: TaxonomicLcaWikiAdapter())
+
+    result = await aop_tools.get_ker(
+        aop_tools.GetKerInput(ker_id="KER:10")
+    )
+
+    validate_payload(result, namespace="read", name="get_ker.response.schema")
+    assert result["applicability"]["taxa"][0]["term"]["id"] == "NCBITaxon:40674"
+    assert "lowest common taxonomic ancestor" in result["applicability"]["taxa"][0]["rationale"].lower()
+    assert "lowest-common-ancestor" in result["applicability"]["summary_rationale"].lower()
+
+
+@pytest.mark.asyncio
+async def test_get_ker_tool_surfaces_supplemental_assay_cutoff_ordering(monkeypatch) -> None:
+    class QuantitativeKerWikiAdapter(StubWikiAdapter):
+        async def get_ker(self, ker_id: str):
+            record = dict(await super().get_ker(ker_id))
+            if ker_id == "KER:10":
+                record["referenced_aops"] = [
+                    {
+                        "id": "AOP:232",
+                        "iri": "https://identifiers.org/aop/232",
+                        "title": "Example AOP",
+                    }
+                ]
+            return record
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: QuantitativeKerWikiAdapter())
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubQuantitativeDbAdapter())
+
+    result = await aop_tools.get_ker(
+        aop_tools.GetKerInput(ker_id="KER:10")
+    )
+
+    validate_payload(result, namespace="read", name="get_ker.response.schema")
+    assert result["assay_cutoff_ordering"]["heuristic_call"] == "moderate"
+    assert result["assay_cutoff_ordering"]["supporting_chemical_count"] == 1
+    assert result["assay_cutoff_ordering"]["supporting_chemicals"][0] == {
+        "dtxsid": "DTXSID3031864",
+        "preferred_name": "Perfluorooctanesulfonic acid",
+        "casrn": "1763-23-1",
+        "upstream_best_activity_cutoff": 10.0,
+        "downstream_best_activity_cutoff": 20.0,
+        "ordering": "concordant",
+    }
 
 
 @pytest.mark.asyncio
@@ -302,13 +450,85 @@ async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monk
     assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_call"] == "not_assessed"
     assert "overall_aop_evidence" not in result["confidence_dimensions"]
     assert result["supplemental_signals"]["aop_level_evidence_signal"]["heuristic_call"] == "moderate"
+    assert result["supplemental_signals"]["citation_concordance_signal"]["heuristic_call"] == "low"
+    assert result["supplemental_signals"]["citation_concordance_signal"]["shared_reference_kers"] == 0
+    assert result["supplemental_signals"]["assay_cutoff_ordering_signal"]["heuristic_call"] == "not_reported"
     assert result["oecd_alignment"]["status"] == "partial"
     assert result["overall_call"] == "moderate"
     assert result["heuristic_overall_call"] == "moderate"
     assert any("essentiality" in item.lower() for item in result["limitations"])
+    assert any("assay-cutoff ordering" in item.lower() for item in result["limitations"])
     assert result["applicability_summary"]["taxonomic_applicability"] == ["NCBITaxon:9606"]
     assert result["overall_applicability"]["taxa"][0]["evidence_call"] == "moderate"
     assert result["overall_applicability"]["summary_rationale"] is not None
+
+
+@pytest.mark.asyncio
+async def test_assess_aop_confidence_rolls_up_citation_concordance_as_supplemental_signal(monkeypatch) -> None:
+    class CitationConcordanceWikiAdapter(StubWikiAdapter):
+        async def list_kers(self, aop_id: str):
+            assert aop_id == "AOP:232"
+            return [
+                {
+                    "id": "KER:10",
+                    "upstream": {"id": "KE:1", "iri": "https://identifiers.org/aop.events/1"},
+                    "downstream": {"id": "KE:2", "iri": "https://identifiers.org/aop.events/2"},
+                }
+            ]
+
+        async def get_key_event(self, ke_id: str):
+            record = dict(await super().get_key_event(ke_id))
+            if ke_id == "KE:1":
+                record["references"] = [
+                    {"label": "Shared study", "identifier": "PMID:999999", "source": "pmid"},
+                    {"label": "Upstream-only study", "identifier": "10.1000/ke-1", "source": "doi"},
+                ]
+            elif ke_id == "KE:2":
+                record["references"] = [
+                    {"label": "Shared study", "identifier": "PMID:999999", "source": "pmid"},
+                    {"label": "Downstream-only study", "identifier": "10.1000/ke-2", "source": "doi"},
+                ]
+            return record
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: CitationConcordanceWikiAdapter())
+
+    result = await aop_tools.assess_aop_confidence(
+        aop_tools.AssessAopConfidenceInput(aop_id="AOP:232")
+    )
+
+    assert result["supplemental_signals"]["citation_concordance_signal"]["heuristic_call"] == "moderate"
+    assert result["supplemental_signals"]["citation_concordance_signal"]["shared_reference_kers"] == 1
+    assert result["ker_assessments"][0]["citation_concordance"]["shared_reference_count"] == 1
+    assert result["ker_assessments"][0]["citation_concordance_call"] == "moderate"
+
+
+@pytest.mark.asyncio
+async def test_assess_aop_confidence_rolls_up_assay_cutoff_ordering_as_supplemental_signal(monkeypatch) -> None:
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubQuantitativeDbAdapter())
+
+    result = await aop_tools.assess_aop_confidence(
+        aop_tools.AssessAopConfidenceInput(aop_id="AOP:232")
+    )
+
+    signal = result["supplemental_signals"]["assay_cutoff_ordering_signal"]
+    assert signal["heuristic_call"] == "moderate"
+    assert signal["coverage"] == {"present": 3, "total": 3}
+    assert signal["concordant_kers"] == 3
+    assert signal["discordant_kers"] == 0
+    assert signal["supporting_chemical_count"] == 3
+    assert result["coverage"]["kers_with_assay_cutoff_ordering"] == 3
+    assert result["ker_assessments"][0]["assay_cutoff_ordering_call"] == "moderate"
+    assert result["ker_assessments"][0]["assay_cutoff_supporting_chemical_count"] == 1
+    assert result["ker_assessments"][0]["assay_cutoff_ordering"]["supporting_chemicals"][0] == {
+        "dtxsid": "DTXSID3031864",
+        "preferred_name": "Perfluorooctanesulfonic acid",
+        "casrn": "1763-23-1",
+        "upstream_best_activity_cutoff": 10.0,
+        "downstream_best_activity_cutoff": 20.0,
+        "ordering": "concordant",
+    }
+    assert any("assay-cutoff ordering" in item.lower() for item in result["rationale"])
 
 
 @pytest.mark.asyncio
@@ -494,6 +714,17 @@ async def test_validate_draft_oecd_reports_readiness_and_warnings(monkeypatch) -
     checks = {item["id"]: item for item in result["results"]}
     assert checks["ke_essentiality_shape"]["status"] == "pass"
     assert checks["ke_essentiality_coverage"]["status"] == "pass"
+    assert checks["ke_event_role_coverage"]["status"] == "fail"
+    assert checks["topology_anchor_inference_used"]["status"] == "fail"
+    assert checks["topology_mie_present"]["status"] == "pass"
+    assert checks["topology_ao_present"]["status"] == "pass"
+    assert checks["topology_cycle_free"]["status"] == "pass"
+    assert checks["topology_mie_to_ao_path_exists"]["status"] == "pass"
+    assert checks["topology_unanchored_key_events"]["status"] == "pass"
+    assert checks["topology_directional_concordance_assessable"]["status"] == "fail"
+    assert checks["topology_directional_concordance"]["status"] == "pass"
+    assert checks["ker_assay_cutoff_ordering_assessable"]["status"] == "fail"
+    assert checks["ker_assay_cutoff_ordering"]["status"] == "pass"
 
 
 @pytest.mark.asyncio
@@ -575,3 +806,452 @@ async def test_validate_draft_oecd_flags_legacy_malformed_essentiality(monkeypat
     assert checks["ke_essentiality_shape"]["status"] == "fail"
     assert checks["ke_essentiality_shape"]["severity"] == "error"
     assert checks["ke_essentiality_coverage"]["status"] == "fail"
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_passes_topology_checks_with_explicit_roles(monkeypatch) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-explicit",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            applicability={"species": "human", "life_stage": "adult", "sex": "female"},
+            references=[{"title": "Example reference"}],
+            author="tester",
+            summary="create draft",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-explicit",
+            version_id="v2",
+            author="tester",
+            summary="add ke1",
+            identifier="KE:1",
+            title="PXR activation",
+            event_role="mie",
+            attributes={
+                "measurement_methods": ["Reporter assay"],
+                "essentiality": {
+                    "evidence_call": "moderate",
+                    "rationale": "Blocking the event reduced downstream lipid accumulation.",
+                },
+            },
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-explicit",
+            version_id="v3",
+            author="tester",
+            summary="add ke2",
+            identifier="KE:2",
+            title="Liver steatosis",
+            event_role="ao",
+            attributes={
+                "measurement": "Histopathology",
+                "direction_of_change": "increased",
+                "essentiality": {
+                    "evidence_call": "not_assessed",
+                    "rationale": "Direct perturbation evidence has not yet been curated for this draft.",
+                },
+            },
+        )
+    )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-explicit",
+            version_id="v4",
+            author="tester",
+            summary="add ker",
+            identifier="KER:1",
+            upstream="KE:1",
+            downstream="KE:2",
+            plausibility="Strong mechanistic rationale",
+            attributes={"relationship_effect": "increased"},
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-explicit")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["ke_event_role_coverage"]["status"] == "pass"
+    assert checks["topology_anchor_inference_used"]["status"] == "pass"
+    assert checks["topology_mie_present"]["status"] == "pass"
+    assert checks["topology_ao_present"]["status"] == "pass"
+    assert checks["topology_cycle_free"]["status"] == "pass"
+    assert checks["topology_mie_to_ao_path_exists"]["status"] == "pass"
+    assert checks["topology_directional_concordance_assessable"]["status"] == "pass"
+    assert checks["topology_directional_concordance"]["status"] == "pass"
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_passes_assay_cutoff_ordering_when_draft_stressors_are_resolvable(monkeypatch) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubQuantitativeDbAdapter())
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-quantitative",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            applicability={"species": "human", "life_stage": "adult", "sex": "female"},
+            references=[{"title": "Example reference"}],
+            author="tester",
+            summary="create draft",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-quantitative",
+            version_id="v2",
+            author="tester",
+            summary="add mie",
+            identifier="KE:1",
+            title="PXR activation",
+            event_role="mie",
+            attributes={"measurement_methods": ["Reporter assay"]},
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-quantitative",
+            version_id="v3",
+            author="tester",
+            summary="add ao",
+            identifier="KE:2",
+            title="Liver steatosis",
+            event_role="ao",
+            attributes={"measurement": "Histopathology"},
+        )
+    )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-quantitative",
+            version_id="v4",
+            author="tester",
+            summary="add ker",
+            identifier="KER:1",
+            upstream="KE:1",
+            downstream="KE:2",
+            plausibility="Strong mechanistic rationale",
+        )
+    )
+    await aop_tools.link_stressor(
+        aop_tools.StressorLinkInputModel(
+            draft_id="draft-oecd-quantitative",
+            version_id="v5",
+            author="tester",
+            summary="link stressor",
+            stressor_id="CHEM:PFOS",
+            label="Perfluorooctanesulfonic acid",
+            source="1763-23-1",
+            target="KE:1",
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-quantitative")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["ker_assay_cutoff_ordering_assessable"]["status"] == "pass"
+    assert checks["ker_assay_cutoff_ordering"]["status"] == "pass"
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_flags_assay_cutoff_ordering_conflicts(monkeypatch) -> None:
+    class DiscordantQuantitativeCompTox(StubQuantitativeCompTox):
+        def bioactivity_data_by_dtxsid(self, dtxsid: str):
+            assert dtxsid == "DTXSID3031864"
+            return [
+                {"aeid": 101, "hitc": 0.98, "coff": 30.0},
+                {"aeid": 202, "hitc": 0.97, "coff": 10.0},
+            ]
+
+    class DiscordantQuantitativeDbAdapter(StubQuantitativeDbAdapter):
+        def __init__(self) -> None:
+            self.comptox = DiscordantQuantitativeCompTox()
+
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: DiscordantQuantitativeDbAdapter())
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-quantitative-conflict",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            applicability={"species": "human", "life_stage": "adult", "sex": "female"},
+            references=[{"title": "Example reference"}],
+            author="tester",
+            summary="create draft",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-quantitative-conflict",
+            version_id="v2",
+            author="tester",
+            summary="add mie",
+            identifier="KE:1",
+            title="PXR activation",
+            event_role="mie",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-quantitative-conflict",
+            version_id="v3",
+            author="tester",
+            summary="add ao",
+            identifier="KE:2",
+            title="Liver steatosis",
+            event_role="ao",
+        )
+    )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-quantitative-conflict",
+            version_id="v4",
+            author="tester",
+            summary="add ker",
+            identifier="KER:1",
+            upstream="KE:1",
+            downstream="KE:2",
+            plausibility="Strong mechanistic rationale",
+        )
+    )
+    await aop_tools.link_stressor(
+        aop_tools.StressorLinkInputModel(
+            draft_id="draft-oecd-quantitative-conflict",
+            version_id="v5",
+            author="tester",
+            summary="link stressor",
+            stressor_id="CHEM:PFOS",
+            label="Perfluorooctanesulfonic acid",
+            source="1763-23-1",
+            target="KE:1",
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-quantitative-conflict")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["ker_assay_cutoff_ordering_assessable"]["status"] == "pass"
+    assert checks["ker_assay_cutoff_ordering"]["status"] == "fail"
+    assert "KER:1" in checks["ker_assay_cutoff_ordering"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_flags_directional_concordance_conflicts(monkeypatch) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-directional",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            author="tester",
+            summary="create draft",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-directional",
+            version_id="v2",
+            author="tester",
+            summary="add ke1",
+            identifier="KE:1",
+            title="PXR activation",
+            event_role="mie",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-directional",
+            version_id="v3",
+            author="tester",
+            summary="add ke2",
+            identifier="KE:2",
+            title="Increased INSIG1",
+            event_role="ao",
+        )
+    )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-directional",
+            version_id="v4",
+            author="tester",
+            summary="add ker",
+            identifier="KER:1",
+            upstream="KE:1",
+            downstream="KE:2",
+            attributes={"relationship_effect": "decreased"},
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-directional")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["topology_directional_concordance_assessable"]["status"] == "pass"
+    assert checks["topology_directional_concordance"]["status"] == "fail"
+    assert "KER:1" in checks["topology_directional_concordance"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_flags_cycle_and_missing_path(monkeypatch) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-cycle",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            author="tester",
+            summary="create draft",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-cycle",
+            version_id="v2",
+            author="tester",
+            summary="add ke1",
+            identifier="KE:1",
+            title="PXR activation",
+            event_role="mie",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-cycle",
+            version_id="v3",
+            author="tester",
+            summary="add ke2",
+            identifier="KE:2",
+            title="Intermediate",
+            event_role="intermediate",
+        )
+    )
+    await aop_tools.add_or_update_ke(
+        aop_tools.KeyEventInputModel(
+            draft_id="draft-oecd-cycle",
+            version_id="v4",
+            author="tester",
+            summary="add ke3",
+            identifier="KE:3",
+            title="Liver steatosis",
+            event_role="ao",
+        )
+    )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-cycle",
+            version_id="v5",
+            author="tester",
+            summary="add ker",
+            identifier="KER:1",
+            upstream="KE:1",
+            downstream="KE:2",
+        )
+    )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-cycle",
+            version_id="v6",
+            author="tester",
+            summary="add ker",
+            identifier="KER:2",
+            upstream="KE:2",
+            downstream="KE:1",
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-cycle")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["topology_cycle_free"]["status"] == "fail"
+    assert checks["topology_mie_to_ao_path_exists"]["status"] == "fail"
+
+
+@pytest.mark.asyncio
+async def test_validate_draft_oecd_warns_for_unanchored_key_events(monkeypatch) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-oecd-unanchored",
+            title="PXR activation leading to liver steatosis",
+            description="Initial OECD-style draft.",
+            adverse_outcome="Liver steatosis",
+            author="tester",
+            summary="create draft",
+        )
+    )
+    for version_id, identifier, role in [
+        ("v2", "KE:1", "mie"),
+        ("v3", "KE:2", "ao"),
+        ("v4", "KE:3", "intermediate"),
+    ]:
+        await aop_tools.add_or_update_ke(
+            aop_tools.KeyEventInputModel(
+                draft_id="draft-oecd-unanchored",
+                version_id=version_id,
+                author="tester",
+                summary="add key event",
+                identifier=identifier,
+                title=identifier,
+                event_role=role,
+            )
+        )
+    await aop_tools.add_or_update_ker(
+        aop_tools.KerInputModel(
+            draft_id="draft-oecd-unanchored",
+            version_id="v5",
+            author="tester",
+            summary="add ker",
+            identifier="KER:1",
+            upstream="KE:1",
+            downstream="KE:2",
+        )
+    )
+
+    result = await aop_tools.validate_draft_oecd(
+        aop_tools.ValidateDraftOecdInput(draft_id="draft-oecd-unanchored")
+    )
+
+    checks = {item["id"]: item for item in result["results"]}
+    assert checks["topology_unanchored_key_events"]["status"] == "fail"

@@ -6,5 +6,6 @@ current MCP tool surface.
 
 Available guides:
 - `find-aop.md` - discovery-first path for phenotype or mechanism searches.
+- `live-scientific-examples.md` - validated live-server examples for phenotype review, KE assay search, orphan discovery, and confidence interpretation.
 - `oecd-draft-authoring.md` - OECD-style draft authoring with governed KE essentiality capture.
 - `publish.md` - dry-run draft-to-publish planning guidance.

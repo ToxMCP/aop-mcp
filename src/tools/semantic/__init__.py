@@ -44,9 +44,11 @@ class SemanticTools:
         validate_payload(payload, namespace="semantic", name="get_applicability.response.schema")
         return payload
 
+    def lowest_common_taxon(self, values: Iterable[str]) -> str | None:
+        return self._applicability.lowest_common_taxon(values)
+
     def get_evidence_matrix(self, entries: Iterable[Mapping[str, str | None]]) -> dict[str, list[dict[str, str | None]]]:
         matrix = build_matrix(entries)
         payload = {"matrix": matrix}
         validate_payload(payload, namespace="semantic", name="get_evidence_matrix.response.schema")
         return payload
-

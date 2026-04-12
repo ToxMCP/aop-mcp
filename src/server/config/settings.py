@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     comptox_bioactivity_url: str = "https://comptox.epa.gov/ctx-api/"
     comptox_api_key: str | None = None
 
+    # HGNC
+    hgnc_base_url: str = "https://rest.genenames.org/"
+    hgnc_timeout: float = 5.0
+
+    # Local artifact export
+    artifact_output_dir: str = "output"
+
     @field_validator("aop_wiki_sparql_endpoints", "aop_db_sparql_endpoints", mode="before")
     @classmethod
     def _split_csv_endpoints(cls, value: object) -> object:

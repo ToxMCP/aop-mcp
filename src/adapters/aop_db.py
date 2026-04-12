@@ -8,8 +8,9 @@ import re
 from typing import Any
 
 from .aop_wiki import _iri_to_curie  # reuse IRI normalization
-from .comp_tox import CompToxClient, CompToxError
+from .comp_tox import CompToxClient, CompToxError, compute_specificity_score
 from .fixtures import FixtureNotFoundError, load_fixture
+from .hgnc import HgncClient, HgncError
 from .sparql_client import SparqlClient, SparqlClientError
 from .sparql_client import TemplateCatalog as _TemplateCatalog
 
@@ -118,6 +119,9 @@ _ASSAY_EMPTY_REASON_MISSING_COMPTOX_API_KEY = "missing_comptox_api_key"
 _ASSAY_EMPTY_REASON_NO_LINKED_STRESSORS = "no_linked_stressors"
 _ASSAY_EMPTY_REASON_NO_COMPTOX_CHEMICAL_MATCH = "no_comptox_chemical_match"
 _ASSAY_EMPTY_REASON_NO_BIOACTIVITY_HITS = "no_bioactivity_hits_after_filtering"
+_ORPHAN_EMPTY_REASON_NO_ASSAY_CANDIDATES = "no_assay_candidates"
+_ORPHAN_EMPTY_REASON_NO_ASSAY_CHEMICAL_HITS = "no_assay_chemical_hits"
+_ORPHAN_EMPTY_REASON_NO_ORPHAN_CANDIDATES = "no_orphan_candidates_after_excluding_curated_chemicals"
 
 _GENE_ALIAS_RULES = [
     {
@@ -175,13 +179,17 @@ class AOPDBAdapter:
         cache_ttl_seconds: int = 600,
         *,
         comptox_client: CompToxClient | None = None,
+        hgnc_client: HgncClient | None = None,
         enable_fixture_fallback: bool = True,
+        comptox_concurrency_limit: int = 8,
     ) -> None:
         self.client = client
         self.cache_ttl_seconds = cache_ttl_seconds
         self._templates = _TemplateCatalog.from_directory(TEMPLATE_DIR)
         self.comptox = comptox_client
+        self.hgnc = hgnc_client
         self.enable_fixture_fallback = enable_fixture_fallback
+        self.comptox_concurrency_limit = max(1, comptox_concurrency_limit)
 
     async def map_chemical_to_aops(
         self,
@@ -409,14 +417,13 @@ class AOPDBAdapter:
                 "Some linked stressors lacked a searchable CAS RN or label and were skipped."
             )
 
-        ranked_candidates = sorted(
-            assay_candidates.values(),
-            key=lambda item: (item["support_count"], item["max_hitcall"], -(item["aeid"])),
-            reverse=True,
-        )[:limit]
-
-        for candidate in ranked_candidates:
-            assay = await self._call_comptox("assay_by_aeid", candidate["aeid"]) or {}
+        metadata_tasks = [
+            self._call_comptox("assay_by_aeid", candidate["aeid"])
+            for candidate in assay_candidates.values()
+        ]
+        metadata_results = await asyncio.gather(*metadata_tasks)
+        for candidate, assay in zip(assay_candidates.values(), metadata_results):
+            assay = assay or {}
             genes = assay.get("gene") or []
             candidate["assay_name"] = assay.get("assayName")
             candidate["assay_component_endpoint_name"] = assay.get("assayComponentEndpointName")
@@ -427,7 +434,24 @@ class AOPDBAdapter:
             candidate["gene_symbols"] = sorted(
                 {gene.get("geneSymbol") for gene in genes if gene.get("geneSymbol")}
             )
+            candidate["specificity_score"] = _assay_specificity_score(assay)
+            candidate["_weighted_hitcall"] = _weighted_hitcall(
+                candidate["max_hitcall"],
+                candidate["specificity_score"],
+            )
             candidate.pop("_seen_dtxsids", None)
+
+        ranked_candidates = sorted(
+            assay_candidates.values(),
+            key=lambda item: (
+                -item["support_count"],
+                -float(item["_weighted_hitcall"]),
+                -float(item["max_hitcall"]),
+                item["aeid"],
+            ),
+        )[:limit]
+        for candidate in ranked_candidates:
+            candidate.pop("_weighted_hitcall", None)
 
         diagnostics["returned_assay_count"] = len(ranked_candidates)
         if diagnostics["returned_assay_count"] == 0:
@@ -494,6 +518,7 @@ class AOPDBAdapter:
                         "target_family_sub": row.get("target_family_sub"),
                         "gene_symbols": set(row.get("gene_symbols", [])),
                         "max_hitcall": float(row.get("max_hitcall") or 0.0),
+                        "specificity_score": row.get("specificity_score"),
                         "_supporting_aops": set(),
                         "_supporting_chemicals": {},
                     },
@@ -501,6 +526,8 @@ class AOPDBAdapter:
                 candidate["_supporting_aops"].add(aop_id)
                 candidate["max_hitcall"] = max(candidate["max_hitcall"], float(row.get("max_hitcall") or 0.0))
                 candidate["gene_symbols"].update(row.get("gene_symbols", []))
+                if candidate["specificity_score"] is None:
+                    candidate["specificity_score"] = row.get("specificity_score")
 
                 supporting_chemicals: dict[str, dict[str, Any]] = candidate["_supporting_chemicals"]
                 for chemical in row.get("supporting_chemicals", []):
@@ -561,17 +588,24 @@ class AOPDBAdapter:
             candidate["aop_support_count"] = len(supporting_aops)
             candidate["supporting_chemicals"] = supporting_chemicals
             candidate["chemical_support_count"] = len(supporting_chemicals)
+            candidate["_weighted_hitcall"] = _weighted_hitcall(
+                candidate["max_hitcall"],
+                candidate["specificity_score"],
+            )
             materialized_candidates.append(candidate)
 
         materialized_candidates.sort(
             key=lambda item: (
                 -item["aop_support_count"],
                 -item["chemical_support_count"],
+                -float(item.get("_weighted_hitcall") or 0.0),
                 -float(item.get("max_hitcall") or 0.0),
                 item["aeid"],
             )
         )
         results = materialized_candidates[:limit]
+        for candidate in results:
+            candidate.pop("_weighted_hitcall", None)
 
         warnings: list[str] = []
         if len(normalized_aop_ids) != len(aop_ids):
@@ -592,6 +626,380 @@ class AOPDBAdapter:
             },
         }
 
+    async def discover_orphan_stressors_for_aop_with_diagnostics(
+        self,
+        aop_id: str,
+        *,
+        assay_limit: int = 10,
+        per_assay_chemical_limit: int = 25,
+        limit: int = 25,
+        min_hitcall: float = 0.9,
+    ) -> dict[str, Any]:
+        if not aop_id:
+            raise ValueError("aop_id is required")
+        diagnostics = {
+            "aop_id": aop_id,
+            "comptox_api_key_configured": bool(self.comptox and self.comptox.has_api_key),
+            "curated_stressor_count": 0,
+            "curated_chemical_match_count": 0,
+            "assay_candidate_count": 0,
+            "scanned_assay_count": 0,
+            "assay_chemical_hit_count": 0,
+            "returned_candidate_count": 0,
+            "empty_reason": None,
+            "warnings": [],
+        }
+        if not self.comptox or not self.comptox.has_api_key:
+            diagnostics["empty_reason"] = _ASSAY_EMPTY_REASON_MISSING_COMPTOX_API_KEY
+            diagnostics["warnings"].append(
+                "CompTox API key is not configured; orphan stressor discovery requires CompTox assay-chemical lookup."
+            )
+            return {"results": [], "diagnostics": diagnostics}
+
+        stressors = await self._list_stressor_chemicals_for_aop(aop_id)
+        diagnostics["curated_stressor_count"] = len(stressors)
+        if not stressors:
+            diagnostics["empty_reason"] = _ASSAY_EMPTY_REASON_NO_LINKED_STRESSORS
+            diagnostics["warnings"].append(
+                "No linked stressor chemicals were found for this AOP in AOP-DB."
+            )
+            return {"results": [], "diagnostics": diagnostics}
+
+        curated_index, curated_match_count, curated_warnings = await self._build_curated_chemical_index(stressors)
+        diagnostics["curated_chemical_match_count"] = curated_match_count
+        diagnostics["warnings"].extend(curated_warnings)
+
+        assay_report = await self.list_assays_for_aop_with_diagnostics(
+            aop_id,
+            limit=assay_limit,
+            min_hitcall=min_hitcall,
+        )
+        assay_rows = assay_report["results"]
+        assay_diagnostics = assay_report["diagnostics"]
+        diagnostics["assay_candidate_count"] = len(assay_rows)
+        diagnostics["warnings"].extend(assay_diagnostics["warnings"])
+        if not assay_rows:
+            diagnostics["empty_reason"] = (
+                assay_diagnostics.get("empty_reason") or _ORPHAN_EMPTY_REASON_NO_ASSAY_CANDIDATES
+            )
+            diagnostics["warnings"] = list(dict.fromkeys(diagnostics["warnings"]))
+            return {"results": [], "diagnostics": diagnostics}
+
+        scanned_assays = self._rank_assays_for_orphan_scanning(assay_rows)[:assay_limit]
+        diagnostics["scanned_assay_count"] = len(scanned_assays)
+        assay_chemical_results = await self._gather_bounded(
+            [
+                self._fetch_orphan_assay_chemicals(assay_row["aeid"])
+                for assay_row in scanned_assays
+            ],
+            limit=self.comptox_concurrency_limit,
+            return_exceptions=True,
+        )
+
+        orphan_candidates: dict[str, dict[str, Any]] = {}
+        candidate_aliases: dict[str, str] = {}
+        for assay_rank, (assay_row, assay_chemicals) in enumerate(
+            zip(scanned_assays, assay_chemical_results, strict=False),
+            start=1,
+        ):
+            if isinstance(assay_chemicals, Exception):
+                diagnostics["warnings"].append(
+                    f"CompTox assay-chemical lookup failed for AEID {assay_row['aeid']}: {assay_chemicals}"
+                )
+                continue
+
+            for chemical in assay_chemicals[:per_assay_chemical_limit]:
+                diagnostics["assay_chemical_hit_count"] += 1
+                normalized_chemical = _normalize_assay_chemical_record(chemical)
+                if not _chemical_identity_available(normalized_chemical):
+                    continue
+                if _chemical_matches_index(normalized_chemical, curated_index):
+                    continue
+
+                candidate_key = next(
+                    (
+                        candidate_aliases[alias]
+                        for alias in _chemical_alias_keys(normalized_chemical)
+                        if alias in candidate_aliases
+                    ),
+                    None,
+                ) or _chemical_candidate_key(normalized_chemical)
+                if candidate_key is None:
+                    continue
+                candidate = orphan_candidates.setdefault(
+                    candidate_key,
+                    {
+                        "dtxsid": normalized_chemical.get("dtxsid"),
+                        "casrn": normalized_chemical.get("casrn"),
+                        "preferred_name": normalized_chemical.get("preferred_name"),
+                        "supporting_assay_count": 0,
+                        "best_assay_rank": assay_rank,
+                        "max_specificity_score": assay_row.get("specificity_score"),
+                        "supporting_assays": [],
+                        "_seen_aeids": set(),
+                    },
+                )
+                for alias in _chemical_alias_keys(normalized_chemical):
+                    candidate_aliases.setdefault(alias, candidate_key)
+                if candidate["dtxsid"] is None:
+                    candidate["dtxsid"] = normalized_chemical.get("dtxsid")
+                if candidate["casrn"] is None:
+                    candidate["casrn"] = normalized_chemical.get("casrn")
+                if candidate["preferred_name"] is None:
+                    candidate["preferred_name"] = normalized_chemical.get("preferred_name")
+                candidate["best_assay_rank"] = min(candidate["best_assay_rank"], assay_rank)
+
+                assay_specificity = assay_row.get("specificity_score")
+                if assay_specificity is not None:
+                    current_specificity = candidate.get("max_specificity_score")
+                    if current_specificity is None or assay_specificity > current_specificity:
+                        candidate["max_specificity_score"] = assay_specificity
+
+                aeid = assay_row["aeid"]
+                if aeid in candidate["_seen_aeids"]:
+                    continue
+                candidate["_seen_aeids"].add(aeid)
+                candidate["supporting_assay_count"] += 1
+                candidate["supporting_assays"].append(
+                    {
+                        "aeid": aeid,
+                        "assay_name": assay_row.get("assay_name"),
+                        "rank": assay_rank,
+                        "specificity_score": assay_specificity,
+                    }
+                )
+
+        if diagnostics["assay_chemical_hit_count"] == 0:
+            diagnostics["empty_reason"] = _ORPHAN_EMPTY_REASON_NO_ASSAY_CHEMICAL_HITS
+            diagnostics["warnings"].append(
+                "The selected assay candidates did not return any active chemicals from CompTox."
+            )
+            diagnostics["warnings"] = list(dict.fromkeys(diagnostics["warnings"]))
+            return {"results": [], "diagnostics": diagnostics}
+
+        ranked_candidates = sorted(
+            orphan_candidates.values(),
+            key=lambda item: (
+                -item["supporting_assay_count"],
+                item["best_assay_rank"],
+                -(item["max_specificity_score"] if item["max_specificity_score"] is not None else -1.0),
+                item.get("preferred_name") or "",
+            ),
+        )[:limit]
+
+        for candidate in ranked_candidates:
+            candidate["supporting_assays"].sort(
+                key=lambda item: (
+                    item["rank"],
+                    -(item["specificity_score"] if item["specificity_score"] is not None else -1.0),
+                    item["aeid"],
+                )
+            )
+            candidate.pop("_seen_aeids", None)
+
+        diagnostics["returned_candidate_count"] = len(ranked_candidates)
+        if diagnostics["returned_candidate_count"] == 0:
+            diagnostics["empty_reason"] = _ORPHAN_EMPTY_REASON_NO_ORPHAN_CANDIDATES
+            diagnostics["warnings"].append(
+                "All active assay chemicals for the selected pathway assays were already linked as curated AOP stressors or matched their known CAS/name identifiers."
+            )
+        diagnostics["warnings"] = list(dict.fromkeys(diagnostics["warnings"]))
+        return {"results": ranked_candidates, "diagnostics": diagnostics}
+
+    def _rank_assays_for_orphan_scanning(
+        self,
+        assay_rows: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        def sort_key(item: dict[str, Any]) -> tuple[Any, ...]:
+            assay_function_type = str(item.get("assay_function_type") or "").strip().lower()
+            target_family = str(item.get("target_family") or "").strip().lower()
+            deprioritized = assay_function_type == "background control" or target_family == "cell morphology"
+            specificity_score = item.get("specificity_score")
+            return (
+                deprioritized,
+                -(1 if specificity_score is not None else 0),
+                -float(specificity_score if specificity_score is not None else -1.0),
+                -len(item.get("gene_symbols") or []),
+                -int(item.get("support_count") or 0),
+                -float(item.get("max_hitcall") or 0.0),
+                int(item.get("aeid") or 0),
+            )
+
+        return sorted(assay_rows, key=sort_key)
+
+    async def _fetch_orphan_assay_chemicals(self, aeid: int | str) -> list[dict[str, Any]] | list[Any]:
+        return await self._call_comptox("get_chemicals_in_assay", str(aeid))
+
+    async def discover_orphan_stressors_for_aops_with_diagnostics(
+        self,
+        aop_ids: list[str],
+        *,
+        limit: int = 25,
+        per_aop_limit: int = 10,
+        per_assay_chemical_limit: int = 25,
+        min_hitcall: float = 0.9,
+    ) -> dict[str, Any]:
+        normalized_aop_ids = list(dict.fromkeys(aop_ids))
+        if not normalized_aop_ids:
+            raise ValueError("At least one aop_id is required")
+
+        per_aop_candidate_limit = max(limit, min(per_aop_limit * per_assay_chemical_limit, 250))
+        global_curated_index = {
+            "dtxsids": set(),
+            "casrns": set(),
+            "names": set(),
+        }
+        if self.comptox and self.comptox.has_api_key:
+            stressor_lists = await asyncio.gather(
+                *(self._list_stressor_chemicals_for_aop(aop_id) for aop_id in normalized_aop_ids)
+            )
+            combined_stressors = [
+                stressor
+                for stressors in stressor_lists
+                for stressor in stressors
+            ]
+            global_curated_index, _global_match_count, global_warnings = await self._build_curated_chemical_index(
+                combined_stressors
+            )
+        else:
+            global_warnings = []
+        aggregated_candidates: dict[str, dict[str, Any]] = {}
+        candidate_aliases: dict[str, str] = {}
+        per_aop_diagnostics: list[dict[str, Any]] = []
+        for aop_id in normalized_aop_ids:
+            report = await self.discover_orphan_stressors_for_aop_with_diagnostics(
+                aop_id,
+                assay_limit=per_aop_limit,
+                per_assay_chemical_limit=per_assay_chemical_limit,
+                limit=per_aop_candidate_limit,
+                min_hitcall=min_hitcall,
+            )
+            per_aop_diagnostics.append(report["diagnostics"])
+            for candidate in report["results"]:
+                normalized_chemical = {
+                    "dtxsid": candidate.get("dtxsid"),
+                    "casrn": candidate.get("casrn"),
+                    "preferred_name": candidate.get("preferred_name"),
+                }
+                candidate_key = next(
+                    (
+                        candidate_aliases[alias]
+                        for alias in _chemical_alias_keys(normalized_chemical)
+                        if alias in candidate_aliases
+                    ),
+                    None,
+                ) or _chemical_candidate_key(normalized_chemical)
+                if candidate_key is None:
+                    continue
+                aggregated_candidate = aggregated_candidates.setdefault(
+                    candidate_key,
+                    {
+                        "dtxsid": candidate.get("dtxsid"),
+                        "casrn": candidate.get("casrn"),
+                        "preferred_name": candidate.get("preferred_name"),
+                        "aop_support_count": 0,
+                        "supporting_aops": [],
+                        "supporting_assay_count": 0,
+                        "best_assay_rank": candidate.get("best_assay_rank"),
+                        "max_specificity_score": candidate.get("max_specificity_score"),
+                        "supporting_assays": [],
+                        "_supporting_aops": set(),
+                        "_seen_support": set(),
+                    },
+                )
+                for alias in _chemical_alias_keys(normalized_chemical):
+                    candidate_aliases.setdefault(alias, candidate_key)
+                if aggregated_candidate["dtxsid"] is None:
+                    aggregated_candidate["dtxsid"] = candidate.get("dtxsid")
+                if aggregated_candidate["casrn"] is None:
+                    aggregated_candidate["casrn"] = candidate.get("casrn")
+                if aggregated_candidate["preferred_name"] is None:
+                    aggregated_candidate["preferred_name"] = candidate.get("preferred_name")
+
+                best_assay_rank = candidate.get("best_assay_rank")
+                if best_assay_rank is not None:
+                    current_best = aggregated_candidate.get("best_assay_rank")
+                    if current_best is None or best_assay_rank < current_best:
+                        aggregated_candidate["best_assay_rank"] = best_assay_rank
+
+                max_specificity_score = candidate.get("max_specificity_score")
+                if max_specificity_score is not None:
+                    current_specificity = aggregated_candidate.get("max_specificity_score")
+                    if current_specificity is None or max_specificity_score > current_specificity:
+                        aggregated_candidate["max_specificity_score"] = max_specificity_score
+
+                aggregated_candidate["_supporting_aops"].add(aop_id)
+                for support in candidate.get("supporting_assays", []):
+                    support_key = (aop_id, support.get("aeid"))
+                    if support_key in aggregated_candidate["_seen_support"]:
+                        continue
+                    aggregated_candidate["_seen_support"].add(support_key)
+                    aggregated_candidate["supporting_assays"].append(
+                        {
+                            "aop_id": aop_id,
+                            "aeid": support.get("aeid"),
+                            "assay_name": support.get("assay_name"),
+                            "rank": support.get("rank"),
+                            "specificity_score": support.get("specificity_score"),
+                        }
+                    )
+
+        materialized_candidates: list[dict[str, Any]] = []
+        for candidate in aggregated_candidates.values():
+            normalized_chemical = {
+                "dtxsid": candidate.get("dtxsid"),
+                "casrn": candidate.get("casrn"),
+                "preferred_name": candidate.get("preferred_name"),
+            }
+            if _chemical_matches_index(normalized_chemical, global_curated_index):
+                continue
+            supporting_aops = sorted(candidate.pop("_supporting_aops"))
+            candidate.pop("_seen_support", None)
+            candidate["supporting_assays"].sort(
+                key=lambda item: (
+                    item["rank"],
+                    -(item["specificity_score"] if item["specificity_score"] is not None else -1.0),
+                    item["aop_id"],
+                    item["aeid"],
+                )
+            )
+            candidate["supporting_aops"] = supporting_aops
+            candidate["aop_support_count"] = len(supporting_aops)
+            candidate["supporting_assay_count"] = len(candidate["supporting_assays"])
+            materialized_candidates.append(candidate)
+
+        materialized_candidates.sort(
+            key=lambda item: (
+                -item["aop_support_count"],
+                -item["supporting_assay_count"],
+                item["best_assay_rank"],
+                -(item["max_specificity_score"] if item["max_specificity_score"] is not None else -1.0),
+                item.get("preferred_name") or "",
+            )
+        )
+        results = materialized_candidates[:limit]
+
+        warnings: list[str] = []
+        warnings.extend(global_warnings)
+        if len(normalized_aop_ids) != len(aop_ids):
+            warnings.append("Duplicate AOP identifiers were deduplicated before orphan-candidate aggregation.")
+        if any(item.get("empty_reason") is not None for item in per_aop_diagnostics):
+            warnings.append(
+                "One or more AOPs returned no orphan candidates; inspect diagnostics.per_aop for details."
+            )
+        warnings = list(dict.fromkeys(warnings))
+
+        return {
+            "results": results,
+            "diagnostics": {
+                "requested_aop_ids": list(aop_ids),
+                "processed_aop_ids": normalized_aop_ids,
+                "returned_candidate_count": len(results),
+                "per_aop": per_aop_diagnostics,
+                "warnings": warnings,
+            },
+        }
+
     async def search_assays_for_key_event(
         self,
         key_event: dict[str, Any],
@@ -601,14 +1009,53 @@ class AOPDBAdapter:
         if not self.comptox:
             raise ValueError("CompTox client is required for key-event assay search")
 
-        derived_search_terms = _derive_key_event_search_terms(key_event)
+        heuristic_terms = _derive_key_event_search_terms(
+            key_event,
+            expand_phenotype_phrases=False,
+        )
         limitations = [
-            "Assays are ranked using key-event-derived gene and phrase matches against CompTox assay search endpoints when available, with catalog and AOP-Wiki measurement-method fallbacks; this is not a curated KE-to-assay ontology mapping.",
+            "Assays are ranked using key-event-derived gene and phrase matches plus specificity-aware CompTox discovery ranking when available, with catalog and AOP-Wiki measurement-method fallbacks; this is not a curated KE-to-assay ontology mapping.",
         ]
+        structured_gene_identifiers = _structured_gene_identifiers(key_event.get("gene_identifiers") or [])
+        resolved_gene_symbols: list[str] = []
+        if structured_gene_identifiers and self.hgnc:
+            try:
+                resolved_gene_symbols = await self._resolve_hgnc_gene_symbols(structured_gene_identifiers)
+            except HgncError as exc:
+                limitations.append(
+                    "HGNC gene-symbol resolution was unavailable, so only title/alias-derived gene symbols were used."
+                )
+                limitations.append(f"HGNC detail: {exc}")
+        elif structured_gene_identifiers:
+            limitations.append(
+                "Structured HGNC gene identifiers were available on the key event, but HGNC resolution was not configured."
+            )
+        elif key_event.get("gene_identifiers"):
+            limitations.append(
+                "Key-event gene identifiers were present but did not contain resolvable HGNC identifiers."
+            )
+        merged_gene_symbols = _merge_preserving_order(
+            resolved_gene_symbols,
+            heuristic_terms["gene_symbols"],
+        )
+        phrases = heuristic_terms["phrases"]
+        if not merged_gene_symbols:
+            phrases = _expand_phenotype_phrases(phrases)
+        phrases = _finalize_phrases(phrases, merged_gene_symbols)
+        derived_search_terms = {
+            "structured_gene_identifiers": structured_gene_identifiers,
+            "resolved_gene_symbols": resolved_gene_symbols,
+            "gene_symbols": merged_gene_symbols[:8],
+            "phrases": phrases[:8],
+        }
+        if structured_gene_identifiers and not resolved_gene_symbols and self.hgnc:
+            limitations.append(
+                "Structured HGNC gene identifiers were available, but none could be resolved to gene symbols."
+            )
 
         if not derived_search_terms["gene_symbols"] and not derived_search_terms["phrases"]:
             limitations.append(
-                "No gene-like symbols or searchable phrases could be derived from the key event metadata."
+                "No structured or heuristic gene symbols or searchable phrases could be derived from the key event metadata."
             )
             return {
                 "derived_search_terms": derived_search_terms,
@@ -709,6 +1156,102 @@ class AOPDBAdapter:
         method = getattr(self.comptox, method_name)
         return await asyncio.to_thread(method, *args, **kwargs)
 
+    async def _gather_bounded(
+        self,
+        coroutines: list[Any],
+        *,
+        limit: int,
+        return_exceptions: bool = False,
+    ) -> list[Any]:
+        semaphore = asyncio.Semaphore(max(1, limit))
+
+        async def run(coroutine: Any) -> Any:
+            async with semaphore:
+                return await coroutine
+
+        return await asyncio.gather(
+            *(run(coroutine) for coroutine in coroutines),
+            return_exceptions=return_exceptions,
+        )
+
+    async def _resolve_hgnc_gene_symbols(self, identifiers: list[str]) -> list[str]:
+        if not self.hgnc:
+            return []
+        tasks = [
+            asyncio.to_thread(self.hgnc.resolve_symbol, identifier)
+            for identifier in identifiers
+        ]
+        resolved = await asyncio.gather(*tasks, return_exceptions=True)
+        symbols: list[str] = []
+        for item in resolved:
+            if isinstance(item, Exception):
+                if isinstance(item, HgncError):
+                    raise item
+                raise HgncError(str(item)) from item
+            if item:
+                symbols.append(item)
+        return symbols
+
+    async def _build_curated_chemical_index(
+        self,
+        stressors: list[dict[str, Any]],
+    ) -> tuple[dict[str, set[str]], int, list[str]]:
+        index = {
+            "dtxsids": set(),
+            "casrns": set(),
+            "names": set(),
+        }
+        search_values: list[str] = []
+        for stressor in stressors:
+            casrn = stressor.get("casrn")
+            if casrn:
+                index["casrns"].add(str(casrn))
+                if str(casrn) not in search_values:
+                    search_values.append(str(casrn))
+            label = stressor.get("label")
+            normalized_label = _normalize_chemical_name(label)
+            if normalized_label:
+                index["names"].add(normalized_label)
+                if str(label) not in search_values:
+                    search_values.append(str(label))
+
+        warnings: list[str] = []
+        if not search_values:
+            warnings.append(
+                "Linked stressors lacked searchable CAS RN and label values, so curated-chemical exclusion relies only on exact identifiers already present in assay results."
+            )
+            return index, 0, warnings
+
+        search_results = await self._gather_bounded(
+            [
+                self._call_comptox("search_equal", search_value)
+                for search_value in search_values
+            ],
+            limit=self.comptox_concurrency_limit,
+            return_exceptions=True,
+        )
+        resolved_dtxsids: set[str] = set()
+        for search_value, search_result in zip(search_values, search_results, strict=False):
+            if isinstance(search_result, Exception):
+                warnings.append(
+                    f"CompTox chemical resolution failed for curated stressor lookup '{search_value}': {search_result}"
+                )
+                continue
+            if not search_result:
+                continue
+            matched_chemical = _normalize_assay_chemical_record(search_result[0])
+            dtxsid = matched_chemical.get("dtxsid")
+            if dtxsid:
+                index["dtxsids"].add(dtxsid)
+                resolved_dtxsids.add(dtxsid)
+            casrn = matched_chemical.get("casrn")
+            if casrn:
+                index["casrns"].add(casrn)
+            normalized_name = _normalize_chemical_name(matched_chemical.get("preferred_name"))
+            if normalized_name:
+                index["names"].add(normalized_name)
+        return index, len(resolved_dtxsids), warnings
+
     async def _list_stressor_chemicals_for_aop(self, aop_id: str) -> list[dict[str, Any]]:
         query = self._templates.render("list_stressor_chemicals_for_aop", {"aop_iri": _aop_iri(aop_id)})
         payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
@@ -739,7 +1282,11 @@ class AOPDBAdapter:
             return []
 
 
-def _derive_key_event_search_terms(key_event: dict[str, Any]) -> dict[str, list[str]]:
+def _derive_key_event_search_terms(
+    key_event: dict[str, Any],
+    *,
+    expand_phenotype_phrases: bool = True,
+) -> dict[str, list[str]]:
     title = str(key_event.get("title") or "")
     short_name = str(key_event.get("short_name") or "")
     description = str(key_event.get("description") or "")
@@ -767,7 +1314,7 @@ def _derive_key_event_search_terms(key_event: dict[str, Any]) -> dict[str, list[
                 gene_symbols.append(symbol)
         _expand_alias_terms(description, gene_symbols, phrases)
     gene_symbols = _finalize_gene_symbols(gene_symbols)
-    if not gene_symbols:
+    if not gene_symbols and expand_phenotype_phrases:
         phrases = _expand_phenotype_phrases(phrases)
     phrases = _finalize_phrases(phrases, gene_symbols)
 
@@ -874,6 +1421,144 @@ def _expand_phenotype_phrases(phrases: list[str]) -> list[str]:
             if synonym not in expanded:
                 expanded.append(synonym)
     return expanded
+
+
+def _merge_preserving_order(*groups: list[str]) -> list[str]:
+    merged: list[str] = []
+    for group in groups:
+        for value in group:
+            if value and value not in merged:
+                merged.append(value)
+    return merged
+
+
+def _structured_gene_identifiers(values: list[str]) -> list[str]:
+    identifiers: list[str] = []
+    for value in values:
+        normalized = str(value).strip().upper()
+        if not re.fullmatch(r"HGNC:\d+", normalized):
+            continue
+        if normalized not in identifiers:
+            identifiers.append(normalized)
+    return identifiers
+
+
+def _assay_specificity_score(assay: dict[str, Any]) -> float | None:
+    return compute_specificity_score(
+        multi_active=assay.get("multi_conc_assay_chemical_count_active")
+        or assay.get("multiConcActives"),
+        multi_total=assay.get("multi_conc_assay_chemical_count_total"),
+        single_active=assay.get("single_conc_assay_chemical_count_active")
+        or assay.get("singleConcActive"),
+        single_total=assay.get("single_conc_assay_chemical_count_total"),
+    )
+
+
+def _weighted_hitcall(max_hitcall: float, specificity_score: float | None) -> float:
+    if specificity_score is None:
+        return max_hitcall
+    return max_hitcall * (0.5 + (0.5 * specificity_score))
+
+
+def _normalize_assay_chemical_record(record: dict[str, Any] | str | Any) -> dict[str, str | None]:
+    if isinstance(record, str):
+        normalized = record.strip()
+        if not normalized:
+            return {"dtxsid": None, "casrn": None, "preferred_name": None}
+        if re.fullmatch(r"DTXSID\d+", normalized, re.IGNORECASE):
+            return {
+                "dtxsid": normalized.upper(),
+                "casrn": None,
+                "preferred_name": None,
+            }
+        if re.fullmatch(r"\d{2,7}-\d{2}-\d", normalized):
+            return {
+                "dtxsid": None,
+                "casrn": normalized,
+                "preferred_name": None,
+            }
+        return {
+            "dtxsid": None,
+            "casrn": None,
+            "preferred_name": normalized,
+        }
+    return {
+        "dtxsid": _first_non_empty(
+            record.get("dtxsid"),
+            record.get("dsstoxSubstanceId"),
+            record.get("dsstoxSubstanceID"),
+        ),
+        "casrn": _first_non_empty(
+            record.get("casrn"),
+            record.get("cas"),
+            record.get("casNumber"),
+        ),
+        "preferred_name": _first_non_empty(
+            record.get("preferredName"),
+            record.get("preferred_name"),
+            record.get("name"),
+            record.get("chemicalName"),
+        ),
+    }
+
+
+def _first_non_empty(*values: Any) -> str | None:
+    for value in values:
+        if value is None:
+            continue
+        normalized = str(value).strip()
+        if normalized:
+            return normalized
+    return None
+
+
+def _normalize_chemical_name(value: Any) -> str | None:
+    if value is None:
+        return None
+    normalized = re.sub(r"[^a-z0-9]+", "", str(value).lower())
+    return normalized or None
+
+
+def _chemical_identity_available(record: dict[str, str | None]) -> bool:
+    return bool(record.get("dtxsid") or record.get("casrn") or _normalize_chemical_name(record.get("preferred_name")))
+
+
+def _chemical_candidate_key(record: dict[str, str | None]) -> str | None:
+    return (
+        record.get("dtxsid")
+        or record.get("casrn")
+        or _normalize_chemical_name(record.get("preferred_name"))
+    )
+
+
+def _chemical_alias_keys(record: dict[str, str | None]) -> list[str]:
+    aliases: list[str] = []
+    dtxsid = record.get("dtxsid")
+    if dtxsid:
+        aliases.append(f"dtxsid:{dtxsid}")
+    casrn = record.get("casrn")
+    if casrn:
+        aliases.append(f"casrn:{casrn}")
+    normalized_name = _normalize_chemical_name(record.get("preferred_name"))
+    if normalized_name:
+        aliases.append(f"name:{normalized_name}")
+    return aliases
+
+
+def _chemical_matches_index(
+    record: dict[str, str | None],
+    index: dict[str, set[str]],
+) -> bool:
+    dtxsid = record.get("dtxsid")
+    if dtxsid and dtxsid in index["dtxsids"]:
+        return True
+    casrn = record.get("casrn")
+    if casrn and casrn in index["casrns"]:
+        return True
+    normalized_name = _normalize_chemical_name(record.get("preferred_name"))
+    if normalized_name and normalized_name in index["names"]:
+        return True
+    return False
 
 
 def _preferred_taxa_from_key_event(key_event: dict[str, Any]) -> list[str]:

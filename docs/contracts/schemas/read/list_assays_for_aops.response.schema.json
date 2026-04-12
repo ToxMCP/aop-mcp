@@ -100,6 +100,7 @@
           "target_family": {"type": ["string", "null"]},
           "target_family_sub": {"type": ["string", "null"]},
           "gene_symbols": {"type": "array", "items": {"type": "string"}},
+          "specificity_score": {"type": ["number", "null"]},
           "max_hitcall": {"type": "number"},
           "supporting_aops": {"type": "array", "items": {"type": "string"}},
           "aop_support_count": {"type": "integer"},

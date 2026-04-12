@@ -20,6 +20,8 @@
       "type": "object",
       "required": ["gene_symbols", "phrases"],
       "properties": {
+        "structured_gene_identifiers": {"type": "array", "items": {"type": "string"}},
+        "resolved_gene_symbols": {"type": "array", "items": {"type": "string"}},
         "gene_symbols": {"type": "array", "items": {"type": "string"}},
         "phrases": {"type": "array", "items": {"type": "string"}}
       },
@@ -53,6 +55,8 @@
           "applicability_match": {"type": ["string", "null"]},
           "matched_taxa": {"type": "array", "items": {"type": "string"}},
           "match_score": {"type": "number"},
+          "rank_score": {"type": "number"},
+          "specificity_score": {"type": ["number", "null"]},
           "match_basis": {"type": "array", "items": {"type": "string"}},
           "matched_terms": {"type": "array", "items": {"type": "string"}},
           "multi_conc_assay_chemical_count_active": {"type": ["integer", "null"]},

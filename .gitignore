@@ -28,3 +28,5 @@ scripts/test_api.py
 tests/golden/live/
 tests/unit/test_research_tools_existence.py
 OECD_AOP.pdf
+output/
+scientific_engine_bundle.txt

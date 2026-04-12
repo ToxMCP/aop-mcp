@@ -8,6 +8,7 @@
     "upstream",
     "downstream",
     "applicability",
+    "assay_cutoff_ordering",
     "evidence_blocks",
     "references",
     "provenance"
@@ -47,6 +48,76 @@
         "life_stages": {"type": "array", "items": {"type": "object"}},
         "sexes": {"type": "array", "items": {"type": "object"}},
         "summary_rationale": {"type": ["string", "null"]},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "citation_concordance": {
+      "type": "object",
+      "required": [
+        "heuristic_call",
+        "basis",
+        "upstream_reference_count",
+        "downstream_reference_count",
+        "shared_reference_count",
+        "shared_references",
+        "provenance"
+      ],
+      "properties": {
+        "heuristic_call": {"type": "string"},
+        "basis": {"type": "string"},
+        "upstream_reference_count": {"type": "integer"},
+        "downstream_reference_count": {"type": "integer"},
+        "shared_reference_count": {"type": "integer"},
+        "shared_references": {"type": "array", "items": {"type": "object"}},
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    },
+    "assay_cutoff_ordering": {
+      "type": "object",
+      "required": [
+        "heuristic_call",
+        "basis",
+        "upstream_candidate_assay_count",
+        "downstream_candidate_assay_count",
+        "supporting_chemical_count",
+        "concordant_chemical_count",
+        "discordant_chemical_count",
+        "supporting_chemicals",
+        "provenance"
+      ],
+      "properties": {
+        "heuristic_call": {"type": "string"},
+        "basis": {"type": "string"},
+        "upstream_candidate_assay_count": {"type": "integer"},
+        "downstream_candidate_assay_count": {"type": "integer"},
+        "supporting_chemical_count": {"type": "integer"},
+        "concordant_chemical_count": {"type": "integer"},
+        "discordant_chemical_count": {"type": "integer"},
+        "supporting_chemicals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "dtxsid",
+              "preferred_name",
+              "casrn",
+              "upstream_best_activity_cutoff",
+              "downstream_best_activity_cutoff",
+              "ordering"
+            ],
+            "properties": {
+              "dtxsid": {"type": "string"},
+              "preferred_name": {"type": ["string", "null"]},
+              "casrn": {"type": ["string", "null"]},
+              "upstream_best_activity_cutoff": {"type": "number"},
+              "downstream_best_activity_cutoff": {"type": "number"},
+              "ordering": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
         "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
       },
       "additionalProperties": false

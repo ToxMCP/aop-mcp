@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "review_draft_bundle.response",
+  "type": "object",
+  "required": [
+    "draft_id",
+    "version_id",
+    "draft",
+    "review_parameters",
+    "chemical_query",
+    "bundle_summary",
+    "evidence_gap_summary",
+    "validation",
+    "quantitative_review",
+    "chemical_trace",
+    "evidence_gaps",
+    "limitations"
+  ],
+  "properties": {
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"},
+    "draft": {
+      "type": "object",
+      "required": ["aop_entity_id", "title", "adverse_outcome"],
+      "properties": {
+        "aop_entity_id": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "adverse_outcome": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "review_parameters": {
+      "type": "object",
+      "required": ["assay_limit", "stressor_limit", "min_hitcall", "chemical_trace_requested"],
+      "properties": {
+        "assay_limit": {"type": "integer"},
+        "stressor_limit": {"type": "integer"},
+        "min_hitcall": {"type": "number"},
+        "chemical_trace_requested": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "chemical_query": {
+      "type": "object",
+      "required": ["dtxsid", "cas", "inchikey", "name"],
+      "properties": {
+        "dtxsid": {"type": ["string", "null"]},
+        "cas": {"type": ["string", "null"]},
+        "inchikey": {"type": ["string", "null"]},
+        "name": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "bundle_summary": {
+      "type": "object",
+      "required": [
+        "ready_for_review",
+        "validator_error_count",
+        "validator_warning_count",
+        "assay_cutoff_assessable_relationship_count",
+        "assay_cutoff_discordant_relationship_count",
+        "chemical_trace_included",
+        "traced_key_event_count",
+        "active_key_event_count",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "validator_error_count": {"type": "integer"},
+        "validator_warning_count": {"type": "integer"},
+        "assay_cutoff_assessable_relationship_count": {"type": "integer"},
+        "assay_cutoff_discordant_relationship_count": {"type": "integer"},
+        "chemical_trace_included": {"type": "boolean"},
+        "traced_key_event_count": {"type": "integer"},
+        "active_key_event_count": {"type": "integer"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "evidence_gap_summary": {
+      "type": "object",
+      "required": [
+        "ready_for_review",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count",
+        "global_gap_count",
+        "key_event_gap_count",
+        "relationship_gap_count",
+        "stressor_gap_count",
+        "assay_mapping_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"},
+        "global_gap_count": {"type": "integer"},
+        "key_event_gap_count": {"type": "integer"},
+        "relationship_gap_count": {"type": "integer"},
+        "stressor_gap_count": {"type": "integer"},
+        "assay_mapping_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "required": ["draft_id", "version_id", "summary", "results"],
+      "properties": {
+        "draft_id": {"type": "string"},
+        "version_id": {"type": "string"},
+        "summary": {"type": "object"},
+        "results": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": false
+    },
+    "quantitative_review": {
+      "type": "object",
+      "required": [
+        "draft_id",
+        "version_id",
+        "draft",
+        "review_parameters",
+        "summary",
+        "stressors",
+        "key_events",
+        "relationships",
+        "limitations"
+      ],
+      "properties": {
+        "draft_id": {"type": "string"},
+        "version_id": {"type": "string"},
+        "draft": {"type": "object"},
+        "review_parameters": {"type": "object"},
+        "summary": {"type": "object"},
+        "stressors": {"type": "array", "items": {"type": "object"}},
+        "key_events": {"type": "array", "items": {"type": "object"}},
+        "relationships": {"type": "array", "items": {"type": "object"}},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "chemical_trace": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": [
+            "draft_id",
+            "version_id",
+            "draft",
+            "chemical",
+            "summary",
+            "key_events",
+            "relationships",
+            "limitations"
+          ],
+          "properties": {
+            "draft_id": {"type": "string"},
+            "version_id": {"type": "string"},
+            "draft": {"type": "object"},
+            "chemical": {"type": "object"},
+            "summary": {"type": "object"},
+            "key_events": {"type": "array", "items": {"type": "object"}},
+            "relationships": {"type": "array", "items": {"type": "object"}},
+            "limitations": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "evidence_gaps": {
+      "type": "object",
+      "required": [
+        "draft_id",
+        "version_id",
+        "draft",
+        "review_parameters",
+        "bundle_summary",
+        "summary",
+        "global_gaps",
+        "key_events",
+        "relationships",
+        "stressors",
+        "recommendations",
+        "limitations"
+      ],
+      "properties": {
+        "draft_id": {"type": "string"},
+        "version_id": {"type": "string"},
+        "draft": {"type": "object"},
+        "review_parameters": {"type": "object"},
+        "bundle_summary": {"type": "object"},
+        "summary": {"type": "object"},
+        "global_gaps": {"type": "array", "items": {"type": "object"}},
+        "key_events": {"type": "array", "items": {"type": "object"}},
+        "relationships": {"type": "array", "items": {"type": "object"}},
+        "stressors": {"type": "array", "items": {"type": "object"}},
+        "recommendations": {"type": "array", "items": {"type": "string"}},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

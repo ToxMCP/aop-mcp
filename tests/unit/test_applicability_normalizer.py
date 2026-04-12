@@ -33,3 +33,15 @@ def test_applicability_normalizer_falls_back_to_curie() -> None:
     normalizer = make_normalizer()
     result = normalizer.normalize(ApplicabilityInput(species="NCBITaxon:10090"))
     assert result.species == "NCBITaxon:10090"
+
+
+def test_applicability_normalizer_infers_lowest_common_taxon_for_mammals() -> None:
+    normalizer = make_normalizer()
+    result = normalizer.lowest_common_taxon(["NCBITaxon:9606", "NCBITaxon:10090"])
+    assert result == "NCBITaxon:40674"
+
+
+def test_applicability_normalizer_avoids_overly_broad_common_taxa() -> None:
+    normalizer = make_normalizer()
+    result = normalizer.lowest_common_taxon(["NCBITaxon:9606", "NCBITaxon:7227"])
+    assert result is None

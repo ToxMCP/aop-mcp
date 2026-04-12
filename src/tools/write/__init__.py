@@ -30,6 +30,7 @@ class KeyEventPayload:
     identifier: str
     title: str
     event_type: str | None = None
+    event_role: str | None = None
     attributes: Mapping[str, Any] | None = None
 
 
@@ -192,6 +193,7 @@ class WriteTools:
         attributes = {
             "title": payload.title,
             "event_type": payload.event_type,
+            "event_role": payload.event_role,
         }
         if normalized_attributes:
             attributes.update(normalized_attributes)
