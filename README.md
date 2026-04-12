@@ -79,20 +79,15 @@ For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `do
 
 ## What's new in v0.8.1
 
-- Expanded the scientific review surface well beyond the original read path: specificity-aware assay ranking, HGNC-backed KE assay search, KER citation concordance, conservative taxonomic LCA inference, draft topology validation, directional concordance checks, and supplemental assay-cutoff ordering review.
+- Expanded the scientific review surface beyond the original read path with specificity-aware assay ranking, HGNC-backed KE assay search, KER citation concordance, conservative taxonomic LCA inference, draft topology validation, directional concordance checks, and supplemental assay-cutoff ordering review.
 - Added a coherent draft review workflow: `review_draft_bundle`, `review_draft_evidence_gaps`, `export_draft_review_artifact`, `save_draft_review_artifact`, `list_saved_draft_review_artifacts`, and `plan_linear_draft_review_document`.
-- Added mechanistic discovery tooling: orphan stressor discovery for one AOP, several AOPs, and phenotype or mechanism queries, plus chemical trace overlays on draft graphs.
-- Hardened live operations with a refreshed MCP smoke script, stronger CompTox client caching, and verified real-server examples for KE assay search, orphan discovery, and confidence review.
-- Documented validated scientific examples from the live server so release users can reproduce the same review and discovery flows quickly.
+- Added mechanistic discovery tooling for orphan stressor discovery across one AOP, multiple AOPs, and phenotype or mechanism queries, plus chemical trace overlays on draft graphs.
+- Hardened live operations with a refreshed MCP smoke script, stronger CompTox caching and bounded concurrency, and real-server validation for KE assay search, orphan discovery, confidence review, and draft review/export flows.
+- Added release-facing documentation for validated scientific examples in [docs/quickstarts/live-scientific-examples.md](/Volumes/Storage/topotox_space_relief_20260220/AOP_MCP/docs/quickstarts/live-scientific-examples.md).
 
 ## Previous highlights from v0.8.0
 
-- Hardened the draft audit path: draft reads now return isolated copies, appended versions are protected from caller mutation, and checksum generation is stable for nested mappings.
-- Expanded MCP contract coverage with explicit response schemas and runtime validation across the newer read/review and draft-validation tool surface.
-- Improved assay tool UX: `map_assay_to_aops` now rejects explicit AOP IDs with a steering error, and the new alias tools `get_assays_for_aop` and `get_assays_for_aops` make the AOP-to-assay workflow easier to discover.
-- Added assay diagnostics to `list_assays_for_aop`, `list_assays_for_aops`, and `list_assays_for_query`, so empty results now distinguish missing CompTox access, missing linked stressors, missing CompTox chemical matches, and missing bioactivity hits after filtering.
-- Updated the README and tool catalog with an explicit “Which assay tool should I use?” guide and AOP-ID examples matching common assay-candidate retrieval workflows.
-- Expanded regression coverage across assay adapters, schema validation, MCP smoke tests, and draft-store integrity checks; the full suite now passes with `148 passed, 1 skipped`.
+`v0.8.0` focused on draft-store hardening, broader schema/runtime contract coverage, improved assay-tool steering and diagnostics, and expanded regression coverage across the assay and draft integrity surfaces.
 
 ## Why this project exists
 
