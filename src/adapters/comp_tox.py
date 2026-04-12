@@ -993,11 +993,11 @@ def compute_specificity_score(
     single_total: Any,
 ) -> float | None:
     active, total = _normalize_activity_counts(multi_active, multi_total)
-    if total is None:
+    if active is None or total is None:
         active, total = _normalize_activity_counts(single_active, single_total)
-    if total is None or total <= 0:
+    if active is None or total is None or total <= 0:
         return None
-    active = min(max(active or 0, 0), total)
+    active = min(max(active, 0), total)
     return 1.0 - (active / total)
 
 

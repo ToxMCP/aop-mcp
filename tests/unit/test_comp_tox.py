@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from src.adapters import CompToxClient, CompToxError, extract_identifiers
+from src.adapters.comp_tox import compute_specificity_score
 
 
 class MockTransport(httpx.BaseTransport):
@@ -181,6 +182,24 @@ def test_comp_tox_client_assay_by_aeid_uses_cache() -> None:
     assert transport.calls == [
         "https://comptox.epa.gov/ctx-api/bioactivity/assay/search/by-aeid/2309"
     ]
+
+
+def test_compute_specificity_score_falls_back_when_multi_active_is_missing() -> None:
+    assert compute_specificity_score(
+        multi_active=None,
+        multi_total=1000,
+        single_active=50,
+        single_total=200,
+    ) == 0.75
+
+
+def test_compute_specificity_score_returns_none_when_active_count_is_unknown() -> None:
+    assert compute_specificity_score(
+        multi_active=None,
+        multi_total=1000,
+        single_active=None,
+        single_total=200,
+    ) is None
 
 
 def test_comp_tox_client_all_assays_returns_rows() -> None:
