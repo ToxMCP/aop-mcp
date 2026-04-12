@@ -192,6 +192,22 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="discover_orphan_stressors_for_aop",
+    description="Start from one AOP's strongest assay candidates, pull active assay chemicals from CompTox, exclude already curated AOP stressors, and return mechanistic orphan chemical candidates with diagnostics.",
+    handler=aop.discover_orphan_stressors_for_aop,
+    input_model=aop.DiscoverOrphanStressorsForAopInput,
+    output_schema=_schema("read", "discover_orphan_stressors_for_aop.response.schema"),
+)
+
+tool_registry.register(
+    name="discover_orphan_stressors_for_aops",
+    description="Aggregate orphan chemical candidates across multiple AOPs by combining each pathway's strongest assay evidence, excluding stressors already curated anywhere in the selected AOP set, and ranking chemicals by cross-AOP support.",
+    handler=aop.discover_orphan_stressors_for_aops,
+    input_model=aop.DiscoverOrphanStressorsForAopsInput,
+    output_schema=_schema("read", "discover_orphan_stressors_for_aops.response.schema"),
+)
+
+tool_registry.register(
     name="list_assays_for_aops",
     description="Aggregate and deduplicate assay candidates across multiple AOPs, with per-AOP diagnostics for empty results.",
     handler=aop.list_assays_for_aops,
@@ -216,11 +232,83 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="discover_orphan_stressors_for_query",
+    description="Given a phenotype or mechanism query, search AOPs, aggregate orphan chemical candidates across the selected AOPs, and return query plus per-AOP diagnostics.",
+    handler=aop.discover_orphan_stressors_for_query,
+    input_model=aop.DiscoverOrphanStressorsForQueryInput,
+    output_schema=_schema("read", "discover_orphan_stressors_for_query.response.schema"),
+)
+
+tool_registry.register(
     name="export_assays_table",
     description="Export aggregated assay candidates as CSV or TSV from a query or explicit AOP list.",
     handler=aop.export_assays_table,
     input_model=aop.ExportAssaysTableInput,
     output_schema=_schema("read", "export_assays_table.response.schema"),
+)
+
+tool_registry.register(
+    name="export_draft_review_artifact",
+    description="Export a scientist-facing draft review artifact as markdown or json by rendering the unified draft review bundle, including an optional publication-style markdown profile.",
+    handler=aop.export_draft_review_artifact,
+    input_model=aop.ExportDraftReviewArtifactInput,
+    output_schema=_schema("read", "export_draft_review_artifact.response.schema"),
+)
+
+tool_registry.register(
+    name="list_saved_draft_review_artifacts",
+    description="List saved local draft review artifacts from the configured artifact output directory, with optional draft, profile, format, and subdirectory filters.",
+    handler=aop.list_saved_draft_review_artifacts,
+    input_model=aop.ListSavedDraftReviewArtifactsInput,
+    output_schema=_schema("read", "list_saved_draft_review_artifacts.response.schema"),
+)
+
+tool_registry.register(
+    name="plan_linear_draft_review_document",
+    description="Build a connector-ready Linear document payload from either a live draft review export or a previously saved draft review artifact.",
+    handler=aop.plan_linear_draft_review_document,
+    input_model=aop.PlanLinearDraftReviewDocumentInput,
+    output_schema=_schema("read", "plan_linear_draft_review_document.response.schema"),
+)
+
+tool_registry.register(
+    name="save_draft_review_artifact",
+    description="Render and save a draft review artifact to the local artifact output directory, with optional subdirectory, filename override, and publication-style markdown profile support.",
+    handler=aop.save_draft_review_artifact,
+    input_model=aop.SaveDraftReviewArtifactInput,
+    output_schema=_schema("write", "save_draft_review_artifact.response.schema"),
+)
+
+tool_registry.register(
+    name="trace_chemical_on_draft",
+    description="Project one chemical's CompTox bioactivity onto draft key events by matching each KE to candidate assays and returning a draft graph activity overlay.",
+    handler=aop.trace_chemical_on_draft,
+    input_model=aop.TraceChemicalOnDraftInput,
+    output_schema=_schema("read", "trace_chemical_on_draft.response.schema"),
+)
+
+tool_registry.register(
+    name="review_draft_assay_cutoff_ordering",
+    description="Review per-KER assay-cutoff ordering evidence for a draft by combining draft stressor links, KE assay candidates, and CompTox bioactivity cutoffs.",
+    handler=aop.review_draft_assay_cutoff_ordering,
+    input_model=aop.ReviewDraftAssayCutoffOrderingInput,
+    output_schema=_schema("read", "review_draft_assay_cutoff_ordering.response.schema"),
+)
+
+tool_registry.register(
+    name="review_draft_bundle",
+    description="Build a unified draft review bundle that combines draft validation, structured evidence-gap findings, per-KER assay-cutoff ordering review, and optional chemical projection into one response.",
+    handler=aop.review_draft_bundle,
+    input_model=aop.ReviewDraftBundleInput,
+    output_schema=_schema("read", "review_draft_bundle.response.schema"),
+)
+
+tool_registry.register(
+    name="review_draft_evidence_gaps",
+    description="Mine one draft for concrete evidence gaps across root metadata, topology, KE assay coverage, KER evidence fields, and linked stressor resolvability.",
+    handler=aop.review_draft_evidence_gaps,
+    input_model=aop.ReviewDraftEvidenceGapsInput,
+    output_schema=_schema("read", "review_draft_evidence_gaps.response.schema"),
 )
 
 tool_registry.register(

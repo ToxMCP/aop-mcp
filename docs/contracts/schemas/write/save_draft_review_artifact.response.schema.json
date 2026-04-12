@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "save_draft_review_artifact.response",
+  "type": "object",
+  "required": [
+    "format",
+    "artifact_profile",
+    "draft_id",
+    "version_id",
+    "filename",
+    "path",
+    "relative_path",
+    "metadata_path",
+    "output_directory",
+    "bundle_summary",
+    "section_titles",
+    "bytes_written",
+    "sha256",
+    "saved_at",
+    "overwrote_existing_file"
+  ],
+  "properties": {
+    "format": {"type": "string", "enum": ["markdown", "json"]},
+    "artifact_profile": {"type": "string", "enum": ["review", "publication"]},
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"},
+    "filename": {"type": "string"},
+    "path": {"type": "string"},
+    "relative_path": {"type": "string"},
+    "metadata_path": {"type": "string"},
+    "output_directory": {"type": "string"},
+    "bundle_summary": {
+      "type": "object",
+      "required": [
+        "ready_for_review",
+        "validator_error_count",
+        "validator_warning_count",
+        "assay_cutoff_assessable_relationship_count",
+        "assay_cutoff_discordant_relationship_count",
+        "chemical_trace_included",
+        "traced_key_event_count",
+        "active_key_event_count",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "validator_error_count": {"type": "integer"},
+        "validator_warning_count": {"type": "integer"},
+        "assay_cutoff_assessable_relationship_count": {"type": "integer"},
+        "assay_cutoff_discordant_relationship_count": {"type": "integer"},
+        "chemical_trace_included": {"type": "boolean"},
+        "traced_key_event_count": {"type": "integer"},
+        "active_key_event_count": {"type": "integer"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "evidence_gap_summary": {
+      "type": "object",
+      "required": [
+        "ready_for_review",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count",
+        "global_gap_count",
+        "key_event_gap_count",
+        "relationship_gap_count",
+        "stressor_gap_count",
+        "assay_mapping_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"},
+        "global_gap_count": {"type": "integer"},
+        "key_event_gap_count": {"type": "integer"},
+        "relationship_gap_count": {"type": "integer"},
+        "stressor_gap_count": {"type": "integer"},
+        "assay_mapping_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "section_titles": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "bytes_written": {"type": "integer", "minimum": 0},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "saved_at": {"type": "string"},
+    "overwrote_existing_file": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}

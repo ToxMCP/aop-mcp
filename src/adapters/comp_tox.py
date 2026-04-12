@@ -31,6 +31,10 @@ class CompToxClient:
         self._api_key = api_key
         self._assay_catalog_items_cache: list[dict[str, Any]] | None = None
         self._all_assays_cache: list[dict[str, Any]] | None = None
+        self._assay_chemicals_cache: dict[str, list[dict[str, Any]] | list[Any]] = {}
+        self._search_equal_cache: dict[str, list[dict[str, Any]]] = {}
+        self._bioactivity_cache: dict[str, list[dict[str, Any]]] = {}
+        self._assay_cache: dict[int, dict[str, Any] | None] = {}
 
     def close(self) -> None:
         self._client.close()
@@ -70,46 +74,72 @@ class CompToxClient:
 
     def get_chemicals_in_assay(self, aeid: str) -> list[dict[str, Any]]:
         """Fetch chemicals active in a specific assay (by AEID) from Bioactivity API."""
+        cache_key = str(aeid)
+        if cache_key in self._assay_chemicals_cache:
+            return self._assay_chemicals_cache[cache_key]
         # Endpoint: bioactivity/assay/chemicals/search/by-aeid/{aeid}
         # Note: We use _bio_client which points to ctx-api
         response = self._bio_client.get(f"bioactivity/assay/chemicals/search/by-aeid/{aeid}", headers=self._headers())
         # Bioactivity API returns a list of objects directly, or empty list
         payload = self._handle_response(response)
         if payload is None:
+            self._assay_chemicals_cache[cache_key] = []
             return []
-        return payload if isinstance(payload, list) else []
+        results = payload if isinstance(payload, list) else []
+        self._assay_chemicals_cache[cache_key] = results
+        return results
 
     def search_equal(self, value: str) -> list[dict[str, Any]]:
+        cache_key = str(value)
+        if cache_key in self._search_equal_cache:
+            return self._search_equal_cache[cache_key]
         response = self._bio_client.get(
             f"chemical/search/equal/{quote(value, safe='')}",
             headers=self._headers(),
         )
         payload = self._handle_response(response)
         if payload is None:
+            self._search_equal_cache[cache_key] = []
             return []
-        return payload if isinstance(payload, list) else []
+        results = payload if isinstance(payload, list) else []
+        self._search_equal_cache[cache_key] = results
+        return results
 
     def bioactivity_data_by_dtxsid(self, dtxsid: str) -> list[dict[str, Any]]:
+        cache_key = str(dtxsid)
+        if cache_key in self._bioactivity_cache:
+            return self._bioactivity_cache[cache_key]
         response = self._bio_client.get(
             f"bioactivity/data/search/by-dtxsid/{quote(dtxsid, safe='')}",
             headers=self._headers(),
         )
         payload = self._handle_response(response)
         if payload is None:
+            self._bioactivity_cache[cache_key] = []
             return []
-        return payload if isinstance(payload, list) else []
+        results = payload if isinstance(payload, list) else []
+        self._bioactivity_cache[cache_key] = results
+        return results
 
     def assay_by_aeid(self, aeid: int) -> dict[str, Any] | None:
+        cache_key = int(aeid)
+        if cache_key in self._assay_cache:
+            return self._assay_cache[cache_key]
         response = self._bio_client.get(
             f"bioactivity/assay/search/by-aeid/{aeid}",
             headers=self._headers(),
         )
         payload = self._handle_response(response)
         if payload is None:
+            self._assay_cache[cache_key] = None
             return None
         if isinstance(payload, list):
-            return payload[0] if payload else None
-        return payload if isinstance(payload, dict) else None
+            result = payload[0] if payload else None
+            self._assay_cache[cache_key] = result
+            return result
+        result = payload if isinstance(payload, dict) else None
+        self._assay_cache[cache_key] = result
+        return result
 
     def assays_by_gene(self, gene_symbol: str) -> list[dict[str, Any]]:
         response = self._bio_client.get(
@@ -308,13 +338,26 @@ class CompToxClient:
                         match_basis.add("taxonomic_applicability_match")
                         applicability_match = "match"
 
-            score += min(int(item.get("multi_conc_assay_chemical_count_active") or 0) // 250, 20)
+            specificity_score = compute_specificity_score(
+                multi_active=item.get("multi_conc_assay_chemical_count_active"),
+                multi_total=item.get("multi_conc_assay_chemical_count_total"),
+                single_active=item.get("single_conc_assay_chemical_count_active"),
+                single_total=item.get("single_conc_assay_chemical_count_total"),
+            )
+            total_assay_count = _select_total_assay_count(
+                multi_total=item.get("multi_conc_assay_chemical_count_total"),
+                single_total=item.get("single_conc_assay_chemical_count_total"),
+            )
+            rank_score = _rank_score_from_match_score(score, specificity_score)
             candidate = ranked_items.setdefault(
                 aeid_int,
                 {
                     "aeid": aeid_int,
                     "catalog_item": item,
                     "match_score": score,
+                    "rank_score": rank_score,
+                    "specificity_score": specificity_score,
+                    "total_assay_count": total_assay_count,
                     "matched_terms": set(matched_terms),
                     "match_basis": set(match_basis),
                     "matched_taxa": set(matched_taxa),
@@ -324,6 +367,9 @@ class CompToxClient:
             if score > candidate["match_score"]:
                 candidate["catalog_item"] = item
                 candidate["match_score"] = score
+                candidate["rank_score"] = rank_score
+                candidate["specificity_score"] = specificity_score
+                candidate["total_assay_count"] = total_assay_count
                 candidate["applicability_match"] = applicability_match
             candidate["matched_terms"].update(matched_terms)
             candidate["match_basis"].update(match_basis)
@@ -332,9 +378,9 @@ class CompToxClient:
         ranked_candidates = sorted(
             ranked_items.values(),
             key=lambda item: (
-                -item["match_score"],
-                -int(item["catalog_item"].get("multi_conc_assay_chemical_count_active") or 0),
-                -int(item["catalog_item"].get("multi_conc_assay_chemical_count_total") or 0),
+                -item["rank_score"],
+                -(item["specificity_score"] if item["specificity_score"] is not None else -1.0),
+                -int(item["total_assay_count"] or 0),
                 item["aeid"],
             ),
         )[:limit]
@@ -376,6 +422,8 @@ class CompToxClient:
                     "applicability_match": candidate["applicability_match"],
                     "matched_taxa": sorted(candidate["matched_taxa"]),
                     "match_score": candidate["match_score"],
+                    "rank_score": candidate["rank_score"],
+                    "specificity_score": candidate["specificity_score"],
                     "match_basis": sorted(candidate["match_basis"]),
                     "matched_terms": sorted(candidate["matched_terms"]),
                     "multi_conc_assay_chemical_count_active": catalog_item.get(
@@ -516,7 +564,17 @@ class CompToxClient:
 
                 multi_active, multi_total = _parse_activity_summary(row.get("multiConcActives"))
                 single_active, single_total = _parse_activity_summary(row.get("singleConcActive"))
-                score += min((multi_active or 0) // 250, 20)
+                specificity_score = compute_specificity_score(
+                    multi_active=multi_active,
+                    multi_total=multi_total,
+                    single_active=single_active,
+                    single_total=single_total,
+                )
+                total_assay_count = _select_total_assay_count(
+                    multi_total=multi_total,
+                    single_total=single_total,
+                )
+                rank_score = _rank_score_from_match_score(score, specificity_score)
 
                 candidate = ranked_items.setdefault(
                     aeid_int,
@@ -527,6 +585,9 @@ class CompToxClient:
                         "taxon_name": assay.get("organism") or assay.get("taxonName"),
                         "applicability_match": applicability_match,
                         "match_score": score,
+                        "rank_score": rank_score,
+                        "specificity_score": specificity_score,
+                        "total_assay_count": total_assay_count,
                         "matched_terms": set(matched_terms),
                         "match_basis": set(match_basis),
                         "matched_taxa": set(matched_taxa),
@@ -542,6 +603,9 @@ class CompToxClient:
                     candidate["taxon_name"] = assay.get("organism") or assay.get("taxonName")
                     candidate["applicability_match"] = applicability_match
                     candidate["match_score"] = score
+                    candidate["rank_score"] = rank_score
+                    candidate["specificity_score"] = specificity_score
+                    candidate["total_assay_count"] = total_assay_count
                     candidate["multi_conc_assay_chemical_count_active"] = multi_active
                     candidate["multi_conc_assay_chemical_count_total"] = multi_total
                     candidate["single_conc_assay_chemical_count_active"] = single_active
@@ -553,9 +617,9 @@ class CompToxClient:
         ranked_candidates = sorted(
             ranked_items.values(),
             key=lambda item: (
-                -item["match_score"],
-                -int(item.get("multi_conc_assay_chemical_count_active") or 0),
-                -int(item.get("multi_conc_assay_chemical_count_total") or 0),
+                -item["rank_score"],
+                -(item["specificity_score"] if item["specificity_score"] is not None else -1.0),
+                -int(item["total_assay_count"] or 0),
                 item["aeid"],
             ),
         )[:limit]
@@ -590,6 +654,8 @@ class CompToxClient:
                     "applicability_match": candidate["applicability_match"],
                     "matched_taxa": sorted(candidate["matched_taxa"]),
                     "match_score": candidate["match_score"],
+                    "rank_score": candidate["rank_score"],
+                    "specificity_score": candidate["specificity_score"],
                     "match_basis": sorted(candidate["match_basis"]),
                     "matched_terms": sorted(candidate["matched_terms"]),
                     "multi_conc_assay_chemical_count_active": candidate["multi_conc_assay_chemical_count_active"],
@@ -708,7 +774,17 @@ class CompToxClient:
 
             multi_active, multi_total = _parse_activity_summary(assay.get("multiConcActives"))
             single_active, single_total = _parse_activity_summary(assay.get("singleConcActive"))
-            score += min((multi_active or 0) // 250, 20)
+            specificity_score = compute_specificity_score(
+                multi_active=multi_active,
+                multi_total=multi_total,
+                single_active=single_active,
+                single_total=single_total,
+            )
+            total_assay_count = _select_total_assay_count(
+                multi_total=multi_total,
+                single_total=single_total,
+            )
+            rank_score = _rank_score_from_match_score(score, specificity_score)
 
             candidate = ranked_items.setdefault(
                 aeid_int,
@@ -718,6 +794,9 @@ class CompToxClient:
                     "taxon_name": assay.get("organism") or assay.get("taxonName"),
                     "applicability_match": applicability_match,
                     "match_score": score,
+                    "rank_score": rank_score,
+                    "specificity_score": specificity_score,
+                    "total_assay_count": total_assay_count,
                     "matched_terms": set(matched_terms),
                     "match_basis": set(match_basis),
                     "matched_taxa": set(matched_taxa),
@@ -732,6 +811,9 @@ class CompToxClient:
                 candidate["taxon_name"] = assay.get("organism") or assay.get("taxonName")
                 candidate["applicability_match"] = applicability_match
                 candidate["match_score"] = score
+                candidate["rank_score"] = rank_score
+                candidate["specificity_score"] = specificity_score
+                candidate["total_assay_count"] = total_assay_count
                 candidate["multi_conc_assay_chemical_count_active"] = multi_active
                 candidate["multi_conc_assay_chemical_count_total"] = multi_total
                 candidate["single_conc_assay_chemical_count_active"] = single_active
@@ -743,9 +825,9 @@ class CompToxClient:
         ranked_candidates = sorted(
             ranked_items.values(),
             key=lambda item: (
-                -item["match_score"],
-                -int(item.get("multi_conc_assay_chemical_count_active") or 0),
-                -int(item.get("multi_conc_assay_chemical_count_total") or 0),
+                -item["rank_score"],
+                -(item["specificity_score"] if item["specificity_score"] is not None else -1.0),
+                -int(item["total_assay_count"] or 0),
                 item["aeid"],
             ),
         )[:limit]
@@ -775,6 +857,8 @@ class CompToxClient:
                     "applicability_match": candidate["applicability_match"],
                     "matched_taxa": sorted(candidate["matched_taxa"]),
                     "match_score": candidate["match_score"],
+                    "rank_score": candidate["rank_score"],
+                    "specificity_score": candidate["specificity_score"],
                     "match_basis": sorted(candidate["match_basis"]),
                     "matched_terms": sorted(candidate["matched_terms"]),
                     "multi_conc_assay_chemical_count_active": candidate["multi_conc_assay_chemical_count_active"],
@@ -899,6 +983,52 @@ def _parse_activity_summary(value: Any) -> tuple[int | None, int | None]:
     if not match:
         return None, None
     return int(match.group(1)), int(match.group(2))
+
+
+def compute_specificity_score(
+    *,
+    multi_active: Any,
+    multi_total: Any,
+    single_active: Any,
+    single_total: Any,
+) -> float | None:
+    active, total = _normalize_activity_counts(multi_active, multi_total)
+    if total is None:
+        active, total = _normalize_activity_counts(single_active, single_total)
+    if total is None or total <= 0:
+        return None
+    active = min(max(active or 0, 0), total)
+    return 1.0 - (active / total)
+
+
+def _normalize_activity_counts(active: Any, total: Any) -> tuple[int | None, int | None]:
+    active_value = int(active) if isinstance(active, int) else None
+    total_value = int(total) if isinstance(total, int) else None
+    if active_value is not None or total_value is not None:
+        return active_value, total_value
+    if active is not None and total is None:
+        return _parse_activity_summary(active)
+    return None, None
+
+
+def _select_total_assay_count(*, multi_total: Any, single_total: Any) -> int | None:
+    normalized_multi_total = int(multi_total) if isinstance(multi_total, int) else None
+    if normalized_multi_total is not None:
+        return normalized_multi_total
+    normalized_single_total = int(single_total) if isinstance(single_total, int) else None
+    if normalized_single_total is not None:
+        return normalized_single_total
+    _active, parsed_total = _parse_activity_summary(multi_total)
+    if parsed_total is not None:
+        return parsed_total
+    _active, parsed_total = _parse_activity_summary(single_total)
+    return parsed_total
+
+
+def _rank_score_from_match_score(match_score: int, specificity_score: float | None) -> float:
+    if specificity_score is None:
+        return float(match_score)
+    return float(match_score) + (20.0 * specificity_score)
 
 
 def _normalize_taxon_name(value: str | None) -> str:

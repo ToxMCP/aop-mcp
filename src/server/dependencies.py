@@ -7,6 +7,7 @@ from functools import lru_cache
 from src.adapters import (
     AOPDBAdapter,
     AOPWikiAdapter,
+    HgncClient,
     SparqlClient,
     SparqlEndpoint,
 )
@@ -45,9 +46,11 @@ def get_aop_db_adapter() -> AOPDBAdapter:
     settings = get_settings()
     client = _build_sparql_client(settings.aop_db_sparql_endpoints)
     comptox = get_comptox_client()
+    hgnc = get_hgnc_client()
     return AOPDBAdapter(
         client,
         comptox_client=comptox,
+        hgnc_client=hgnc,
         enable_fixture_fallback=settings.enable_fixture_fallback,
     )
 
@@ -59,6 +62,15 @@ def get_comptox_client() -> CompToxClient:
         base_url=settings.comptox_base_url,
         bioactivity_url=settings.comptox_bioactivity_url,
         api_key=settings.comptox_api_key,
+    )
+
+
+@lru_cache
+def get_hgnc_client() -> HgncClient:
+    settings = get_settings()
+    return HgncClient(
+        base_url=settings.hgnc_base_url,
+        timeout=settings.hgnc_timeout,
     )
 
 

@@ -55,13 +55,19 @@ def test_add_or_update_ke_updates_graph() -> None:
         version_id="v2",
         author="bob",
         summary="Add KE",
-        payload=KeyEventPayload(identifier="KE:1", title="Mitochondrial dysfunction", event_type="Cellular"),
+        payload=KeyEventPayload(
+            identifier="KE:1",
+            title="Mitochondrial dysfunction",
+            event_type="Cellular",
+            event_role="mie",
+        ),
     )
     validate_payload(response, namespace="write", name="update_draft.response.schema")
     assert response == {"draft_id": "draft-1", "version_id": "v2"}
     draft = service.get_draft("draft-1")
     assert draft is not None
     assert draft.versions[-1].graph.entities["KE:1"].attributes["title"] == "Mitochondrial dysfunction"
+    assert draft.versions[-1].graph.entities["KE:1"].attributes["event_role"] == "mie"
 
 
 def test_add_or_update_ke_normalizes_governed_essentiality_payload() -> None:

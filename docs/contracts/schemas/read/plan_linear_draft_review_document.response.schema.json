@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "plan_linear_draft_review_document.response",
+  "type": "object",
+  "required": [
+    "source",
+    "artifact_summary",
+    "linear_document",
+    "suggested_create_document_arguments",
+    "warnings"
+  ],
+  "properties": {
+    "source": {
+      "type": "object",
+      "required": [
+        "mode",
+        "draft_id",
+        "version_id",
+        "format",
+        "artifact_profile",
+        "path",
+        "relative_path",
+        "saved_at",
+        "metadata_available",
+        "metadata_path"
+      ],
+      "properties": {
+        "mode": {"type": "string", "enum": ["live_draft_export", "saved_artifact"]},
+        "draft_id": {"type": ["string", "null"]},
+        "version_id": {"type": ["string", "null"]},
+        "format": {"type": "string", "enum": ["markdown", "json"]},
+        "artifact_profile": {"type": "string", "enum": ["review", "publication"]},
+        "path": {"type": ["string", "null"]},
+        "relative_path": {"type": ["string", "null"]},
+        "saved_at": {"type": ["string", "null"]},
+        "metadata_available": {"type": "boolean"},
+        "metadata_path": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "artifact_summary": {
+      "type": ["object", "null"],
+      "required": [
+        "ready_for_review",
+        "validator_error_count",
+        "validator_warning_count",
+        "assay_cutoff_assessable_relationship_count",
+        "assay_cutoff_discordant_relationship_count",
+        "chemical_trace_included",
+        "traced_key_event_count",
+        "active_key_event_count",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "validator_error_count": {"type": "integer"},
+        "validator_warning_count": {"type": "integer"},
+        "assay_cutoff_assessable_relationship_count": {"type": "integer"},
+        "assay_cutoff_discordant_relationship_count": {"type": "integer"},
+        "chemical_trace_included": {"type": "boolean"},
+        "traced_key_event_count": {"type": "integer"},
+        "active_key_event_count": {"type": "integer"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "evidence_gap_summary": {
+      "type": ["object", "null"],
+      "required": [
+        "ready_for_review",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count",
+        "global_gap_count",
+        "key_event_gap_count",
+        "relationship_gap_count",
+        "stressor_gap_count",
+        "assay_mapping_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"},
+        "global_gap_count": {"type": "integer"},
+        "key_event_gap_count": {"type": "integer"},
+        "relationship_gap_count": {"type": "integer"},
+        "stressor_gap_count": {"type": "integer"},
+        "assay_mapping_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "linear_document": {
+      "type": "object",
+      "required": [
+        "draft_id",
+        "version_id",
+        "title",
+        "content",
+        "project",
+        "issue",
+        "icon",
+        "source_reference",
+        "artifact_profile"
+      ],
+      "properties": {
+        "draft_id": {"type": ["string", "null"]},
+        "version_id": {"type": ["string", "null"]},
+        "title": {"type": "string"},
+        "content": {"type": "string"},
+        "project": {"type": ["string", "null"]},
+        "issue": {"type": ["string", "null"]},
+        "icon": {"type": ["string", "null"]},
+        "source_reference": {"type": ["string", "null"]},
+        "artifact_profile": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "suggested_create_document_arguments": {
+      "type": "object",
+      "required": ["title", "content"],
+      "properties": {
+        "title": {"type": "string"},
+        "content": {"type": "string"},
+        "project": {"type": "string"},
+        "issue": {"type": "string"},
+        "icon": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

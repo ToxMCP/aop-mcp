@@ -57,8 +57,19 @@ def test_tools_list_includes_registered_tools() -> None:
         "find_paths_between_events",
         "map_assay_to_aops",
         "get_assays_for_aop",
+        "discover_orphan_stressors_for_aop",
+        "discover_orphan_stressors_for_aops",
         "get_assays_for_aops",
+        "discover_orphan_stressors_for_query",
+        "export_draft_review_artifact",
+        "list_saved_draft_review_artifacts",
+        "plan_linear_draft_review_document",
+        "review_draft_evidence_gaps",
+        "save_draft_review_artifact",
         "search_assays_for_key_event",
+        "trace_chemical_on_draft",
+        "review_draft_assay_cutoff_ordering",
+        "review_draft_bundle",
         "validate_draft_oecd",
         "create_draft_aop",
     }.issubset(tool_names)
@@ -68,14 +79,37 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["get_ker"]["outputSchema"]["title"] == "get_ker.response"
     assert by_name["assess_aop_confidence"]["outputSchema"]["title"] == "assess_aop_confidence.response"
     assert by_name["get_assays_for_aop"]["outputSchema"]["title"] == "list_assays_for_aop.response"
+    assert by_name["discover_orphan_stressors_for_aop"]["outputSchema"]["title"] == "discover_orphan_stressors_for_aop.response"
+    assert by_name["discover_orphan_stressors_for_aops"]["outputSchema"]["title"] == "discover_orphan_stressors_for_aops.response"
     assert by_name["get_assays_for_aops"]["outputSchema"]["title"] == "list_assays_for_aops.response"
+    assert by_name["discover_orphan_stressors_for_query"]["outputSchema"]["title"] == "discover_orphan_stressors_for_query.response"
+    assert by_name["export_draft_review_artifact"]["outputSchema"]["title"] == "export_draft_review_artifact.response"
+    assert by_name["list_saved_draft_review_artifacts"]["outputSchema"]["title"] == "list_saved_draft_review_artifacts.response"
+    assert by_name["plan_linear_draft_review_document"]["outputSchema"]["title"] == "plan_linear_draft_review_document.response"
+    assert by_name["review_draft_evidence_gaps"]["outputSchema"]["title"] == "review_draft_evidence_gaps.response"
+    assert by_name["save_draft_review_artifact"]["outputSchema"]["title"] == "save_draft_review_artifact.response"
+    assert by_name["trace_chemical_on_draft"]["outputSchema"]["title"] == "trace_chemical_on_draft.response"
+    assert by_name["review_draft_assay_cutoff_ordering"]["outputSchema"]["title"] == "review_draft_assay_cutoff_ordering.response"
+    assert by_name["review_draft_bundle"]["outputSchema"]["title"] == "review_draft_bundle.response"
     assert all("title" in tool["outputSchema"] for tool in tools)
     assert by_name["map_assay_to_aops"]["description"].startswith(
         "Given an assay identifier, return related AOPs. Do not pass AOP IDs."
     )
     assert "Given one AOP identifier" in by_name["get_assays_for_aop"]["description"]
+    assert "strongest assay candidates" in by_name["discover_orphan_stressors_for_aop"]["description"]
+    assert "cross-AOP support" in by_name["discover_orphan_stressors_for_aops"]["description"]
+    assert "phenotype or mechanism query" in by_name["discover_orphan_stressors_for_query"]["description"]
+    assert "saved local draft review artifacts" in by_name["list_saved_draft_review_artifacts"]["description"]
+    assert "Linear document payload" in by_name["plan_linear_draft_review_document"]["description"]
+    assert "concrete evidence gaps" in by_name["review_draft_evidence_gaps"]["description"]
+    assert "local artifact output directory" in by_name["save_draft_review_artifact"]["description"]
     assert "Given multiple AOP identifiers" in by_name["get_assays_for_aops"]["description"]
     add_ke_schema = by_name["add_or_update_ke"]["inputSchema"]
+    assert add_ke_schema["properties"]["event_role"]["anyOf"][0]["enum"] == [
+        "mie",
+        "intermediate",
+        "ao",
+    ]
     essentiality_ref = add_ke_schema["$defs"]["KeyEventAttributesInputModel"]["properties"]["essentiality"]["anyOf"][0]["$ref"]
     essentiality_schema = add_ke_schema["$defs"][essentiality_ref.split("/")[-1]]
     assert "evidence_call" in essentiality_schema["properties"]
@@ -231,6 +265,7 @@ def test_tools_call_add_or_update_ke_accepts_governed_essentiality_and_validator
                     "summary": "add key event",
                     "identifier": identifier,
                     "title": title,
+                    "event_role": "mie" if identifier == "KE:1" else "ao",
                     "attributes": attributes,
                 },
             },

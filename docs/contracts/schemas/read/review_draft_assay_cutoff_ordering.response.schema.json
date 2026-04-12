@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "review_draft_assay_cutoff_ordering.response",
+  "type": "object",
+  "required": [
+    "draft_id",
+    "version_id",
+    "draft",
+    "review_parameters",
+    "summary",
+    "stressors",
+    "key_events",
+    "relationships",
+    "limitations"
+  ],
+  "properties": {
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"},
+    "draft": {
+      "type": "object",
+      "required": ["aop_entity_id", "title", "adverse_outcome"],
+      "properties": {
+        "aop_entity_id": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "adverse_outcome": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "review_parameters": {
+      "type": "object",
+      "required": ["assay_limit", "stressor_limit", "min_hitcall"],
+      "properties": {
+        "assay_limit": {"type": "integer"},
+        "stressor_limit": {"type": "integer"},
+        "min_hitcall": {"type": "number"}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "key_event_count",
+        "relationship_count",
+        "linked_stressor_count",
+        "scanned_stressor_count",
+        "searchable_stressor_count",
+        "assessable_relationship_count",
+        "concordant_relationship_count",
+        "discordant_relationship_count",
+        "not_reported_relationship_count",
+        "supporting_chemical_count"
+      ],
+      "properties": {
+        "key_event_count": {"type": "integer"},
+        "relationship_count": {"type": "integer"},
+        "linked_stressor_count": {"type": "integer"},
+        "scanned_stressor_count": {"type": "integer"},
+        "searchable_stressor_count": {"type": "integer"},
+        "assessable_relationship_count": {"type": "integer"},
+        "concordant_relationship_count": {"type": "integer"},
+        "discordant_relationship_count": {"type": "integer"},
+        "not_reported_relationship_count": {"type": "integer"},
+        "supporting_chemical_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "stressors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "stressor_id",
+          "label",
+          "source",
+          "casrn",
+          "dtxsid",
+          "linked_target_ids",
+          "searchable"
+        ],
+        "properties": {
+          "stressor_id": {"type": ["string", "null"]},
+          "label": {"type": ["string", "null"]},
+          "source": {"type": ["string", "null"]},
+          "casrn": {"type": ["string", "null"]},
+          "dtxsid": {"type": ["string", "null"]},
+          "linked_target_ids": {"type": "array", "items": {"type": "string"}},
+          "searchable": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "key_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "event_type", "event_role"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": ["string", "null"]},
+          "event_type": {"type": ["string", "null"]},
+          "event_role": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "target",
+          "type",
+          "plausibility",
+          "status",
+          "assay_cutoff_ordering_call",
+          "assay_cutoff_supporting_chemical_count",
+          "assay_cutoff_ordering"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "type": {"type": "string"},
+          "plausibility": {"type": ["string", "null"]},
+          "status": {"type": ["string", "null"]},
+          "assay_cutoff_ordering_call": {"type": "string"},
+          "assay_cutoff_supporting_chemical_count": {"type": "integer"},
+          "assay_cutoff_ordering": {"$ref": "#/$defs/assayCutoffOrdering"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "provenanceRecord": {
+      "type": "object",
+      "required": ["source", "field", "transformation", "confidence"],
+      "properties": {
+        "source": {"type": "string"},
+        "field": {"type": "string"},
+        "transformation": {"type": ["string", "null"]},
+        "confidence": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "assayCutoffOrdering": {
+      "type": "object",
+      "required": [
+        "heuristic_call",
+        "basis",
+        "upstream_candidate_assay_count",
+        "downstream_candidate_assay_count",
+        "supporting_chemical_count",
+        "concordant_chemical_count",
+        "discordant_chemical_count",
+        "supporting_chemicals",
+        "provenance"
+      ],
+      "properties": {
+        "heuristic_call": {"type": "string"},
+        "basis": {"type": "string"},
+        "upstream_candidate_assay_count": {"type": "integer"},
+        "downstream_candidate_assay_count": {"type": "integer"},
+        "supporting_chemical_count": {"type": "integer"},
+        "concordant_chemical_count": {"type": "integer"},
+        "discordant_chemical_count": {"type": "integer"},
+        "supporting_chemicals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "dtxsid",
+              "preferred_name",
+              "casrn",
+              "upstream_best_activity_cutoff",
+              "downstream_best_activity_cutoff",
+              "ordering"
+            ],
+            "properties": {
+              "dtxsid": {"type": "string"},
+              "preferred_name": {"type": ["string", "null"]},
+              "casrn": {"type": ["string", "null"]},
+              "upstream_best_activity_cutoff": {"type": "number"},
+              "downstream_best_activity_cutoff": {"type": "number"},
+              "ordering": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

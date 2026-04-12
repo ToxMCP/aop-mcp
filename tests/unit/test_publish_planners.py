@@ -9,7 +9,7 @@ from src.services.draft_store import (
     VersionMetadata,
     diff_graphs,
 )
-from src.services.publish import MediaWikiPublishPlanner, OWLPublishPlanner
+from src.services.publish import LinearDocumentPlanner, MediaWikiPublishPlanner, OWLPublishPlanner
 
 
 def make_version(version_id: str) -> DraftVersion:
@@ -63,3 +63,25 @@ def test_owl_planner_produces_changes() -> None:
     data = delta.to_dict()
     assert len(data["changes"]) >= 2
     assert data["changes"][0]["action"] == "upsert_individual"
+
+
+def test_linear_document_planner_produces_connector_payload() -> None:
+    planner = LinearDocumentPlanner()
+    plan = planner.build_plan(
+        draft_id="draft-1",
+        version_id="v2",
+        artifact_title="Scientific Draft Review: Draft AOP",
+        artifact_markdown="## Handoff Context\n- Draft ID: draft-1\n",
+        artifact_profile="publication",
+        project="Tox Reviews",
+        issue="AOP-123",
+        source_reference="handoff/draft_review_draft_1_publication.md",
+    )
+    data = plan.to_dict()
+    assert data["draft_id"] == "draft-1"
+    assert data["version_id"] == "v2"
+    assert data["title"] == "Scientific Draft Review: Draft AOP"
+    assert data["project"] == "Tox Reviews"
+    assert data["issue"] == "AOP-123"
+    assert data["icon"] == ":microscope:"
+    assert data["artifact_profile"] == "publication"

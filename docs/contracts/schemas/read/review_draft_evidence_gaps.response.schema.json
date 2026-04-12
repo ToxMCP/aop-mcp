@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "review_draft_evidence_gaps.response",
+  "type": "object",
+  "required": [
+    "draft_id",
+    "version_id",
+    "draft",
+    "review_parameters",
+    "bundle_summary",
+    "summary",
+    "global_gaps",
+    "key_events",
+    "relationships",
+    "stressors",
+    "recommendations",
+    "limitations"
+  ],
+  "properties": {
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"},
+    "draft": {
+      "type": "object",
+      "required": ["aop_entity_id", "title", "adverse_outcome"],
+      "properties": {
+        "aop_entity_id": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "adverse_outcome": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "review_parameters": {
+      "type": "object",
+      "required": ["assay_limit", "stressor_limit", "min_hitcall"],
+      "properties": {
+        "assay_limit": {"type": "integer"},
+        "stressor_limit": {"type": "integer"},
+        "min_hitcall": {"type": "number"}
+      },
+      "additionalProperties": false
+    },
+    "bundle_summary": {
+      "type": "object",
+      "required": [
+        "ready_for_review",
+        "validator_error_count",
+        "validator_warning_count",
+        "assay_cutoff_assessable_relationship_count",
+        "assay_cutoff_discordant_relationship_count",
+        "chemical_trace_included",
+        "traced_key_event_count",
+        "active_key_event_count",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "validator_error_count": {"type": "integer"},
+        "validator_warning_count": {"type": "integer"},
+        "assay_cutoff_assessable_relationship_count": {"type": "integer"},
+        "assay_cutoff_discordant_relationship_count": {"type": "integer"},
+        "chemical_trace_included": {"type": "boolean"},
+        "traced_key_event_count": {"type": "integer"},
+        "active_key_event_count": {"type": "integer"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "ready_for_review",
+        "total_gap_count",
+        "blocking_gap_count",
+        "advisory_gap_count",
+        "global_gap_count",
+        "key_event_gap_count",
+        "relationship_gap_count",
+        "stressor_gap_count",
+        "assay_mapping_gap_count"
+      ],
+      "properties": {
+        "ready_for_review": {"type": "boolean"},
+        "total_gap_count": {"type": "integer"},
+        "blocking_gap_count": {"type": "integer"},
+        "advisory_gap_count": {"type": "integer"},
+        "global_gap_count": {"type": "integer"},
+        "key_event_gap_count": {"type": "integer"},
+        "relationship_gap_count": {"type": "integer"},
+        "stressor_gap_count": {"type": "integer"},
+        "assay_mapping_gap_count": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "global_gaps": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/gap"}
+    },
+    "key_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "event_type",
+          "event_role",
+          "assay_candidate_count",
+          "top_assay_name",
+          "top_assay_specificity_score",
+          "assay_search_limitations",
+          "gap_count",
+          "gaps"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": ["string", "null"]},
+          "event_type": {"type": ["string", "null"]},
+          "event_role": {"type": ["string", "null"]},
+          "assay_candidate_count": {"type": "integer"},
+          "top_assay_name": {"type": ["string", "null"]},
+          "top_assay_specificity_score": {"type": ["number", "null"]},
+          "assay_search_limitations": {"type": "array", "items": {"type": "string"}},
+          "gap_count": {"type": "integer"},
+          "gaps": {"type": "array", "items": {"$ref": "#/$defs/gap"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "target",
+          "type",
+          "plausibility",
+          "status",
+          "assay_cutoff_ordering_call",
+          "assay_cutoff_supporting_chemical_count",
+          "gap_count",
+          "gaps"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "type": {"type": "string"},
+          "plausibility": {"type": ["string", "null"]},
+          "status": {"type": ["string", "null"]},
+          "assay_cutoff_ordering_call": {"type": "string"},
+          "assay_cutoff_supporting_chemical_count": {"type": "integer"},
+          "gap_count": {"type": "integer"},
+          "gaps": {"type": "array", "items": {"$ref": "#/$defs/gap"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "stressors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "stressor_id",
+          "label",
+          "source",
+          "casrn",
+          "dtxsid",
+          "linked_target_ids",
+          "searchable",
+          "gap_count",
+          "gaps"
+        ],
+        "properties": {
+          "stressor_id": {"type": ["string", "null"]},
+          "label": {"type": ["string", "null"]},
+          "source": {"type": ["string", "null"]},
+          "casrn": {"type": ["string", "null"]},
+          "dtxsid": {"type": ["string", "null"]},
+          "linked_target_ids": {"type": "array", "items": {"type": "string"}},
+          "searchable": {"type": "boolean"},
+          "gap_count": {"type": "integer"},
+          "gaps": {"type": "array", "items": {"$ref": "#/$defs/gap"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "recommendations": {"type": "array", "items": {"type": "string"}},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "gap": {
+      "type": "object",
+      "required": ["id", "severity", "category", "title", "detail", "source", "related_check_ids"],
+      "properties": {
+        "id": {"type": "string"},
+        "severity": {"type": "string", "enum": ["error", "warning"]},
+        "category": {"type": "string"},
+        "title": {"type": "string"},
+        "detail": {"type": "string"},
+        "source": {"type": "string"},
+        "related_check_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

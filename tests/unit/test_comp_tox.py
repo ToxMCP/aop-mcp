@@ -11,8 +11,10 @@ from src.adapters import CompToxClient, CompToxError, extract_identifiers
 class MockTransport(httpx.BaseTransport):
     def __init__(self, responses: dict[str, httpx.Response]) -> None:
         self.responses = responses
+        self.calls: list[str] = []
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self.calls.append(str(request.url))
         response = self.responses.get(str(request.url))
         if response is None:
             raise AssertionError(f"Unexpected URL {request.url}")
@@ -99,6 +101,86 @@ def test_comp_tox_client_assays_by_gene_returns_rows() -> None:
         assays = client.assays_by_gene("NR1I2")
 
     assert assays == [{"aeid": 103, "geneSymbol": "NR1I2"}]
+
+
+def test_comp_tox_client_get_chemicals_in_assay_uses_cache() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/assay/chemicals/search/by-aeid/101",
+            200,
+            json_data=[{"dtxsid": "DTXSID3031864"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        first = client.get_chemicals_in_assay("101")
+        second = client.get_chemicals_in_assay("101")
+
+    assert first == [{"dtxsid": "DTXSID3031864"}]
+    assert second == first
+    assert transport.calls == [
+        "https://comptox.epa.gov/ctx-api/bioactivity/assay/chemicals/search/by-aeid/101"
+    ]
+
+
+def test_comp_tox_client_search_equal_uses_cache() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/chemical/search/equal/1763-23-1",
+            200,
+            json_data=[{"dtxsid": "DTXSID3031864"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        first = client.search_equal("1763-23-1")
+        second = client.search_equal("1763-23-1")
+
+    assert first == [{"dtxsid": "DTXSID3031864"}]
+    assert second == first
+    assert transport.calls == [
+        "https://comptox.epa.gov/ctx-api/chemical/search/equal/1763-23-1"
+    ]
+
+
+def test_comp_tox_client_bioactivity_data_by_dtxsid_uses_cache() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/data/search/by-dtxsid/DTXSID3031864",
+            200,
+            json_data=[{"aeid": 2309, "hitc": 0.95}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        first = client.bioactivity_data_by_dtxsid("DTXSID3031864")
+        second = client.bioactivity_data_by_dtxsid("DTXSID3031864")
+
+    assert first == [{"aeid": 2309, "hitc": 0.95}]
+    assert second == first
+    assert transport.calls == [
+        "https://comptox.epa.gov/ctx-api/bioactivity/data/search/by-dtxsid/DTXSID3031864"
+    ]
+
+
+def test_comp_tox_client_assay_by_aeid_uses_cache() -> None:
+    responses = dict([
+        make_response(
+            "https://comptox.epa.gov/ctx-api/bioactivity/assay/search/by-aeid/2309",
+            200,
+            json_data=[{"aeid": 2309, "assayName": "CCTE_GLTED_hDIO1"}],
+        )
+    ])
+    transport = MockTransport(responses)
+    with CompToxClient(transport=transport, api_key="test-key") as client:
+        first = client.assay_by_aeid(2309)
+        second = client.assay_by_aeid(2309)
+
+    assert first == {"aeid": 2309, "assayName": "CCTE_GLTED_hDIO1"}
+    assert second == first
+    assert transport.calls == [
+        "https://comptox.epa.gov/ctx-api/bioactivity/assay/search/by-aeid/2309"
+    ]
 
 
 def test_comp_tox_client_all_assays_returns_rows() -> None:
@@ -343,6 +425,8 @@ def test_comp_tox_client_search_assay_catalog_prefers_direct_gene_api(monkeypatc
     assert results[0]["single_conc_assay_chemical_count_active"] == 0
     assert results[0]["single_conc_assay_chemical_count_total"] == 310
     assert results[0]["match_score"] >= 300
+    assert results[0]["rank_score"] > results[0]["match_score"]
+    assert results[0]["specificity_score"] == pytest.approx(1 - (2076 / 4060))
     assert "ctx_gene_search_exact" in results[0]["match_basis"]
     assert "gene_name_exact" in results[0]["match_basis"]
     assert "taxonomic_applicability_match" in results[0]["match_basis"]
@@ -391,7 +475,9 @@ def test_comp_tox_client_search_assay_catalog_falls_back_to_catalog_metadata(mon
             "taxon_name": "human",
             "applicability_match": "unknown",
             "matched_taxa": [],
-            "match_score": 122,
+            "match_score": 120,
+            "rank_score": 128.0,
+            "specificity_score": 0.4,
             "match_basis": ["gene_symbol_exact"],
             "matched_terms": ["NR1I2"],
             "multi_conc_assay_chemical_count_active": 600,
@@ -446,3 +532,45 @@ def test_comp_tox_client_search_assay_catalog_prefers_matching_taxa(monkeypatch)
     assert [row["aeid"] for row in results] == [10, 11]
     assert results[0]["applicability_match"] == "match"
     assert results[1]["applicability_match"] == "mismatch"
+
+
+def test_comp_tox_client_search_assay_catalog_prefers_more_specific_match_when_relevance_ties(monkeypatch) -> None:
+    catalog_items = [
+        {
+            "aeid": 10,
+            "assayName": "PXR_specific",
+            "assayComponentEndpointName": "PXR_specific",
+            "assayComponentEndpointDesc": "Pregnane X receptor assay",
+            "taxonName": "human",
+            "multi_conc_assay_chemical_count_active": 50,
+            "multi_conc_assay_chemical_count_total": 1000,
+            "genes": [{"geneSymbol": "NR1I2", "geneName": "pregnane X receptor"}],
+        },
+        {
+            "aeid": 11,
+            "assayName": "PXR_promiscuous",
+            "assayComponentEndpointName": "PXR_promiscuous",
+            "assayComponentEndpointDesc": "Pregnane X receptor assay",
+            "taxonName": "human",
+            "multi_conc_assay_chemical_count_active": 700,
+            "multi_conc_assay_chemical_count_total": 1000,
+            "genes": [{"geneSymbol": "NR1I2", "geneName": "pregnane X receptor"}],
+        },
+    ]
+
+    with CompToxClient() as client:
+        monkeypatch.setattr(client, "assays_by_gene", lambda symbol: [])
+        monkeypatch.setattr(client, "all_assays", lambda: (_ for _ in ()).throw(CompToxError("full api unavailable")))
+        monkeypatch.setattr(client, "assay_catalog_items", lambda: catalog_items)
+        monkeypatch.setattr(client, "assay_by_aeid", lambda aeid: None)
+
+        results = client.search_assay_catalog(
+            gene_symbols=["NR1I2"],
+            phrases=["pregnane x receptor"],
+            preferred_taxa=["human"],
+            limit=5,
+        )
+
+    assert [row["aeid"] for row in results[:2]] == [10, 11]
+    assert results[0]["specificity_score"] > results[1]["specificity_score"]
+    assert results[0]["rank_score"] > results[1]["rank_score"]

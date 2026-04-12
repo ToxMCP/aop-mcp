@@ -47,6 +47,9 @@ All write tools respond with the draft ID and latest version so reviewers can tr
    ```
 4. Share the dry-run artifacts with reviewers and publishers. Plans include page summaries,
    key event listings, and OWL individual/property changes.
+5. For reviewer-facing document systems, build a connector-ready handoff with
+   `plan_linear_draft_review_document` from either a live publication-profile
+   export or a saved review artifact file.
 
 ## Execution (future work)
 - The publish planner outputs are intended for downstream executors responsible for CSRF token
