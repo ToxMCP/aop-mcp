@@ -6,8 +6,9 @@ import asyncio
 from pathlib import Path
 import re
 from typing import Any
+from urllib.parse import quote
 
-from .aop_wiki import _iri_to_curie  # reuse IRI normalization
+from src.semantic import AOP_CURIE_RESOLVER
 from .comp_tox import CompToxClient, CompToxError, compute_specificity_score
 from .fixtures import FixtureNotFoundError, load_fixture
 from .hgnc import HgncClient, HgncError
@@ -201,13 +202,14 @@ class AOPDBAdapter:
         if not any([inchikey, cas, name]):
             raise ValueError("At least one identifier (inchikey, cas, name) must be provided")
 
-        query = self._templates.render(
+        cas_uri = f"https://identifiers.org/cas/{quote(cas, safe='')}" if cas else ""
+        query = self._templates.render_safe(
             "map_chemical_to_aops",
-            {
-                "inchikey": inchikey or "",
-                "cas": cas or "",
+            literals={
                 "name": name or "",
+                "cas_literal": cas or "",
             },
+            uris={"cas_uri": cas_uri},
         )
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
@@ -221,7 +223,7 @@ class AOPDBAdapter:
             results.append(
                 {
                     "aop": {
-                        "id": _iri_to_curie(aop.get("value", "")),
+                        "id": AOP_CURIE_RESOLVER.resolve(aop.get("value", "")),
                         "iri": aop.get("value"),
                         "title": row.get("title", {}).get("value"),
                     },
@@ -1113,7 +1115,9 @@ class AOPDBAdapter:
         }
 
     async def _map_assay_legacy(self, assay_id: str) -> list[dict[str, Any]]:
-        query = self._templates.render("map_assay_to_aops", {"assay_id": assay_id})
+        query = self._templates.render_safe(
+            "map_assay_to_aops", literals={"assay_id": assay_id}
+        )
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -1125,7 +1129,7 @@ class AOPDBAdapter:
             results.append(
                 {
                     "aop": {
-                        "id": _iri_to_curie(aop.get("value", "")),
+                        "id": AOP_CURIE_RESOLVER.resolve(aop.get("value", "")),
                         "iri": aop.get("value"),
                         "title": row.get("title", {}).get("value"),
                     },
@@ -1253,7 +1257,9 @@ class AOPDBAdapter:
         return index, len(resolved_dtxsids), warnings
 
     async def _list_stressor_chemicals_for_aop(self, aop_id: str) -> list[dict[str, Any]]:
-        query = self._templates.render("list_stressor_chemicals_for_aop", {"aop_iri": _aop_iri(aop_id)})
+        query = self._templates.render_safe(
+            "list_stressor_chemicals_for_aop", uris={"aop_iri": _aop_iri(aop_id)}
+        )
         payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         bindings = payload.get("results", {}).get("bindings", [])
         stressors: list[dict[str, Any]] = []

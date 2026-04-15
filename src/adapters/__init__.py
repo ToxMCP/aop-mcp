@@ -6,6 +6,9 @@ from .comp_tox import CompToxClient, CompToxError, extract_identifiers  # noqa: 
 from .hgnc import HgncClient, HgncError  # noqa: F401
 from .sparql_client import (  # noqa: F401
     CacheProtocol,
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerOpen,
     SparqlClient,
     SparqlClientError,
     SparqlEndpoint,
@@ -16,6 +19,9 @@ from .sparql_client import (  # noqa: F401
 
 __all__ = [
     "CacheProtocol",
+    "CircuitBreaker",
+    "CircuitBreakerConfig",
+    "CircuitBreakerOpen",
     "SparqlClient",
     "SparqlClientError",
     "SparqlEndpoint",

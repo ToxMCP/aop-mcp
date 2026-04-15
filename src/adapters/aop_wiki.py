@@ -11,6 +11,7 @@ from typing import Any
 from .fixtures import FixtureNotFoundError, load_fixture
 from .sparql_client import SparqlClient, SparqlClientError
 from .sparql_client import TemplateCatalog as _TemplateCatalog
+from src.semantic import AOP_CURIE_RESOLVER
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "aop_wiki"
 
@@ -107,19 +108,8 @@ def _build_search_query_parts(text: str | None) -> dict[str, str]:
 
 
 def _iri_to_curie(iri: str) -> str:
-    if iri.startswith("https://identifiers.org/aop/"):
-        return f"AOP:{iri.rsplit('/', 1)[-1]}"
-    if iri.startswith("https://identifiers.org/aop.events/"):
-        return f"KE:{iri.rsplit('/', 1)[-1]}"
-    if iri.startswith("https://identifiers.org/aop.relationships/"):
-        return f"KER:{iri.rsplit('/', 1)[-1]}"
-    if iri.startswith("http://aopwiki.org/aops/"):
-        return f"AOP:{iri.rsplit('/', 1)[-1]}"
-    if iri.startswith("http://aopwiki.org/events/"):
-        return f"KE:{iri.rsplit('/', 1)[-1]}"
-    if iri.startswith("http://aopwiki.org/relationships/"):
-        return f"KER:{iri.rsplit('/', 1)[-1]}"
-    return iri
+    """Resolve an AOP-related IRI to a CURIE using the configured resolver."""
+    return AOP_CURIE_RESOLVER.resolve(iri)
 
 
 def _normalize_text(value: str | None) -> str | None:
@@ -160,7 +150,7 @@ def _normalize_binding_identifier(binding: dict[str, Any], key: str) -> dict[str
     iri = _binding_value(binding, key)
     if iri is None:
         return {"id": None, "iri": None}
-    return {"id": _iri_to_curie(iri), "iri": iri}
+    return {"id": AOP_CURIE_RESOLVER.resolve(iri), "iri": iri}
 
 
 def _append_unique(values: list[str], value: str | None) -> None:
@@ -269,12 +259,10 @@ class AOPWikiAdapter:
     async def search_aops(self, *, text: str | None = None, limit: int = 25) -> list[dict[str, Any]]:
         search_query_parts = _build_search_query_parts(text)
 
-        query = self._templates.render(
+        query = self._templates.render_safe(
             "search_aops",
-            {
-                **search_query_parts,
-                "limit": limit,
-            },
+            fragments=search_query_parts,
+            ints={"limit": limit},
         )
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
@@ -301,7 +289,7 @@ class AOPWikiAdapter:
 
     async def get_aop(self, aop_id: str) -> dict[str, Any]:
         iri = self._aop_iri(aop_id)
-        query = self._templates.render("get_aop", {"aop_iri": iri})
+        query = self._templates.render_safe("get_aop", uris={"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -332,7 +320,7 @@ class AOPWikiAdapter:
 
     async def get_aop_assessment(self, aop_id: str) -> dict[str, Any]:
         iri = self._aop_iri(aop_id)
-        query = self._templates.render("get_aop_assessment", {"aop_iri": iri})
+        query = self._templates.render_safe("get_aop_assessment", uris={"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -399,7 +387,7 @@ class AOPWikiAdapter:
 
     async def list_key_events(self, aop_id: str) -> list[dict[str, Any]]:
         iri = self._aop_iri(aop_id)
-        query = self._templates.render("list_key_events", {"aop_iri": iri})
+        query = self._templates.render_safe("list_key_events", uris={"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -419,7 +407,7 @@ class AOPWikiAdapter:
 
     async def get_key_event(self, ke_id: str) -> dict[str, Any]:
         iri = self._event_iri(ke_id)
-        query = self._templates.render("get_key_event", {"ke_iri": iri})
+        query = self._templates.render_safe("get_key_event", uris={"ke_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -518,7 +506,7 @@ class AOPWikiAdapter:
 
     async def list_kers(self, aop_id: str) -> list[dict[str, Any]]:
         iri = self._aop_iri(aop_id)
-        query = self._templates.render("list_kers", {"aop_iri": iri})
+        query = self._templates.render_safe("list_kers", uris={"aop_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -542,7 +530,7 @@ class AOPWikiAdapter:
 
     async def get_ker(self, ker_id: str) -> dict[str, Any]:
         iri = self._ker_iri(ker_id)
-        query = self._templates.render("get_ker", {"ker_iri": iri})
+        query = self._templates.render_safe("get_ker", uris={"ker_iri": iri})
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
@@ -633,7 +621,9 @@ class AOPWikiAdapter:
 
     async def get_related_aops(self, aop_id: str, *, limit: int = 20) -> list[dict[str, Any]]:
         iri = self._aop_iri(aop_id)
-        query = self._templates.render("get_related_aops", {"aop_iri": iri, "limit": limit})
+        query = self._templates.render_safe(
+            "get_related_aops", uris={"aop_iri": iri}, ints={"limit": limit}
+        )
         try:
             payload = await self.client.query(query, cache_ttl_seconds=self.cache_ttl_seconds)
         except SparqlClientError as exc:
