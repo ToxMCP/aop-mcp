@@ -195,12 +195,11 @@ class AOPDBAdapter:
     async def map_chemical_to_aops(
         self,
         *,
-        inchikey: str | None = None,
         cas: str | None = None,
         name: str | None = None,
     ) -> list[dict[str, Any]]:
-        if not any([inchikey, cas, name]):
-            raise ValueError("At least one identifier (inchikey, cas, name) must be provided")
+        if not any([cas, name]):
+            raise ValueError("At least one identifier (cas, name) must be provided")
 
         cas_uri = f"https://identifiers.org/cas/{quote(cas, safe='')}" if cas else ""
         query = self._templates.render_safe(

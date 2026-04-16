@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import random
 from typing import Any
 
 import httpx
@@ -269,11 +270,19 @@ async def test_circuit_breaker_opens_after_failures() -> None:
 
 
 @pytest.mark.asyncio
-async def test_exponential_backoff_on_retry() -> None:
-    call_times: list[float] = []
+async def test_exponential_backoff_on_retry(monkeypatch) -> None:
+    call_count = 0
+    sleep_delays: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleep_delays.append(delay)
+
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(random, "uniform", lambda _a, _b: 0.5)
 
     def handler(request: httpx.Request) -> httpx.Response:
-        call_times.append(asyncio.get_event_loop().time())
+        nonlocal call_count
+        call_count += 1
         return httpx.Response(503)
 
     transport = httpx.MockTransport(handler)
@@ -287,14 +296,14 @@ async def test_exponential_backoff_on_retry() -> None:
         enable_circuit_breaker=False,
     ) as client:
         with pytest.raises(SparqlUpstreamError):
-            start = asyncio.get_event_loop().time()
             await client.query("SELECT * WHERE {?s ?p ?o}")
 
     # 3 attempts (initial + 2 retries) on a single endpoint
-    assert len(call_times) == 3
-    # Backoff should introduce measurable delay between attempts
-    assert call_times[1] - call_times[0] >= 0.05
-    assert call_times[2] - call_times[1] >= 0.05
+    assert call_count == 3
+    # Two sleeps between the three attempts
+    assert len(sleep_delays) == 2
+    # With fixed jitter: 0.1*1 + 0.5 == 0.6, 0.1*2 + 0.5 == 0.7
+    assert sleep_delays == [0.6, 0.7]
 
 
 @pytest.mark.asyncio

@@ -76,7 +76,7 @@ class CircuitBreakerConfig:
     failure_threshold: int = 5
     recovery_timeout: float = 30.0
     half_open_max_calls: int = 1
-    success_threshold: int = 2
+    success_threshold: int = 1
 
 
 class CircuitBreaker:
@@ -97,6 +97,7 @@ class CircuitBreaker:
                 if self._should_attempt_reset():
                     self.state = CircuitState.HALF_OPEN
                     self.half_open_calls = 0
+                    self.success_count = 0
                 else:
                     raise CircuitBreakerOpen("SPARQL endpoint circuit breaker is OPEN")
 
@@ -109,6 +110,8 @@ class CircuitBreaker:
             result = await func(*args, **kwargs)
             await self._on_success()
             return result
+        except SparqlQueryError:
+            raise
         except Exception:
             await self._on_failure()
             raise
@@ -204,7 +207,13 @@ class TemplateCatalog:
     @staticmethod
     def _escape_sparql_literal(value: str) -> str:
         """Escape a string for safe use inside a SPARQL double-quoted string literal."""
-        return value.replace("\\", "\\\\").replace('"', '\\"')
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )
 
     @staticmethod
     def _validate_uri(value: str) -> str:
@@ -220,6 +229,9 @@ class TemplateCatalog:
         allowed_schemes = ("http://", "https://", "urn:", "file:")
         if not any(value.startswith(s) for s in allowed_schemes):
             raise ValueError(f"Invalid URI scheme: {value!r}")
+        invalid_chars = '<>"{}|\\^` \t\n\r'
+        if any(ch in value for ch in invalid_chars):
+            raise ValueError(f"Invalid URI characters: {value!r}")
         return value
 
     @classmethod

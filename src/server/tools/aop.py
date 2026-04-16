@@ -368,21 +368,19 @@ async def find_paths_between_events(params: FindPathsBetweenEventsInput) -> dict
 
 
 class MapChemicalInput(BaseModel):
-    inchikey: Optional[str] = None
     cas: Optional[str] = None
     name: Optional[str] = None
 
     @model_validator(mode="after")
     def ensure_identifier(self) -> "MapChemicalInput":
-        if not (self.inchikey or self.cas or self.name):
-            raise ValueError("Provide at least one identifier: inchikey, cas, or name")
+        if not (self.cas or self.name):
+            raise ValueError("Provide at least one identifier: cas or name")
         return self
 
 
 async def map_chemical_to_aops(params: MapChemicalInput) -> dict[str, Any]:
     adapter = get_aop_db_adapter()
     records = await adapter.map_chemical_to_aops(
-        inchikey=params.inchikey,
         cas=params.cas,
         name=params.name,
     )
