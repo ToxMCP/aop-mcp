@@ -62,6 +62,8 @@ class InMemoryDraftRepository(DraftRepository):
             previous = draft.versions[-1]
             stored_version.metadata.previous_checksum = previous.metadata.checksum
         stored_version.metadata.checksum = compute_graph_checksum(stored_version.graph)
+        if not stored_version.metadata.checksum_algorithm:
+            stored_version.metadata.checksum_algorithm = "sha256-v1"
         draft.add_version(stored_version)
         return deepcopy(draft)
 
@@ -74,5 +76,7 @@ def initialize_version(
 ) -> DraftVersion:
     checksum = compute_graph_checksum(graph)
     metadata.checksum = checksum
+    if not metadata.checksum_algorithm:
+        metadata.checksum_algorithm = "sha256-v1"
     diff = diff_graphs(GraphSnapshot(), graph)
     return DraftVersion(version_id=version_id, graph=graph, metadata=metadata, diff=diff)

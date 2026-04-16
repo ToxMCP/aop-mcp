@@ -64,7 +64,7 @@ async def test_aop_db_map_chemical_regression() -> None:
     payload = load_fixture(BASE_DIR / "aop_db" / "map_chemical_to_aops.json")
     async with SparqlClient(["https://sparql.example"], transport=make_transport(payload)) as client:
         adapter = AOPDBAdapter(client, cache_ttl_seconds=0)
-        records = await adapter.map_chemical_to_aops(inchikey="BSYNRYMUTXBXSQ-UHFFFAOYSA-N")
+        records = await adapter.map_chemical_to_aops(name="BSYNRYMUTXBXSQ-UHFFFAOYSA-N")
 
     validate_payload({"results": records}, namespace="read", name="map_chemical_to_aops.response.schema")
     assert records[0]["aop"]["id"] == "AOP:25"

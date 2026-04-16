@@ -33,9 +33,41 @@ class CurieService:
                 return f"{prefix}:{suffix}"
         raise ValueError(f"Unknown namespace for value: {value}")
 
+    def normalize_safe(self, value: str) -> str:
+        """Normalize to CURIE if possible; otherwise return the original value."""
+        try:
+            return self.normalize(value)
+        except ValueError:
+            return value
+
     def mint(self) -> str:
         return f"{self._mint_prefix}:{uuid.uuid4()}"
 
     def is_allowed_prefix(self, prefix: str) -> bool:
         return prefix in self._namespaces
+
+
+class CurieResolver:
+    """Configurable IRI-to-CURIE resolver supporting multiple source prefixes per target."""
+
+    def __init__(self, mappings: list[tuple[str, str]]) -> None:
+        """mappings: list of (iri_prefix, curie_prefix) ordered by precedence."""
+        self._mappings = list(mappings)
+
+    def resolve(self, iri: str) -> str:
+        for iri_prefix, curie_prefix in self._mappings:
+            if iri.startswith(iri_prefix):
+                suffix = iri[len(iri_prefix):]
+                return f"{curie_prefix}:{suffix}"
+        return iri
+
+
+AOP_CURIE_RESOLVER = CurieResolver([
+    ("https://identifiers.org/aop/", "AOP"),
+    ("https://identifiers.org/aop.events/", "KE"),
+    ("https://identifiers.org/aop.relationships/", "KER"),
+    ("http://aopwiki.org/aops/", "AOP"),
+    ("http://aopwiki.org/events/", "KE"),
+    ("http://aopwiki.org/relationships/", "KER"),
+])
 

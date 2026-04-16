@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Any, Dict, Iterable, Mapping
+from typing import Any, Dict, Iterable, Literal, Mapping
 
 
 def _utcnow() -> datetime:
@@ -54,6 +54,18 @@ class DraftDiff:
 
 
 @dataclass
+class ElectronicSignature:
+    """Electronic signature record for draft version lineage."""
+
+    signer_user_id: str
+    signature_meaning: Literal["authored", "reviewed", "approved", "rejected"]
+    timestamp_utc: str
+    content_hash: str
+    signature_value: str
+    cert_chain: list[str] = field(default_factory=list)
+
+
+@dataclass
 class VersionMetadata:
     """Provenance and audit information for a draft version."""
 
@@ -61,8 +73,14 @@ class VersionMetadata:
     summary: str
     created_at: datetime = field(default_factory=_utcnow)
     provenance: Mapping[str, object] = field(default_factory=dict)
-    checksum: str | None = None
-    previous_checksum: str | None = None
+    checksum: str = ""
+    previous_checksum: str = ""
+    checksum_algorithm: str = "sha256-v1"
+    signatures: list[ElectronicSignature] = field(default_factory=list)
+
+    def add_signature(self, signature: ElectronicSignature) -> None:
+        """Append an electronic signature to this version."""
+        self.signatures.append(signature)
 
 
 @dataclass

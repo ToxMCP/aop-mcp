@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import inspect
-from dataclasses import dataclass
+import random
+import time
+from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping, MutableMapping
 
@@ -37,6 +41,10 @@ class SparqlUpstreamError(SparqlClientError):
     """Raised when all SPARQL endpoints fail or return 5xx errors."""
 
 
+class CircuitBreakerOpen(SparqlUpstreamError):
+    """Raised when the circuit breaker for an endpoint is open."""
+
+
 class CacheProtocol:
     """Simple protocol for cache hooks."""
 
@@ -55,8 +63,87 @@ class SparqlEndpoint:
     name: str | None = None
 
 
+class CircuitState(Enum):
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
+
+
+@dataclass
+class CircuitBreakerConfig:
+    """Configuration for per-endpoint circuit breaker behavior."""
+
+    failure_threshold: int = 5
+    recovery_timeout: float = 30.0
+    half_open_max_calls: int = 1
+    success_threshold: int = 1
+
+
+class CircuitBreaker:
+    """Simple in-memory circuit breaker for SPARQL endpoint protection."""
+
+    def __init__(self, config: CircuitBreakerConfig | None = None) -> None:
+        self.config = config or CircuitBreakerConfig()
+        self.state = CircuitState.CLOSED
+        self.failure_count = 0
+        self.success_count = 0
+        self.last_failure_time: float | None = None
+        self.half_open_calls = 0
+        self._lock = asyncio.Lock()
+
+    async def call(self, func, *args, **kwargs):
+        async with self._lock:
+            if self.state == CircuitState.OPEN:
+                if self._should_attempt_reset():
+                    self.state = CircuitState.HALF_OPEN
+                    self.half_open_calls = 0
+                    self.success_count = 0
+                else:
+                    raise CircuitBreakerOpen("SPARQL endpoint circuit breaker is OPEN")
+
+            if self.state == CircuitState.HALF_OPEN:
+                if self.half_open_calls >= self.config.half_open_max_calls:
+                    raise CircuitBreakerOpen("Circuit breaker half-open limit reached")
+                self.half_open_calls += 1
+
+        try:
+            result = await func(*args, **kwargs)
+            await self._on_success()
+            return result
+        except SparqlQueryError:
+            raise
+        except Exception:
+            await self._on_failure()
+            raise
+
+    def _should_attempt_reset(self) -> bool:
+        if self.last_failure_time is None:
+            return True
+        return (time.monotonic() - self.last_failure_time) >= self.config.recovery_timeout
+
+    async def _on_success(self) -> None:
+        async with self._lock:
+            if self.state == CircuitState.HALF_OPEN:
+                self.success_count += 1
+                if self.success_count >= self.config.success_threshold:
+                    self.state = CircuitState.CLOSED
+                    self.failure_count = 0
+                    self.success_count = 0
+            else:
+                self.failure_count = max(0, self.failure_count - 1)
+
+    async def _on_failure(self) -> None:
+        async with self._lock:
+            self.failure_count += 1
+            self.last_failure_time = time.monotonic()
+            if self.state == CircuitState.HALF_OPEN:
+                self.state = CircuitState.OPEN
+            elif self.failure_count >= self.config.failure_threshold:
+                self.state = CircuitState.OPEN
+
+
 class TemplateCatalog:
-    """Utility for registering and rendering SPARQL templates."""
+    """Utility for registering and rendering SPARQL templates with safe binding."""
 
     def __init__(self, templates: Mapping[str, str] | None = None) -> None:
         self._templates: MutableMapping[str, str] = dict(templates or {})
@@ -71,6 +158,7 @@ class TemplateCatalog:
             raise KeyError(f"Template '{name}' is not registered") from exc
 
     def render(self, name: str, parameters: Mapping[str, Any] | None = None) -> str:
+        """Legacy unsafe render. Prefer render_safe() for all production queries."""
         template = self.get(name)
         params = parameters or {}
         try:
@@ -78,6 +166,73 @@ class TemplateCatalog:
         except KeyError as exc:
             missing = exc.args[0]
             raise ValueError(f"Missing template parameter: {missing}") from exc
+
+    def render_safe(
+        self,
+        name: str,
+        *,
+        literals: Mapping[str, Any] | None = None,
+        uris: Mapping[str, str] | None = None,
+        ints: Mapping[str, int] | None = None,
+        fragments: Mapping[str, str] | None = None,
+    ) -> str:
+        """Render template with safe, categorized parameter binding.
+
+        - literals: escaped as SPARQL string literals.
+        - uris: validated as URIs and passed through.
+        - ints: validated as integers and passed through.
+        - fragments: passed through verbatim (trusted structural fragments only).
+        """
+        template = self.get(name)
+        replacements: dict[str, str] = {}
+
+        for key, value in (literals or {}).items():
+            replacements[key] = self._escape_sparql_literal(str(value))
+
+        for key, value in (uris or {}).items():
+            replacements[key] = self._validate_uri(value)
+
+        for key, value in (ints or {}).items():
+            replacements[key] = str(int(value))
+
+        for key, value in (fragments or {}).items():
+            replacements[key] = value
+
+        try:
+            return template.format(**replacements)
+        except KeyError as exc:
+            missing = exc.args[0]
+            raise ValueError(f"Missing template parameter: {missing}") from exc
+
+    @staticmethod
+    def _escape_sparql_literal(value: str) -> str:
+        """Escape a string for safe use inside a SPARQL double-quoted string literal."""
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )
+
+    @staticmethod
+    def _validate_uri(value: str) -> str:
+        """Validate that a value is a well-formed URI before injecting it.
+
+        Empty string is allowed so templates can use FILTER guards to skip
+        optional URI patterns safely.
+        """
+        if not isinstance(value, str):
+            raise ValueError(f"URI must be a string, got {type(value)}")
+        if value == "":
+            return value
+        allowed_schemes = ("http://", "https://", "urn:", "file:")
+        if not any(value.startswith(s) for s in allowed_schemes):
+            raise ValueError(f"Invalid URI scheme: {value!r}")
+        invalid_chars = '<>"{}|\\^` \t\n\r'
+        if any(ch in value for ch in invalid_chars):
+            raise ValueError(f"Invalid URI characters: {value!r}")
+        return value
 
     @classmethod
     def from_directory(cls, directory: Path, suffix: str = ".sparql") -> "TemplateCatalog":
@@ -100,6 +255,10 @@ class SparqlClient:
         max_retries: int = 2,
         timeout: float = 10.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        retry_base_delay: float = 0.5,
+        retry_max_delay: float = 5.0,
+        circuit_breaker_config: CircuitBreakerConfig | None = None,
+        enable_circuit_breaker: bool = True,
     ) -> None:
         if not endpoints:
             raise ValueError("At least one SPARQL endpoint must be configured")
@@ -114,6 +273,13 @@ class SparqlClient:
         self._metrics = metrics
         self._max_retries = max(0, max_retries)
         self._timeout = timeout
+        self._retry_base_delay = max(0.0, retry_base_delay)
+        self._retry_max_delay = max(0.0, retry_max_delay)
+        self._enable_circuit_breaker = enable_circuit_breaker
+        self._circuit_breakers: dict[str, CircuitBreaker] = {
+            endpoint.url: CircuitBreaker(config=circuit_breaker_config)
+            for endpoint in self._endpoints
+        }
         self._client = httpx.AsyncClient(
             timeout=timeout,
             headers={
@@ -183,17 +349,67 @@ class SparqlClient:
             timeout=timeout,
         )
 
+    async def _execute_single(
+        self,
+        endpoint: SparqlEndpoint,
+        query: str,
+        *,
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
+        """Execute a single request against one endpoint and validate the response.
+
+        Raises SparqlUpstreamError on 5xx or non-JSON responses.
+        Raises SparqlQueryError on 4xx.
+        """
+        response = await self._client.post(
+            endpoint.url,
+            content=query.encode("utf-8"),
+            timeout=timeout or self._timeout,
+        )
+
+        if response.status_code >= 500:
+            raise SparqlUpstreamError(
+                f"Endpoint '{endpoint.url}' returned {response.status_code}"
+            )
+
+        if response.status_code >= 400:
+            raise SparqlQueryError(
+                f"SPARQL query failed with status {response.status_code}: {response.text}"
+            )
+
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise SparqlUpstreamError("Endpoint returned non-JSON response") from exc
+
     async def _dispatch(self, query: str, *, timeout: float | None = None) -> dict[str, Any]:
         last_error: Exception | None = None
         for endpoint in self._endpoints:
+            circuit = self._circuit_breakers[endpoint.url]
             attempts = self._max_retries + 1
             for attempt in range(attempts):
                 try:
-                    response = await self._client.post(
-                        endpoint.url,
-                        content=query.encode("utf-8"),
-                        timeout=timeout or self._timeout,
+                    if self._enable_circuit_breaker:
+                        return await circuit.call(
+                            self._execute_single,
+                            endpoint,
+                            query,
+                            timeout=timeout,
+                        )
+                    return await self._execute_single(
+                        endpoint,
+                        query,
+                        timeout=timeout,
                     )
+                except CircuitBreakerOpen:
+                    logger.warning("SPARQL circuit breaker open for %s", endpoint.url)
+                    last_error = CircuitBreakerOpen(
+                        f"Circuit breaker open for {endpoint.url}"
+                    )
+                    break  # skip retries, move to next endpoint
+                except SparqlQueryError:
+                    # 4xx client errors are not retryable; surface them immediately.
+                    raise
                 except Exception as exc:
                     logger.warning(
                         "SPARQL request to %s failed (attempt %d/%d): %s",
@@ -203,23 +419,13 @@ class SparqlClient:
                         exc,
                     )
                     last_error = exc
+                    if attempt < attempts - 1 and self._retry_base_delay > 0:
+                        delay = min(
+                            self._retry_base_delay * (2 ** attempt) + random.uniform(0, 1),
+                            self._retry_max_delay,
+                        )
+                        await asyncio.sleep(delay)
                     continue
-
-                if response.status_code >= 500:
-                    last_error = SparqlUpstreamError(
-                        f"Endpoint '{endpoint.url}' returned {response.status_code}"
-                    )
-                    continue
-
-                if response.status_code >= 400:
-                    raise SparqlQueryError(
-                        f"SPARQL query failed with status {response.status_code}: {response.text}"
-                    )
-
-                try:
-                    return response.json()
-                except ValueError as exc:
-                    raise SparqlUpstreamError("Endpoint returned non-JSON response") from exc
 
             # reached retry limit for this endpoint -> try next
 

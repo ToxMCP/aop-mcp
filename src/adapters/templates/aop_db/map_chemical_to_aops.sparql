@@ -14,8 +14,8 @@ WHERE {{
   }}
   UNION
   {{
-     FILTER(STRLEN("{cas}") > 0)
-     ?stressId aopo:has_chemical_entity <https://identifiers.org/cas/{cas}> .
+     FILTER(STRLEN("{cas_literal}") > 0)
+     ?stressId aopo:has_chemical_entity <{cas_uri}> .
   }}
 
   ?stressId dcterms:isPartOf ?aop .

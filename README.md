@@ -77,6 +77,13 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
+## What's new in v0.8.2
+
+- **Hardened SPARQL query construction (AOP-01)** — replaced unsafe `template.format(**params)` interpolation with `TemplateCatalog.render_safe()`, which escapes string literals, validates URI schemes, and separates trusted structural fragments from user-facing parameters. Fixed a CAS-URI injection path in `map_chemical_to_aops`.
+- **Added circuit-breaker resilience (AOP-02)** — per-endpoint circuit breaker with CLOSED/OPEN/HALF_OPEN states, exponential backoff + jitter between retries, and immediate surfacing of non-retryable 4xx errors.
+- **Strengthened draft audit chain (AOP-03 / AOP-04)** — `VersionMetadata` now enforces `checksum` and `previous_checksum`, records `checksum_algorithm` (default `sha256-v1`), and supports `ElectronicSignature` records with `authored`/`reviewed`/`approved`/`rejected` semantics. `verify_audit_chain()` rejects unsupported algorithms, empty checksums, and broken chains.
+- **Ontology drift protection scaffold (AOP-05)** — replaced hardcoded `_iri_to_curie()` logic with configurable `CurieResolver`, and added an `OntologyMigrator` framework with BFS pathfinding and term-mapping support.
+
 ## What's new in v0.8.1
 
 - Expanded the scientific review surface beyond the original read path with specificity-aware assay ranking, HGNC-backed KE assay search, KER citation concordance, conservative taxonomic LCA inference, draft topology validation, directional concordance checks, and supplemental assay-cutoff ordering review.
