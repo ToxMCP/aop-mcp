@@ -1,0 +1,55 @@
+name: Supply-chain security
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+  schedule:
+    - cron: "31 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  python-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v5
+      - name: Install project and security tools
+        run: |
+          uv sync --all-extras --dev || uv sync --dev
+          uv pip install bandit pip-audit cyclonedx-bom
+      - name: Ruff
+        run: |
+          if grep -q '^\[tool\.ruff' pyproject.toml; then uv run ruff check .; fi
+      - name: Tests
+        run: uv run pytest -q
+      - name: Bandit
+        run: uv run bandit -r src -x tests
+      - name: pip-audit
+        run: uv run pip-audit --desc
+      - name: Generate CycloneDX SBOM
+        run: |
+          mkdir -p artifacts
+          uv run cyclonedx-py environment --output-format JSON --output-file artifacts/python-sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-sbom
+          path: artifacts/python-sbom.cdx.json
+          if-no-files-found: error
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
