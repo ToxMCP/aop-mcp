@@ -794,7 +794,7 @@ def test_export_draft_replay_package_schema_validation() -> None:
             "manifest_schema_version": "aop-mcp-runtime-manifest.v1",
             "server": {
                 "name": "AOP MCP Server",
-                "version": "0.8.2",
+                "version": "0.9.0",
             },
             "runtime": {
                 "python_version": "3.11.9",
