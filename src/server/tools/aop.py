@@ -7,7 +7,9 @@ import csv
 import hashlib
 import io
 import json
+import platform
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal, Optional
@@ -21,6 +23,7 @@ from src.instrumentation.audit import (
     verify_draft_integrity,
 )
 from src.server.config.settings import get_settings
+from src.server.version import get_app_version
 from src.adapters import CompToxError
 from src.server.dependencies import (
     get_draft_store,
@@ -2104,6 +2107,155 @@ def _metadata_payload_sha256(payload: dict[str, Any]) -> str:
     ).hexdigest()
 
 
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _resolve_git_commit() -> dict[str, Any]:
+    git_entry = _repo_root() / ".git"
+    if git_entry.is_file():
+        text = git_entry.read_text(encoding="utf-8").strip()
+        if text.startswith("gitdir:"):
+            git_dir = Path(text.split(":", 1)[1].strip())
+            if not git_dir.is_absolute():
+                git_dir = git_entry.parent / git_dir
+        else:
+            git_dir = git_entry
+    else:
+        git_dir = git_entry
+
+    head_path = git_dir / "HEAD"
+    if not head_path.exists():
+        return {
+            "available": False,
+            "commit": None,
+            "source": "unavailable",
+            "worktree_dirty": "not_assessed",
+        }
+
+    head = head_path.read_text(encoding="utf-8").strip()
+    commit: str | None = None
+    source = "detached_head"
+    if head.startswith("ref:"):
+        ref_name = head.split(":", 1)[1].strip()
+        ref_path = git_dir / ref_name
+        source = ref_name
+        if ref_path.exists():
+            commit = ref_path.read_text(encoding="utf-8").strip()
+    else:
+        commit = head
+
+    if not isinstance(commit, str) or re.fullmatch(r"[a-f0-9]{40}", commit) is None:
+        commit = None
+    return {
+        "available": commit is not None,
+        "commit": commit,
+        "source": source if commit is not None else "unavailable",
+        "worktree_dirty": "not_assessed",
+    }
+
+
+def _schema_contract_manifest() -> dict[str, Any]:
+    schema_root = _repo_root() / "docs" / "contracts" / "schemas"
+    schema_files = sorted(schema_root.rglob("*.json"))
+    schema_hashes = [
+        {
+            "path": str(path.relative_to(schema_root)),
+            "sha256": _file_sha256(path),
+        }
+        for path in schema_files
+    ]
+    tracked_response_schemas = [
+        "read/export_draft_replay_package.response.schema.json",
+        "read/export_tool_call_audit_log_evidence.response.schema.json",
+        "read/list_tool_call_audit_records.response.schema.json",
+        "read/verify_tool_call_audit_log.response.schema.json",
+    ]
+    schema_by_path = {item["path"]: item["sha256"] for item in schema_hashes}
+    return {
+        "schema_root": "docs/contracts/schemas",
+        "schema_count": len(schema_hashes),
+        "schema_root_sha256": _metadata_payload_sha256({"schemas": schema_hashes}),
+        "tracked_response_schemas": [
+            {
+                "path": path,
+                "sha256": schema_by_path[path],
+            }
+            for path in tracked_response_schemas
+            if path in schema_by_path
+        ],
+    }
+
+
+def _tool_registry_manifest() -> dict[str, Any]:
+    from src.server.tools.registry import tool_registry
+
+    tool_entries = []
+    for tool in sorted(tool_registry.list_tools(), key=lambda item: item.name):
+        output_schema = tool.output_schema or {}
+        tool_entries.append(
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "annotations": tool.annotations,
+                "input_schema_sha256": _metadata_payload_sha256(tool.input_schema),
+                "output_schema_title": output_schema.get("title"),
+                "output_schema_sha256": _metadata_payload_sha256(output_schema),
+            }
+        )
+    return {
+        "tool_count": len(tool_entries),
+        "tool_names": [entry["name"] for entry in tool_entries],
+        "tool_catalog_sha256": _metadata_payload_sha256({"tools": tool_entries}),
+    }
+
+
+def _build_runtime_manifest() -> dict[str, Any]:
+    settings = get_settings()
+    environment = getattr(settings, "environment", "unknown")
+    is_production = getattr(
+        settings,
+        "is_production",
+        str(environment).strip().lower() not in {"development", "local", "test"},
+    )
+    return {
+        "manifest_schema_version": "aop-mcp-runtime-manifest.v1",
+        "server": {
+            "name": "AOP MCP Server",
+            "version": get_app_version(),
+        },
+        "runtime": {
+            "python_version": platform.python_version(),
+            "python_implementation": platform.python_implementation(),
+            "python_executable": Path(sys.executable).name,
+            "platform": platform.platform(),
+        },
+        "configuration": {
+            "environment": environment,
+            "auth_mode": getattr(settings, "auth_mode", "disabled"),
+            "auth_bearer_token_configured": getattr(settings, "auth_bearer_token", None) is not None,
+            "auth_bearer_scope_count": len(getattr(settings, "auth_bearer_scopes", [])),
+            "allowed_origin_count": len(getattr(settings, "allowed_origins", [])),
+            "fixture_fallback_enabled": bool(getattr(settings, "enable_fixture_fallback", False)),
+            "audit_log_enabled": getattr(settings, "audit_log_path", None) is not None,
+            "artifact_output_dir_configured": bool(getattr(settings, "artifact_output_dir", None)),
+            "comptox_api_key_configured": getattr(settings, "comptox_api_key", None) is not None,
+            "max_request_bytes": int(getattr(settings, "max_request_bytes", 1_000_000)),
+            "is_production": bool(is_production),
+            "allow_unauthenticated_production": bool(
+                getattr(settings, "allow_unauthenticated_production", False)
+            ),
+        },
+        "contracts": _schema_contract_manifest(),
+        "tool_registry": _tool_registry_manifest(),
+        "source_control": _resolve_git_commit(),
+    }
+
+
 def _build_draft_version_integrity(version: Any) -> dict[str, str]:
     metadata = version.metadata
     provenance_checksum = getattr(
@@ -3610,6 +3762,7 @@ async def export_draft_replay_package(
     payload = {
         "package_schema_version": "draft-replay-package.v1",
         "generated_at": generated_at,
+        "runtime_manifest": _build_runtime_manifest(),
         "draft_id": draft.draft_id,
         "version_id": version.version_id,
         "draft_snapshot": snapshot,

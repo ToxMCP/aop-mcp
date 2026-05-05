@@ -7,3 +7,4 @@ validation tests.
 Related design documents:
 - `docs/architecture.md` - current MCP layering, adapter boundaries, and Mermaid system diagrams.
 - `docs/contracts/oecd-aligned-schema.md` - OECD-aligned target payload model and current implementation gap audit.
+- `docs/trust-auditability.md` - current auditability, replay, and verification trust model.
