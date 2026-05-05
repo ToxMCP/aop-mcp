@@ -199,6 +199,71 @@ async def test_tool_call_audit_persists_jsonl_records(
 
 
 @pytest.mark.asyncio
+async def test_list_tool_call_audit_records_filters_recent_records_and_persistence(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    audit_path = tmp_path / "tool-calls.jsonl"
+    tool_call_audit_log.configure_jsonl_sink(audit_path)
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"ok": True}))
+    await router_module.dispatch_request(
+        JSONRPCRequest(
+            jsonrpc="2.0",
+            id=1,
+            method="tools/call",
+            params={"name": "fake_tool", "arguments": {"alpha": 1}},
+        )
+    )
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"wrong": True}))
+    with pytest.raises(JSONRPCError):
+        await router_module.dispatch_request(
+            JSONRPCRequest(
+                jsonrpc="2.0",
+                id=2,
+                method="tools/call",
+                params={"name": "fake_tool", "arguments": {"beta": 2}},
+            )
+        )
+
+    result = await aop_tools.list_tool_call_audit_records(
+        aop_tools.ListToolCallAuditRecordsInput(limit=5)
+    )
+
+    assert result["scope"] == "process_local_recent_records"
+    assert result["available_record_count"] == 2
+    assert result["matched_record_count"] == 2
+    assert result["returned_record_count"] == 2
+    assert result["returned_order"] == "oldest_to_newest"
+    assert [record["status"] for record in result["records"]] == ["success", "error"]
+    assert result["persistence"]["enabled"] is True
+    assert result["persistence"]["path"] == str(audit_path)
+    assert result["persistence"]["chain"]["record_count"] == 2
+    assert result["persistence"]["chain"]["verified"] is True
+    assert result["limitations"]
+
+    error_result = await aop_tools.list_tool_call_audit_records(
+        aop_tools.ListToolCallAuditRecordsInput(
+            limit=1,
+            tool_name="fake_tool",
+            status="error",
+        )
+    )
+
+    assert error_result["filters"] == {"tool_name": "fake_tool", "status": "error"}
+    assert error_result["matched_record_count"] == 1
+    assert error_result["returned_record_count"] == 1
+    assert error_result["records"][0]["status"] == "error"
+    assert error_result["records"][0]["output_validation_status"] == "failed"
+
+    empty_window = await aop_tools.list_tool_call_audit_records(
+        aop_tools.ListToolCallAuditRecordsInput(limit=0)
+    )
+    assert empty_window["matched_record_count"] == 2
+    assert empty_window["returned_record_count"] == 0
+    assert empty_window["records"] == []
+
+
+@pytest.mark.asyncio
 async def test_verify_tool_call_audit_log_reports_missing_unconfigured_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
