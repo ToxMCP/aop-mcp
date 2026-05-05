@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -47,8 +48,10 @@ class FakeToolRegistry:
 
 @pytest.fixture(autouse=True)
 def clear_tool_audit_log() -> None:
+    tool_call_audit_log.configure_jsonl_sink(None)
     tool_call_audit_log.clear()
     yield
+    tool_call_audit_log.configure_jsonl_sink(None)
     tool_call_audit_log.clear()
 
 
@@ -151,3 +154,71 @@ async def test_tool_call_audit_records_scope_policy_failure(
     assert record.required_scopes == ["toxmcp:live"]
     assert record.granted_scopes == ["toxmcp:read"]
     assert record.response_hash is None
+
+
+@pytest.mark.asyncio
+async def test_tool_call_audit_persists_jsonl_records(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    audit_path = tmp_path / "tool-calls.jsonl"
+    tool_call_audit_log.configure_jsonl_sink(audit_path)
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"ok": True}))
+
+    await router_module.dispatch_request(
+        JSONRPCRequest(
+            jsonrpc="2.0",
+            id=1,
+            method="tools/call",
+            params={"name": "fake_tool", "arguments": {"alpha": 1}},
+        )
+    )
+
+    persistence = tool_call_audit_log.persistence_status()
+    assert persistence["enabled"] is True
+    assert persistence["path"] == str(audit_path)
+    assert persistence["last_error"] is None
+    assert persistence["chain"]["record_count"] == 1
+    assert persistence["chain"]["verified"] is True
+    assert persistence["chain"]["head_record_hash"]
+    lines = audit_path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    persisted = json.loads(lines[0])
+    assert persisted["schema_version"] == "tool-call-audit-jsonl.v1"
+    assert persisted["algorithm"] == "sha256-json-v1"
+    assert persisted["sequence"] == 1
+    assert persisted["previous_record_hash"] is None
+    assert persisted["record_hash"] == persistence["chain"]["head_record_hash"]
+    assert persisted["record"]["tool_name"] == "fake_tool"
+    assert persisted["record"]["status"] == "success"
+    assert persisted["record"]["argument_keys"] == ["alpha"]
+    assert persisted["record"]["request_hash"]
+    assert persisted["record"]["response_hash"]
+
+
+@pytest.mark.asyncio
+async def test_tool_call_audit_persistence_detects_tampered_jsonl_record(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    audit_path = tmp_path / "tool-calls.jsonl"
+    tool_call_audit_log.configure_jsonl_sink(audit_path)
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"ok": True}))
+
+    await router_module.dispatch_request(
+        JSONRPCRequest(
+            jsonrpc="2.0",
+            id=1,
+            method="tools/call",
+            params={"name": "fake_tool", "arguments": {"alpha": 1}},
+        )
+    )
+
+    persisted = json.loads(audit_path.read_text(encoding="utf-8"))
+    persisted["record"]["status"] = "tampered"
+    audit_path.write_text(json.dumps(persisted, sort_keys=True) + "\n", encoding="utf-8")
+
+    persistence = tool_call_audit_log.persistence_status()
+    assert persistence["chain"]["verified"] is False
+    assert persistence["chain"]["record_count"] == 0
+    assert "record_hash does not match" in persistence["chain"]["verification_error"]

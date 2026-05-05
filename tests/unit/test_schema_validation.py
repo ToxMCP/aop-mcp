@@ -867,6 +867,18 @@ def test_export_draft_replay_package_schema_validation() -> None:
             "included": False,
             "limit": 0,
             "included_record_count": 0,
+            "persistence": {
+                "enabled": False,
+                "path": None,
+                "last_error": None,
+                "chain": {
+                    "algorithm": "sha256-json-v1",
+                    "record_count": 0,
+                    "head_record_hash": None,
+                    "verified": None,
+                    "verification_error": None,
+                },
+            },
             "records": [],
         },
         "limitations": [
