@@ -15,6 +15,8 @@ from typing import Any, Literal, Optional
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.instrumentation.audit import (
+    AUDIT_CHAIN_ALGORITHM,
+    JsonlToolCallAuditSink,
     tool_call_audit_log,
     verify_draft_integrity,
 )
@@ -3496,6 +3498,27 @@ class ExportDraftReplayPackageInput(BaseModel):
         return self
 
 
+class VerifyToolCallAuditLogInput(BaseModel):
+    audit_log_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("audit_log_path", "path"),
+        description=(
+            "Optional durable MCP audit JSONL path to verify. "
+            "Defaults to AOP_MCP_AUDIT_LOG_PATH when configured."
+        ),
+    )
+
+    @field_validator("audit_log_path")
+    @classmethod
+    def _validate_audit_log_path(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("audit_log_path cannot be blank")
+        return normalized
+
+
 async def export_draft_replay_package(
     params: ExportDraftReplayPackageInput,
 ) -> dict[str, Any]:
@@ -3571,6 +3594,59 @@ async def export_draft_replay_package(
         payload,
         namespace="read",
         name="export_draft_replay_package.response.schema",
+    )
+    return payload
+
+
+async def verify_tool_call_audit_log(
+    params: VerifyToolCallAuditLogInput,
+) -> dict[str, Any]:
+    configured_path = get_settings().audit_log_path
+    selected_path = params.audit_log_path or configured_path
+    using_configured_path = params.audit_log_path is None and configured_path is not None
+    warnings: list[str] = []
+
+    if selected_path is None:
+        warnings.append(
+            "No audit log path was provided and AOP_MCP_AUDIT_LOG_PATH is not configured."
+        )
+        payload = {
+            "configured": False,
+            "using_configured_path": False,
+            "path": None,
+            "exists": False,
+            "chain": {
+                "algorithm": AUDIT_CHAIN_ALGORITHM,
+                "record_count": 0,
+                "head_record_hash": None,
+                "verified": None,
+                "verification_error": None,
+            },
+            "warnings": warnings,
+        }
+    else:
+        audit_path = Path(selected_path).expanduser().resolve()
+        chain = JsonlToolCallAuditSink(audit_path).chain_status()
+        exists = audit_path.exists()
+        if not exists:
+            warnings.append(
+                "Audit log file does not exist yet; an empty chain is valid but contains no durable evidence."
+            )
+        if chain["verified"] is False and chain["verification_error"]:
+            warnings.append(str(chain["verification_error"]))
+        payload = {
+            "configured": configured_path is not None,
+            "using_configured_path": using_configured_path,
+            "path": str(audit_path),
+            "exists": exists,
+            "chain": chain,
+            "warnings": warnings,
+        }
+
+    validate_payload(
+        payload,
+        namespace="read",
+        name="verify_tool_call_audit_log.response.schema",
     )
     return payload
 

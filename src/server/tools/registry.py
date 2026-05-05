@@ -331,6 +331,14 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="verify_tool_call_audit_log",
+    description="Verify the durable MCP tool-call audit JSONL hash chain from the configured audit log path or an explicit local path.",
+    handler=aop.verify_tool_call_audit_log,
+    input_model=aop.VerifyToolCallAuditLogInput,
+    output_schema=_schema("read", "verify_tool_call_audit_log.response.schema"),
+)
+
+tool_registry.register(
     name="plan_linear_draft_review_document",
     description="Build a connector-ready Linear document payload from either a live draft review export or a previously saved draft review artifact.",
     handler=aop.plan_linear_draft_review_document,

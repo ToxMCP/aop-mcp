@@ -73,6 +73,7 @@ def test_tools_list_includes_registered_tools() -> None:
         "review_draft_assay_cutoff_ordering",
         "review_draft_bundle",
         "validate_draft_oecd",
+        "verify_tool_call_audit_log",
         "create_draft_aop",
         "attach_registry_handoff_to_draft",
     }.issubset(tool_names)
@@ -97,6 +98,8 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["review_draft_assay_cutoff_ordering"]["outputSchema"]["title"] == "review_draft_assay_cutoff_ordering.response"
     assert by_name["review_draft_bundle"]["outputSchema"]["title"] == "review_draft_bundle.response"
     assert by_name["attach_registry_handoff_to_draft"]["outputSchema"]["title"] == "update_draft.response"
+    assert by_name["verify_tool_call_audit_log"]["outputSchema"]["title"] == "verify_tool_call_audit_log.response"
+    assert by_name["verify_tool_call_audit_log"]["annotations"]["riskClass"] == "read"
     assert all("title" in tool["outputSchema"] for tool in tools)
     assert by_name["map_assay_to_aops"]["description"].startswith(
         "Given an assay identifier, return related AOPs. Do not pass AOP IDs."
@@ -106,6 +109,7 @@ def test_tools_list_includes_registered_tools() -> None:
     assert "cross-AOP support" in by_name["discover_orphan_stressors_for_aops"]["description"]
     assert "phenotype or mechanism query" in by_name["discover_orphan_stressors_for_query"]["description"]
     assert "deterministic replay package" in by_name["export_draft_replay_package"]["description"]
+    assert "audit JSONL hash chain" in by_name["verify_tool_call_audit_log"]["description"]
     assert "saved local draft review artifacts" in by_name["list_saved_draft_review_artifacts"]["description"]
     assert "Linear document payload" in by_name["plan_linear_draft_review_document"]["description"]
     assert "concrete evidence gaps" in by_name["review_draft_evidence_gaps"]["description"]

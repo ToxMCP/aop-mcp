@@ -895,6 +895,29 @@ def test_export_draft_replay_package_schema_validation() -> None:
     )
 
 
+def test_verify_tool_call_audit_log_schema_validation() -> None:
+    payload = {
+        "configured": True,
+        "using_configured_path": True,
+        "path": "/tmp/aop-mcp/tool-calls.jsonl",
+        "exists": True,
+        "chain": {
+            "algorithm": "sha256-json-v1",
+            "record_count": 1,
+            "head_record_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+            "verified": True,
+            "verification_error": None,
+        },
+        "warnings": [],
+    }
+
+    validate_payload(
+        payload,
+        namespace="read",
+        name="verify_tool_call_audit_log.response.schema",
+    )
+
+
 def test_plan_linear_draft_review_document_schema_validation() -> None:
     payload = {
         "source": {
