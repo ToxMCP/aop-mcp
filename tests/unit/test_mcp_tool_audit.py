@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -8,6 +9,7 @@ import pytest
 from src.instrumentation.audit import tool_call_audit_log
 from src.server.mcp import router as router_module
 from src.server.mcp.protocol import FORBIDDEN, INTERNAL_ERROR, JSONRPCError, JSONRPCRequest
+from src.server.tools import aop as aop_tools
 
 
 class FakeRegisteredTool:
@@ -197,6 +199,66 @@ async def test_tool_call_audit_persists_jsonl_records(
 
 
 @pytest.mark.asyncio
+async def test_verify_tool_call_audit_log_reports_missing_unconfigured_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        aop_tools,
+        "get_settings",
+        lambda: SimpleNamespace(audit_log_path=None),
+    )
+
+    result = await aop_tools.verify_tool_call_audit_log(
+        aop_tools.VerifyToolCallAuditLogInput()
+    )
+
+    assert result["configured"] is False
+    assert result["using_configured_path"] is False
+    assert result["path"] is None
+    assert result["exists"] is False
+    assert result["chain"]["record_count"] == 0
+    assert result["chain"]["verified"] is None
+    assert "AOP_MCP_AUDIT_LOG_PATH is not configured" in result["warnings"][0]
+
+
+@pytest.mark.asyncio
+async def test_verify_tool_call_audit_log_uses_configured_path_and_verifies_chain(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    audit_path = tmp_path / "tool-calls.jsonl"
+    tool_call_audit_log.configure_jsonl_sink(audit_path)
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"ok": True}))
+
+    await router_module.dispatch_request(
+        JSONRPCRequest(
+            jsonrpc="2.0",
+            id=1,
+            method="tools/call",
+            params={"name": "fake_tool", "arguments": {"alpha": 1}},
+        )
+    )
+    monkeypatch.setattr(
+        aop_tools,
+        "get_settings",
+        lambda: SimpleNamespace(audit_log_path=str(audit_path)),
+    )
+
+    result = await aop_tools.verify_tool_call_audit_log(
+        aop_tools.VerifyToolCallAuditLogInput()
+    )
+
+    assert result["configured"] is True
+    assert result["using_configured_path"] is True
+    assert result["path"] == str(audit_path.resolve())
+    assert result["exists"] is True
+    assert result["chain"]["record_count"] == 1
+    assert result["chain"]["verified"] is True
+    assert result["chain"]["head_record_hash"]
+    assert result["warnings"] == []
+
+
+@pytest.mark.asyncio
 async def test_tool_call_audit_persistence_detects_tampered_jsonl_record(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
@@ -222,3 +284,12 @@ async def test_tool_call_audit_persistence_detects_tampered_jsonl_record(
     assert persistence["chain"]["verified"] is False
     assert persistence["chain"]["record_count"] == 0
     assert "record_hash does not match" in persistence["chain"]["verification_error"]
+
+    result = await aop_tools.verify_tool_call_audit_log(
+        aop_tools.VerifyToolCallAuditLogInput(audit_log_path=str(audit_path))
+    )
+    assert result["configured"] is False
+    assert result["using_configured_path"] is False
+    assert result["exists"] is True
+    assert result["chain"]["verified"] is False
+    assert "record_hash does not match" in result["warnings"][0]

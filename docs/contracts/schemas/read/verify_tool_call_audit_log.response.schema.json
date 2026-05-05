@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "verify_tool_call_audit_log.response",
+  "type": "object",
+  "required": [
+    "configured",
+    "using_configured_path",
+    "path",
+    "exists",
+    "chain",
+    "warnings"
+  ],
+  "properties": {
+    "configured": {"type": "boolean"},
+    "using_configured_path": {"type": "boolean"},
+    "path": {"type": ["string", "null"]},
+    "exists": {"type": "boolean"},
+    "chain": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "record_count",
+        "head_record_hash",
+        "verified",
+        "verification_error"
+      ],
+      "properties": {
+        "algorithm": {"type": "string", "const": "sha256-json-v1"},
+        "record_count": {"type": "integer", "minimum": 0},
+        "head_record_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verified": {"type": ["boolean", "null"]},
+        "verification_error": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}
