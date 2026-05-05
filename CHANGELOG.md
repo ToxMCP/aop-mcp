@@ -5,6 +5,7 @@
 ### Added
 
 - Machine-readable trust evaluation Q/A pack for auditability, verifiability, Registry handoff trust, replay reproducibility, scientific value, and regulatory-boundary checks.
+- Tighter MCP tool annotations for write-scope enforcement, live/open-world draft review helpers, and read-only export hints.
 
 ## v0.9.0 - 2026-05-05
 

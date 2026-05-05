@@ -60,6 +60,15 @@ def test_tool_list_exposes_security_annotations() -> None:
     by_name = {tool["name"]: tool for tool in tools}
     assert by_name["search_aops"]["annotations"]["requiredScopes"] == ["toxmcp:live"]
     assert by_name["export_draft_review_artifact"]["annotations"]["requiresConfirmation"] is True
+    assert by_name["export_draft_review_artifact"]["annotations"]["readOnlyHint"] is True
+    assert by_name["export_draft_review_artifact"]["annotations"]["openWorldHint"] is True
+    assert by_name["review_draft_bundle"]["annotations"]["riskClass"] == "live"
+    assert by_name["review_draft_bundle"]["annotations"]["requiredScopes"] == ["toxmcp:live"]
+    assert by_name["review_draft_evidence_gaps"]["annotations"]["openWorldHint"] is True
+    assert by_name["trace_chemical_on_draft"]["annotations"]["riskClass"] == "live"
+    assert by_name["link_stressor"]["annotations"]["riskClass"] == "execute"
+    assert by_name["link_stressor"]["annotations"]["requiredScopes"] == ["toxmcp:execute"]
+    assert by_name["link_stressor"]["annotations"]["requiresConfirmation"] is True
 
 
 def test_mcp_endpoint_enforces_bearer_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -142,4 +151,44 @@ def test_mcp_endpoint_enforces_confirmation_for_bearer_write_tools(
     assert response.status_code == 200
     structured = response.json()["result"]["structuredContent"]
     assert structured == {"draft_id": "confirmed-scope-draft", "version_id": "v1"}
+    _clear_settings()
+
+
+def test_mcp_endpoint_treats_link_stressor_as_write_tool(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AOP_MCP_AUTH_MODE", "bearer")
+    monkeypatch.setenv("AOP_MCP_AUTH_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("AOP_MCP_AUTH_BEARER_SCOPES", "toxmcp:read")
+    _clear_settings()
+
+    client = TestClient(create_app())
+    response = client.post(
+        "/mcp",
+        headers={"authorization": "Bearer secret-token"},
+        json={
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "link_stressor",
+                "arguments": {
+                    "draft_id": "draft-id",
+                    "version_id": "v1",
+                    "author": "tester",
+                    "summary": "link stressor",
+                    "stressor_id": "stress-1",
+                    "label": "Example stressor",
+                    "source": "DTXSID000000",
+                    "target": "ke-1",
+                },
+                "confirmed": True,
+            },
+        },
+    )
+
+    assert response.status_code == 403
+    payload = response.json()
+    assert payload["error"]["code"] == FORBIDDEN
+    assert payload["error"]["data"]["missingScopes"] == ["toxmcp:execute"]
     _clear_settings()

@@ -23,6 +23,7 @@ class RegisteredTool:
         risk_class: str | None = None,
         required_scopes: tuple[str, ...] | None = None,
         requires_confirmation: bool | None = None,
+        open_world_hint: bool | None = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -35,11 +36,16 @@ class RegisteredTool:
         self.risk_class = policy["riskClass"]
         self.required_scopes = tuple(policy["requiredScopes"])
         self.requires_confirmation = bool(policy["requiresConfirmation"])
+        self.open_world_hint = (
+            bool(open_world_hint)
+            if open_world_hint is not None
+            else self.risk_class == "live"
+        )
         self.annotations = {
-            "readOnlyHint": self.risk_class in {"read", "live"},
+            "readOnlyHint": self.risk_class in {"read", "live", "export"},
             "destructiveHint": self.risk_class in {"execute", "admin"},
-            "idempotentHint": self.risk_class in {"read", "live"},
-            "openWorldHint": self.risk_class == "live",
+            "idempotentHint": self.risk_class in {"read", "live", "export"},
+            "openWorldHint": self.open_world_hint,
             "riskClass": self.risk_class,
             "requiredScopes": list(self.required_scopes),
             "requiresConfirmation": self.requires_confirmation,
@@ -61,6 +67,7 @@ class ToolRegistry:
         risk_class: str | None = None,
         required_scopes: tuple[str, ...] | None = None,
         requires_confirmation: bool | None = None,
+        open_world_hint: bool | None = None,
     ) -> None:
         if name in self._tools:
             raise ValueError(f"Tool '{name}' already registered")
@@ -73,6 +80,7 @@ class ToolRegistry:
             risk_class=risk_class,
             required_scopes=required_scopes,
             requires_confirmation=requires_confirmation,
+            open_world_hint=open_world_hint,
         )
 
     def list_tools(self) -> list[ToolDescription]:
@@ -116,7 +124,7 @@ def classify_tool_policy(
 ) -> dict[str, Any]:
     if risk_class is None:
         lowered = name.lower()
-        if lowered.startswith(("save_", "create_", "add_", "update_", "delete_")):
+        if lowered.startswith(("save_", "create_", "add_", "update_", "delete_", "link_")):
             risk_class = "execute"
         elif "export" in lowered or "packet" in lowered or "document" in lowered:
             risk_class = "export"
@@ -304,6 +312,7 @@ tool_registry.register(
     handler=aop.export_assays_table,
     input_model=aop.ExportAssaysTableInput,
     output_schema=_schema("read", "export_assays_table.response.schema"),
+    open_world_hint=True,
 )
 
 tool_registry.register(
@@ -312,6 +321,7 @@ tool_registry.register(
     handler=aop.export_draft_review_artifact,
     input_model=aop.ExportDraftReviewArtifactInput,
     output_schema=_schema("read", "export_draft_review_artifact.response.schema"),
+    open_world_hint=True,
 )
 
 tool_registry.register(
@@ -360,6 +370,7 @@ tool_registry.register(
     handler=aop.plan_linear_draft_review_document,
     input_model=aop.PlanLinearDraftReviewDocumentInput,
     output_schema=_schema("read", "plan_linear_draft_review_document.response.schema"),
+    open_world_hint=True,
 )
 
 tool_registry.register(
@@ -368,6 +379,7 @@ tool_registry.register(
     handler=aop.save_draft_review_artifact,
     input_model=aop.SaveDraftReviewArtifactInput,
     output_schema=_schema("write", "save_draft_review_artifact.response.schema"),
+    open_world_hint=True,
 )
 
 tool_registry.register(
@@ -376,6 +388,7 @@ tool_registry.register(
     handler=aop.trace_chemical_on_draft,
     input_model=aop.TraceChemicalOnDraftInput,
     output_schema=_schema("read", "trace_chemical_on_draft.response.schema"),
+    risk_class="live",
 )
 
 tool_registry.register(
@@ -392,6 +405,7 @@ tool_registry.register(
     handler=aop.review_draft_bundle,
     input_model=aop.ReviewDraftBundleInput,
     output_schema=_schema("read", "review_draft_bundle.response.schema"),
+    risk_class="live",
 )
 
 tool_registry.register(
@@ -408,6 +422,7 @@ tool_registry.register(
     handler=aop.review_draft_evidence_gaps,
     input_model=aop.ReviewDraftEvidenceGapsInput,
     output_schema=_schema("read", "review_draft_evidence_gaps.response.schema"),
+    risk_class="live",
 )
 
 tool_registry.register(
