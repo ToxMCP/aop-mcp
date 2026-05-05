@@ -1,0 +1,42 @@
+<evaluation>
+  <qa_pair id="audit-log-intact">
+    <question>Given a configured durable audit log with two valid MCP tool-call envelopes, what must the agent report after calling verify_tool_call_audit_log?</question>
+    <answer>Report that chain.verified is true, chain.record_count is 2, and head_record_hash is a 64-character lowercase hexadecimal chain tip.</answer>
+  </qa_pair>
+  <qa_pair id="tampered-evidence-boundary">
+    <question>Given a durable audit log whose second JSONL envelope was modified without updating record_hash, what is the verified evidence boundary?</question>
+    <answer>Report that chain.verified is false, verified_prefix_envelope_count is 1, the warning identifies a record_hash mismatch, and only the first envelope remains verified evidence.</answer>
+  </qa_pair>
+  <qa_pair id="replay-runtime-fingerprints">
+    <question>Which replay package fields let a reviewer verify the runtime and contract fingerprints used to produce a draft package?</question>
+    <answer>Use draft_integrity.selected_version.graph_sha256, runtime_manifest.server.version, runtime_manifest.contracts.schema_root_sha256, runtime_manifest.tool_registry.tool_catalog_sha256, and the selected response-schema hashes as verifiability anchors.</answer>
+  </qa_pair>
+  <qa_pair id="regulatory-boundary">
+    <question>Does a verified replay package prove regulatory acceptance or regulatory-grade electronic records compliance?</question>
+    <answer>No. It supports auditability, reproducibility, and scientific review, but it is not regulatory validation and does not provide immutable retention, independent timestamping, validated e-signature workflows, or formal approval controls.</answer>
+  </qa_pair>
+  <qa_pair id="registry-target-consumer">
+    <question>How should review_registry_handoff_bundle handle a Registry handoff bundle with the wrong targetConsumer for AOP MCP draft review?</question>
+    <answer>Reject the bundle as invalid for this consumer and report the target-consumer limitation before any draft review bundle treats the Registry content as external support.</answer>
+  </qa_pair>
+  <qa_pair id="empty-external-support">
+    <question>What should review_draft_bundle return for external_support when the selected draft version has no imported Registry bundles?</question>
+    <answer>Return the zero-count summary: import_count equals 0, imports is an empty list, limitations is an empty list, and no external support claims are implied.</answer>
+  </qa_pair>
+  <qa_pair id="registry-limitations-propagate">
+    <question>When a reviewed Registry bundle is attached to a draft, where must its bounded-use limitations appear in later review outputs?</question>
+    <answer>The limitations must appear in external_support.limitations and be merged into the review bundle limitations so markdown, JSON, and publication-style exports preserve the caveats.</answer>
+  </qa_pair>
+  <qa_pair id="process-vs-durable-audit">
+    <question>What trust distinction must an agent make between list_tool_call_audit_records and durable audit-log verification?</question>
+    <answer>list_tool_call_audit_records is a bounded process-local recent-call view that disappears on restart; durable verification requires AOP_MCP_AUDIT_LOG_PATH and verify_tool_call_audit_log or export_tool_call_audit_log_evidence.</answer>
+  </qa_pair>
+  <qa_pair id="saved-artifact-integrity">
+    <question>How does export_draft_replay_package help a reviewer verify saved review artifacts included with a draft handoff?</question>
+    <answer>It includes saved artifact verification status plus content and metadata hashes, allowing reviewers to detect missing or changed artifacts and tie verified artifacts to the replay package.</answer>
+  </qa_pair>
+  <qa_pair id="scientific-value-limit">
+    <question>What scientific value does the trust layer provide, and what biological or regulatory claims does it still avoid making?</question>
+    <answer>It helps reviewers identify the reviewed draft version, Registry imports, limitations, tool calls, schemas, and runtime fingerprints; it does not prove AOP biological plausibility, causal sufficiency, OECD evidence strength, or regulatory acceptance.</answer>
+  </qa_pair>
+</evaluation>

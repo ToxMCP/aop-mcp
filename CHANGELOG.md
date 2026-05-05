@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Machine-readable trust evaluation Q/A pack for auditability, verifiability, Registry handoff trust, replay reproducibility, scientific value, and regulatory-boundary checks.
+
 ## v0.9.0 - 2026-05-05
 
 ### Added

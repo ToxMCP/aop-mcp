@@ -2,6 +2,8 @@
 
 These stable, read-only scenarios are intended for human or agent evaluation of the AOP MCP trust surface. They avoid live network dependencies and use deterministic fixtures or locally generated draft/audit data.
 
+The companion machine-readable pack in `docs/evaluations/trust-scenarios.xml` expands this set to ten string-checkable Q/A pairs covering auditability, verifiability, Registry handoff trust, replay reproducibility, scientific value, and regulatory boundaries.
+
 ## Scenario 1: Verify A Durable Audit Log
 
 Question: Given a configured durable audit log with two valid MCP tool-call envelopes, can the agent prove the log is intact?
