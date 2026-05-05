@@ -33,6 +33,11 @@ Current MCP tool surface exposed by `POST /mcp`.
 - `plan_linear_draft_review_document`: Build a connector-ready Linear document payload from either a live draft review export or a saved local review artifact, with both bundle and evidence-gap summaries surfaced in the response.
 - `save_draft_review_artifact`: Render and persist a draft review artifact to the local artifact output directory, with optional subdirectory and filename override support. Metadata sidecars now also preserve an evidence-gap summary for discovery and handoff tools.
 - `trace_chemical_on_draft`: Resolve one chemical to a CompTox DTXSID, map each draft key event to candidate assays, and return a draft KE/KER overlay showing which draft nodes have matching chemical bioactivity.
+- `review_registry_handoff_bundle`: Review an imported Registry `aop_context` handoff bundle before it is attached to a draft, preserving bounded-use warnings and target-consumer checks.
+- `export_draft_replay_package`: Export a deterministic replay package for one draft version, including draft integrity, external Registry support, saved artifact verification, recent MCP audit records, and a runtime manifest.
+- `list_tool_call_audit_records`: List recent process-local MCP tool-call audit records with optional `tool_name` and `status` filters, plus durable audit persistence status.
+- `verify_tool_call_audit_log`: Verify the durable MCP tool-call audit JSONL hash chain from `AOP_MCP_AUDIT_LOG_PATH` or an explicit local path.
+- `export_tool_call_audit_log_evidence`: Export a bounded, chain-verified durable audit-log evidence package from the JSONL log. If tampering is detected, only the verified prefix before the first failure is exported.
 - `get_applicability`: Normalize applicability parameters such as species, sex, and life stage.
 - `get_evidence_matrix`: Build an evidence matrix from KER facets.
 
@@ -42,6 +47,7 @@ Current MCP tool surface exposed by `POST /mcp`.
 - `add_or_update_ke`: Add or update a key event within a draft, including governed KE-level `essentiality` metadata and optional `event_role` metadata (`mie`, `intermediate`, `ao`) when available.
 - `add_or_update_ker`: Add or update a key event relationship within a draft.
 - `link_stressor`: Link a stressor to a draft entity.
+- `attach_registry_handoff_to_draft`: Attach a reviewed Registry `aop_context` handoff bundle to a draft version so later draft review bundles can surface imported external support and limitations.
 - `validate_draft_oecd`: Validate a draft against OECD AOP handbook-style completeness expectations, including governed KE-level `essentiality` coverage and shape checks plus draft-graph topology checks for anchors, cycles, and MIE -> AO reachability.
 - `validate_draft_oecd` also performs conservative directional concordance checks on draft MIE -> AO paths when the draft exposes enough KE and KER polarity metadata to assess them.
 - `validate_draft_oecd` also performs supplemental draft KER assay-cutoff ordering checks when draft stressor links can be resolved to CompTox chemicals and the drafted KEs map to assay candidates with evaluable cutoffs.
@@ -52,6 +58,9 @@ Current MCP tool surface exposed by `POST /mcp`.
 - Use `plan_linear_draft_review_document` when the next handoff target is Linear or another document system that expects a document title plus markdown body instead of a raw artifact payload. The response now preserves both the exported bundle summary and the evidence-gap summary.
 - Use `save_draft_review_artifact` when the exported review needs to become a real local handoff file under `AOP_MCP_ARTIFACT_OUTPUT_DIR` instead of staying in-memory as an MCP response payload. The metadata sidecar written next to the file preserves both the bundle summary and the evidence-gap summary.
 - Use `review_draft_assay_cutoff_ordering` when you want the detailed per-KER assay-cutoff ordering objects behind those draft quantitative checks instead of only the validator status/message pair.
+- Use `review_registry_handoff_bundle` before `attach_registry_handoff_to_draft` when external Registry support needs to become part of a draft review bundle. The review step checks the bundle's target consumer and records limitations before the write step imports it.
+- Use `export_draft_replay_package` when reviewers need a compact package tying one draft version to integrity checks, imported Registry support, saved artifact integrity, recent MCP audit records, durable audit persistence status, and the runtime/tool/schema manifest that produced the package.
+- Use `list_tool_call_audit_records` for the in-memory recent-call view during the current server process. Use `verify_tool_call_audit_log` for durable JSONL chain status, and `export_tool_call_audit_log_evidence` when the durable audit evidence itself needs to be handed off.
 - `trace_chemical_on_draft` is a draft-review helper. It highlights draft key events using assay matches plus CompTox bioactivity for one chemical, but it does not establish causal directionality or prove that the chemical traverses the full drafted pathway.
 - For directional draft validation, KE polarity can be inferred from titles like `Activation, ...` or `Decreased, ...`, but drafts are more reliably assessable when authors set explicit KE fields such as `attributes.direction_of_change` and KER fields such as `attributes.relationship_effect`.
 - For draft quantitative-ordering validation, link stressors with resolvable chemical metadata whenever possible. A recognizable label, CAS-like source value, or DTXSID-like source value makes the assay-cutoff ordering checks more likely to be assessable.
@@ -60,6 +69,7 @@ Current MCP tool surface exposed by `POST /mcp`.
 
 - Tool schemas are exposed through MCP `tools/list` and validated by the server before tool execution.
 - Response contracts live under `docs/contracts/schemas/`.
+- The trust and auditability model is documented in `docs/trust-auditability.md`.
 - Use `search_aops` for discovery and `get_aop` for fetching a known identifier.
 - Assay tool routing:
   - assay -> AOPs: `map_assay_to_aops`
