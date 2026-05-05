@@ -895,6 +895,77 @@ def test_export_draft_replay_package_schema_validation() -> None:
     )
 
 
+def test_export_tool_call_audit_log_evidence_schema_validation() -> None:
+    record = {
+        "call_id": "call-1",
+        "tool_name": "fake_tool",
+        "started_at": "2026-04-12T12:00:00Z",
+        "finished_at": "2026-04-12T12:00:01Z",
+        "duration_ms": 12.5,
+        "status": "success",
+        "argument_keys": ["alpha"],
+        "request_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "response_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "output_schema_title": "fake_tool.response",
+        "output_schema_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "output_validation_status": "passed",
+        "risk_class": "read",
+        "required_scopes": ["toxmcp:read"],
+        "granted_scopes": ["toxmcp:read"],
+        "requires_confirmation": False,
+        "confirmation_provided": False,
+        "policy_status": "passed",
+        "error_type": None,
+        "error_message": None,
+    }
+    payload = {
+        "evidence_schema_version": "tool-call-audit-log-evidence.v1",
+        "generated_at": "2026-04-12T12:00:00Z",
+        "configured": True,
+        "using_configured_path": True,
+        "path": "/tmp/aop-mcp/tool-calls.jsonl",
+        "exists": True,
+        "selection": {
+            "limit": 25,
+            "tool_name": None,
+            "status": None,
+        },
+        "chain": {
+            "algorithm": "sha256-json-v1",
+            "record_count": 1,
+            "head_record_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+            "verified": True,
+            "verification_error": None,
+        },
+        "verified_prefix_envelope_count": 1,
+        "matched_envelope_count": 1,
+        "exported_envelope_count": 1,
+        "exported_order": "oldest_to_newest",
+        "envelopes": [
+            {
+                "line_number": 1,
+                "schema_version": "tool-call-audit-jsonl.v1",
+                "algorithm": "sha256-json-v1",
+                "sequence": 1,
+                "previous_record_hash": None,
+                "record_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+                "record": record,
+            }
+        ],
+        "warnings": [],
+        "limitations": [
+            "Audit evidence is exported from the durable JSONL log and includes hashed request/response digests, not raw request or response bodies."
+        ],
+        "evidence_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    }
+
+    validate_payload(
+        payload,
+        namespace="read",
+        name="export_tool_call_audit_log_evidence.response.schema",
+    )
+
+
 def test_list_tool_call_audit_records_schema_validation() -> None:
     record = {
         "call_id": "call-1",

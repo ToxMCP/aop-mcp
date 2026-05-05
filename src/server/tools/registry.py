@@ -331,6 +331,14 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="export_tool_call_audit_log_evidence",
+    description="Export a bounded, chain-verified evidence package from the durable MCP tool-call audit JSONL log.",
+    handler=aop.export_tool_call_audit_log_evidence,
+    input_model=aop.ExportToolCallAuditLogEvidenceInput,
+    output_schema=_schema("read", "export_tool_call_audit_log_evidence.response.schema"),
+)
+
+tool_registry.register(
     name="list_tool_call_audit_records",
     description="List recent process-local MCP tool-call audit records with optional tool-name and status filters, plus durable audit persistence status.",
     handler=aop.list_tool_call_audit_records,

@@ -186,15 +186,22 @@ class JsonlToolCallAuditSink:
             )
 
     def chain_status(self) -> dict[str, object]:
+        return self.read_verified_envelopes()["chain"]
+
+    def read_verified_envelopes(self) -> dict[str, object]:
+        envelopes: list[dict[str, object]] = []
         record_count = 0
         previous_hash: str | None = None
         if not self.path.exists():
             return {
-                "algorithm": AUDIT_CHAIN_ALGORITHM,
-                "record_count": 0,
-                "head_record_hash": None,
-                "verified": True,
-                "verification_error": None,
+                "chain": {
+                    "algorithm": AUDIT_CHAIN_ALGORITHM,
+                    "record_count": 0,
+                    "head_record_hash": None,
+                    "verified": True,
+                    "verification_error": None,
+                },
+                "envelopes": envelopes,
             }
 
         try:
@@ -204,9 +211,36 @@ class JsonlToolCallAuditSink:
                     if not stripped:
                         continue
                     envelope = json.loads(stripped)
+                    if not isinstance(envelope, dict):
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
+                            record_count=record_count,
+                            head_record_hash=previous_hash,
+                            message=f"Line {line_number} is not a JSON object.",
+                        )
+                    required_fields = {
+                        "schema_version",
+                        "algorithm",
+                        "sequence",
+                        "previous_record_hash",
+                        "record",
+                        "record_hash",
+                    }
+                    missing_fields = sorted(required_fields - set(envelope))
+                    if missing_fields:
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
+                            record_count=record_count,
+                            head_record_hash=previous_hash,
+                            message=(
+                                f"Line {line_number} is missing audit envelope field(s): "
+                                + ", ".join(missing_fields)
+                            ),
+                        )
                     expected_previous = envelope.get("previous_record_hash")
                     if expected_previous != previous_hash:
-                        return _audit_chain_status_error(
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
                             record_count=record_count,
                             head_record_hash=previous_hash,
                             message=f"Line {line_number} previous_record_hash does not match chain head.",
@@ -216,32 +250,85 @@ class JsonlToolCallAuditSink:
                     envelope_without_hash.pop("record_hash", None)
                     calculated_hash = hash_json(envelope_without_hash)
                     if recorded_hash != calculated_hash:
-                        return _audit_chain_status_error(
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
                             record_count=record_count,
                             head_record_hash=previous_hash,
                             message=f"Line {line_number} record_hash does not match record contents.",
                         )
-                    if envelope.get("algorithm") != AUDIT_CHAIN_ALGORITHM:
-                        return _audit_chain_status_error(
+                    if envelope.get("schema_version") != "tool-call-audit-jsonl.v1":
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
                             record_count=record_count,
+                            head_record_hash=previous_hash,
+                            message=f"Line {line_number} uses unsupported audit envelope schema version.",
+                        )
+                    if envelope.get("algorithm") != AUDIT_CHAIN_ALGORITHM:
+                        return _audit_chain_scan_error(
+                            record_count=record_count,
+                            envelopes=envelopes,
                             head_record_hash=previous_hash,
                             message=f"Line {line_number} uses unsupported audit chain algorithm.",
                         )
+                    expected_sequence = record_count + 1
+                    if envelope.get("sequence") != expected_sequence:
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
+                            record_count=record_count,
+                            head_record_hash=previous_hash,
+                            message=f"Line {line_number} sequence does not match expected value {expected_sequence}.",
+                        )
+                    record = envelope.get("record")
+                    if not isinstance(record, dict):
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
+                            record_count=record_count,
+                            head_record_hash=previous_hash,
+                            message=f"Line {line_number} record is not a JSON object.",
+                        )
+                    missing_record_fields = sorted(
+                        set(ToolCallAuditRecord.__dataclass_fields__) - set(record)
+                    )
+                    if missing_record_fields:
+                        return _audit_chain_scan_error(
+                            envelopes=envelopes,
+                            record_count=record_count,
+                            head_record_hash=previous_hash,
+                            message=(
+                                f"Line {line_number} record is missing audit field(s): "
+                                + ", ".join(missing_record_fields)
+                            ),
+                        )
                     record_count += 1
                     previous_hash = recorded_hash
+                    envelopes.append(
+                        {
+                            "line_number": line_number,
+                            "schema_version": envelope["schema_version"],
+                            "algorithm": envelope["algorithm"],
+                            "sequence": envelope["sequence"],
+                            "previous_record_hash": envelope["previous_record_hash"],
+                            "record_hash": envelope["record_hash"],
+                            "record": record,
+                        }
+                    )
         except (OSError, json.JSONDecodeError) as exc:
-            return _audit_chain_status_error(
+            return _audit_chain_scan_error(
+                envelopes=envelopes,
                 record_count=record_count,
                 head_record_hash=previous_hash,
                 message=str(exc),
             )
 
         return {
-            "algorithm": AUDIT_CHAIN_ALGORITHM,
-            "record_count": record_count,
-            "head_record_hash": previous_hash,
-            "verified": True,
-            "verification_error": None,
+            "chain": {
+                "algorithm": AUDIT_CHAIN_ALGORITHM,
+                "record_count": record_count,
+                "head_record_hash": previous_hash,
+                "verified": True,
+                "verification_error": None,
+            },
+            "envelopes": envelopes,
         }
 
 
@@ -257,6 +344,23 @@ def _audit_chain_status_error(
         "head_record_hash": head_record_hash,
         "verified": False,
         "verification_error": message,
+    }
+
+
+def _audit_chain_scan_error(
+    *,
+    envelopes: list[dict[str, object]],
+    record_count: int,
+    head_record_hash: str | None,
+    message: str,
+) -> dict[str, object]:
+    return {
+        "chain": _audit_chain_status_error(
+            record_count=record_count,
+            head_record_hash=head_record_hash,
+            message=message,
+        ),
+        "envelopes": envelopes,
     }
 
 

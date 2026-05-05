@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "export_tool_call_audit_log_evidence.response",
+  "type": "object",
+  "required": [
+    "evidence_schema_version",
+    "generated_at",
+    "configured",
+    "using_configured_path",
+    "path",
+    "exists",
+    "selection",
+    "chain",
+    "verified_prefix_envelope_count",
+    "matched_envelope_count",
+    "exported_envelope_count",
+    "exported_order",
+    "envelopes",
+    "warnings",
+    "limitations",
+    "evidence_sha256"
+  ],
+  "properties": {
+    "evidence_schema_version": {
+      "type": "string",
+      "const": "tool-call-audit-log-evidence.v1"
+    },
+    "generated_at": {"type": "string"},
+    "configured": {"type": "boolean"},
+    "using_configured_path": {"type": "boolean"},
+    "path": {"type": ["string", "null"]},
+    "exists": {"type": "boolean"},
+    "selection": {
+      "type": "object",
+      "required": ["limit", "tool_name", "status"],
+      "properties": {
+        "limit": {"type": "integer", "minimum": 0, "maximum": 100},
+        "tool_name": {"type": ["string", "null"]},
+        "status": {"type": ["string", "null"], "enum": ["success", "error", null]}
+      },
+      "additionalProperties": false
+    },
+    "chain": {"$ref": "#/$defs/audit_chain_status"},
+    "verified_prefix_envelope_count": {"type": "integer", "minimum": 0},
+    "matched_envelope_count": {"type": "integer", "minimum": 0},
+    "exported_envelope_count": {"type": "integer", "minimum": 0},
+    "exported_order": {"type": "string", "const": "oldest_to_newest"},
+    "envelopes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/audit_log_envelope"}
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "evidence_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "audit_chain_status": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "record_count",
+        "head_record_hash",
+        "verified",
+        "verification_error"
+      ],
+      "properties": {
+        "algorithm": {"type": "string", "const": "sha256-json-v1"},
+        "record_count": {"type": "integer", "minimum": 0},
+        "head_record_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verified": {"type": ["boolean", "null"]},
+        "verification_error": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "audit_log_envelope": {
+      "type": "object",
+      "required": [
+        "line_number",
+        "schema_version",
+        "algorithm",
+        "sequence",
+        "previous_record_hash",
+        "record_hash",
+        "record"
+      ],
+      "properties": {
+        "line_number": {"type": "integer", "minimum": 1},
+        "schema_version": {
+          "type": "string",
+          "const": "tool-call-audit-jsonl.v1"
+        },
+        "algorithm": {"type": "string", "const": "sha256-json-v1"},
+        "sequence": {"type": "integer", "minimum": 1},
+        "previous_record_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "record": {"$ref": "#/$defs/tool_call_audit_record"}
+      },
+      "additionalProperties": false
+    },
+    "tool_call_audit_record": {
+      "type": "object",
+      "required": [
+        "call_id",
+        "tool_name",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "argument_keys",
+        "request_hash",
+        "response_hash",
+        "output_schema_title",
+        "output_schema_hash",
+        "output_validation_status",
+        "risk_class",
+        "required_scopes",
+        "granted_scopes",
+        "requires_confirmation",
+        "confirmation_provided",
+        "policy_status",
+        "error_type",
+        "error_message"
+      ],
+      "properties": {
+        "call_id": {"type": "string"},
+        "tool_name": {"type": "string"},
+        "started_at": {"type": "string"},
+        "finished_at": {"type": "string"},
+        "duration_ms": {"type": "number"},
+        "status": {"type": "string"},
+        "argument_keys": {"type": "array", "items": {"type": "string"}},
+        "request_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "response_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "output_schema_title": {"type": ["string", "null"]},
+        "output_schema_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "output_validation_status": {"type": "string"},
+        "risk_class": {"type": ["string", "null"]},
+        "required_scopes": {"type": "array", "items": {"type": "string"}},
+        "granted_scopes": {"type": "array", "items": {"type": "string"}},
+        "requires_confirmation": {"type": ["boolean", "null"]},
+        "confirmation_provided": {"type": "boolean"},
+        "policy_status": {"type": "string"},
+        "error_type": {"type": ["string", "null"]},
+        "error_message": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
