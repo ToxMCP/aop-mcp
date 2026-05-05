@@ -5,6 +5,7 @@
   "required": [
     "package_schema_version",
     "generated_at",
+    "runtime_manifest",
     "draft_id",
     "version_id",
     "draft_snapshot",
@@ -18,6 +19,7 @@
   "properties": {
     "package_schema_version": {"type": "string", "const": "draft-replay-package.v1"},
     "generated_at": {"type": "string"},
+    "runtime_manifest": {"$ref": "#/$defs/runtime_manifest"},
     "draft_id": {"type": "string"},
     "version_id": {"type": "string"},
     "draft_snapshot": {
@@ -290,6 +292,133 @@
         "previous_graph_sha256": {"type": "string", "pattern": "^(|[a-f0-9]{64})$"},
         "provenance_checksum_algorithm": {"type": "string", "const": "sha256-v1"},
         "provenance_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "runtime_manifest": {
+      "type": "object",
+      "required": [
+        "manifest_schema_version",
+        "server",
+        "runtime",
+        "configuration",
+        "contracts",
+        "tool_registry",
+        "source_control"
+      ],
+      "properties": {
+        "manifest_schema_version": {
+          "type": "string",
+          "const": "aop-mcp-runtime-manifest.v1"
+        },
+        "server": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": {
+            "name": {"type": "string"},
+            "version": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "runtime": {
+          "type": "object",
+          "required": [
+            "python_version",
+            "python_implementation",
+            "python_executable",
+            "platform"
+          ],
+          "properties": {
+            "python_version": {"type": "string"},
+            "python_implementation": {"type": "string"},
+            "python_executable": {"type": "string"},
+            "platform": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "configuration": {
+          "type": "object",
+          "required": [
+            "environment",
+            "auth_mode",
+            "auth_bearer_token_configured",
+            "auth_bearer_scope_count",
+            "allowed_origin_count",
+            "fixture_fallback_enabled",
+            "audit_log_enabled",
+            "artifact_output_dir_configured",
+            "comptox_api_key_configured",
+            "max_request_bytes",
+            "is_production",
+            "allow_unauthenticated_production"
+          ],
+          "properties": {
+            "environment": {"type": "string"},
+            "auth_mode": {"type": "string", "enum": ["disabled", "bearer"]},
+            "auth_bearer_token_configured": {"type": "boolean"},
+            "auth_bearer_scope_count": {"type": "integer", "minimum": 0},
+            "allowed_origin_count": {"type": "integer", "minimum": 0},
+            "fixture_fallback_enabled": {"type": "boolean"},
+            "audit_log_enabled": {"type": "boolean"},
+            "artifact_output_dir_configured": {"type": "boolean"},
+            "comptox_api_key_configured": {"type": "boolean"},
+            "max_request_bytes": {"type": "integer", "minimum": 1},
+            "is_production": {"type": "boolean"},
+            "allow_unauthenticated_production": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "contracts": {
+          "type": "object",
+          "required": [
+            "schema_root",
+            "schema_count",
+            "schema_root_sha256",
+            "tracked_response_schemas"
+          ],
+          "properties": {
+            "schema_root": {"type": "string", "const": "docs/contracts/schemas"},
+            "schema_count": {"type": "integer", "minimum": 0},
+            "schema_root_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "tracked_response_schemas": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["path", "sha256"],
+                "properties": {
+                  "path": {"type": "string"},
+                  "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "tool_registry": {
+          "type": "object",
+          "required": ["tool_count", "tool_names", "tool_catalog_sha256"],
+          "properties": {
+            "tool_count": {"type": "integer", "minimum": 0},
+            "tool_names": {"type": "array", "items": {"type": "string"}},
+            "tool_catalog_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          },
+          "additionalProperties": false
+        },
+        "source_control": {
+          "type": "object",
+          "required": ["available", "commit", "source", "worktree_dirty"],
+          "properties": {
+            "available": {"type": "boolean"},
+            "commit": {
+              "type": ["string", "null"],
+              "pattern": "^[a-f0-9]{40}$"
+            },
+            "source": {"type": "string"},
+            "worktree_dirty": {"type": "string", "const": "not_assessed"}
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },

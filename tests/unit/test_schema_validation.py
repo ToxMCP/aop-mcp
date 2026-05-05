@@ -790,6 +790,55 @@ def test_export_draft_replay_package_schema_validation() -> None:
     payload = {
         "package_schema_version": "draft-replay-package.v1",
         "generated_at": "2026-04-12T12:00:00Z",
+        "runtime_manifest": {
+            "manifest_schema_version": "aop-mcp-runtime-manifest.v1",
+            "server": {
+                "name": "AOP MCP Server",
+                "version": "0.8.2",
+            },
+            "runtime": {
+                "python_version": "3.11.9",
+                "python_implementation": "CPython",
+                "python_executable": "python",
+                "platform": "macOS",
+            },
+            "configuration": {
+                "environment": "test",
+                "auth_mode": "disabled",
+                "auth_bearer_token_configured": False,
+                "auth_bearer_scope_count": 5,
+                "allowed_origin_count": 0,
+                "fixture_fallback_enabled": True,
+                "audit_log_enabled": False,
+                "artifact_output_dir_configured": True,
+                "comptox_api_key_configured": False,
+                "max_request_bytes": 1000000,
+                "is_production": False,
+                "allow_unauthenticated_production": False,
+            },
+            "contracts": {
+                "schema_root": "docs/contracts/schemas",
+                "schema_count": 40,
+                "schema_root_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "tracked_response_schemas": [
+                    {
+                        "path": "read/export_draft_replay_package.response.schema.json",
+                        "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+                    }
+                ],
+            },
+            "tool_registry": {
+                "tool_count": 42,
+                "tool_names": ["export_draft_replay_package"],
+                "tool_catalog_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+            },
+            "source_control": {
+                "available": True,
+                "commit": "1111111111111111111111111111111111111111",
+                "source": "refs/heads/main",
+                "worktree_dirty": "not_assessed",
+            },
+        },
         "draft_id": "draft-1",
         "version_id": "v1",
         "draft_snapshot": {

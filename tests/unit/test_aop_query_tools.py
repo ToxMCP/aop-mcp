@@ -1974,6 +1974,12 @@ async def test_export_draft_replay_package_includes_integrity_artifact_and_audit
     assert result["package_schema_version"] == "draft-replay-package.v1"
     assert result["draft_id"] == "draft-replay"
     assert result["version_id"] == saved["version_id"]
+    assert result["runtime_manifest"]["manifest_schema_version"] == "aop-mcp-runtime-manifest.v1"
+    assert result["runtime_manifest"]["server"]["name"] == "AOP MCP Server"
+    assert result["runtime_manifest"]["contracts"]["schema_count"] > 0
+    assert len(result["runtime_manifest"]["contracts"]["schema_root_sha256"]) == 64
+    assert "export_draft_replay_package" in result["runtime_manifest"]["tool_registry"]["tool_names"]
+    assert len(result["runtime_manifest"]["tool_registry"]["tool_catalog_sha256"]) == 64
     assert result["draft_integrity"]["overall"] is True
     assert result["draft_integrity"]["selected_version"] == saved["draft_version_integrity"]
     assert result["external_support"]["summary"]["attached_bundle_count"] == 0
