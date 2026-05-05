@@ -32,6 +32,10 @@ def json_load(path: Path) -> dict[str, Any]:
 
 def validate_payload(payload: dict[str, Any], *, namespace: str, name: str) -> None:
     schema = load_schema(namespace, name)
+    validate_payload_against_schema(payload, schema)
+
+
+def validate_payload_against_schema(payload: dict[str, Any], schema: dict[str, Any]) -> None:
     validator = Draft202012Validator(schema)
     errors = sorted(validator.iter_errors(payload), key=lambda e: e.path)
     if errors:
@@ -39,4 +43,4 @@ def validate_payload(payload: dict[str, Any], *, namespace: str, name: str) -> N
         raise SchemaValidationError(message)
 
 
-__all__ = ["SchemaValidationError", "validate_payload"]
+__all__ = ["SchemaValidationError", "validate_payload", "validate_payload_against_schema"]

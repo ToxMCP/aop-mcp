@@ -13,6 +13,11 @@ from src.services.draft_store import (
     GraphRelationship,
     UpdateDraftInput,
 )
+from src.services.registry_handoff import (
+    IMPORTED_REGISTRY_SUPPORT_KEY,
+    merge_registry_support_provenance,
+    normalize_registry_handoff_bundle,
+)
 from src.tools.semantic import SemanticTools
 from src.instrumentation.logging import StructuredLogger
 from src.tools import validate_payload
@@ -307,6 +312,49 @@ class WriteTools:
         )
         return response
 
+    def attach_registry_handoff(
+        self,
+        *,
+        draft_id: str,
+        version_id: str,
+        author: str,
+        summary: str,
+        bundle: Mapping[str, Any],
+    ) -> dict[str, str]:
+        draft = self._require_draft(draft_id)
+        latest = draft.versions[-1]
+        normalized_bundle = normalize_registry_handoff_bundle(dict(bundle))
+        existing_bundle_ids = {
+            item.get("bundleId")
+            for item in latest.metadata.provenance.get(IMPORTED_REGISTRY_SUPPORT_KEY, [])
+            if isinstance(item, Mapping)
+        }
+        if normalized_bundle["bundleId"] in existing_bundle_ids:
+            raise ValueError(
+                f"Registry handoff bundle '{normalized_bundle['bundleId']}' is already attached to draft '{draft_id}'"
+            )
+
+        self._save_version(
+            draft_id=draft_id,
+            version_id=version_id,
+            author=author,
+            summary=summary,
+            entities=list(latest.graph.entities.values()),
+            relationships=list(latest.graph.relationships.values()),
+            provenance={
+                IMPORTED_REGISTRY_SUPPORT_KEY: [normalized_bundle],
+            },
+        )
+        response = {"draft_id": draft_id, "version_id": version_id}
+        validate_payload(response, namespace="write", name="update_draft.response.schema")
+        self._logger.info(
+            "draft_updated",
+            draft_id=draft_id,
+            version_id=version_id,
+            action="attach_registry_handoff",
+        )
+        return response
+
     def _require_draft(self, draft_id: str) -> Draft:
         draft = self._drafts.get_draft(draft_id)
         if draft is None:
@@ -324,6 +372,8 @@ class WriteTools:
         relationships: list[GraphRelationship],
         provenance: Mapping[str, Any] | None = None,
     ) -> None:
+        draft = self._require_draft(draft_id)
+        current_provenance = draft.versions[-1].metadata.provenance if draft.versions else {}
         self._drafts.append_version(
             UpdateDraftInput(
                 draft_id=draft_id,
@@ -332,6 +382,9 @@ class WriteTools:
                 summary=summary,
                 entities=entities,
                 relationships=relationships,
-                provenance=provenance,
+                provenance=merge_registry_support_provenance(
+                    current_provenance,
+                    provenance,
+                ),
             )
         )

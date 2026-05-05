@@ -14,6 +14,10 @@ from typing import Any, Literal, Optional
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from src.instrumentation.audit import (
+    tool_call_audit_log,
+    verify_draft_integrity,
+)
 from src.server.config.settings import get_settings
 from src.adapters import CompToxError
 from src.server.dependencies import (
@@ -24,6 +28,11 @@ from src.server.dependencies import (
     get_semantic_tools,
     get_write_tools,
 )
+from src.services.registry_handoff import (
+    build_imported_registry_support_summary,
+    build_registry_handoff_review,
+)
+from src.services.draft_store import compute_provenance_checksum
 from src.services.publish import LinearDocumentPlanner
 from src.tools.write import (
     DraftApplicability,
@@ -34,6 +43,7 @@ from src.tools.write import (
     normalize_key_event_attributes,
 )
 from src.tools import validate_payload
+from src.semantic.mechanism_roles import classify_key_event_role, summarize_mechanism_roles
 
 
 class SearchAopsInput(BaseModel):
@@ -175,6 +185,7 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
         ker_details=ker_details,
     )
     key_event_summaries = [_summarize_key_event(record) for record in key_event_details]
+    mechanism_role_summary = summarize_mechanism_roles(key_event_details)
     ker_assessments = [
         _summarize_ker(
             record,
@@ -276,6 +287,7 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
         "heuristic_overall_call": heuristic_overall_call,
         "rationale": rationale,
         "limitations": limitations,
+        "mechanism_role_summary": mechanism_role_summary,
         "key_events": key_event_summaries,
         "ker_assessments": ker_assessments,
         "provenance": [
@@ -1104,6 +1116,8 @@ def _render_review_draft_review_artifact_markdown(
                     + "; ".join(gap["title"] for gap in item["gaps"])
                 )
 
+    _append_external_support_section(lines, bundle.get("external_support"))
+
     lines.extend(["", "## Recommended Next Actions"])
     recommendations = (
         evidence_gaps["recommendations"]
@@ -1402,6 +1416,8 @@ def _render_publication_draft_review_artifact_markdown(
                 + " |"
             )
 
+    _append_external_support_section(lines, bundle.get("external_support"))
+
     lines.extend(["", "## Recommended Next Actions"])
     for recommendation in recommendations:
         lines.append(f"- {recommendation}")
@@ -1419,6 +1435,63 @@ def _render_publication_draft_review_artifact_markdown(
         lines.append(f"- {limitation}")
 
     return "\n".join(lines) + "\n"
+
+
+def _append_external_support_section(
+    lines: list[str],
+    external_support: dict[str, Any] | None,
+) -> None:
+    lines.extend(["", "## External Support"])
+    if external_support is None:
+        lines.append("- No external Registry support bundles are attached to this draft.")
+        return
+
+    summary = external_support.get("summary", {})
+    imports = external_support.get("imports", [])
+    attached_bundle_count = int(summary.get("attached_bundle_count", 0) or 0)
+    if attached_bundle_count == 0:
+        lines.append("- No external Registry support bundles are attached to this draft.")
+        return
+
+    lines.extend(
+        [
+            f"- Attached Registry bundles: {attached_bundle_count}",
+            f"- Review-ready imported bundles: {summary.get('ready_bundle_count', 0)}",
+            f"- Imported evidence items: {summary.get('total_evidence_item_count', 0)}",
+            f"- Bounded-use warnings: {summary.get('total_bounded_use_warning_count', 0)}",
+            f"- Scientific-review flags: {summary.get('total_scientific_review_flag_count', 0)}",
+            f"- Blocking imported-support issues: {summary.get('blocking_issue_count', 0)}",
+            f"- Advisory imported-support issues: {summary.get('advisory_issue_count', 0)}",
+        ]
+    )
+
+    for imported_bundle in imports:
+        source = imported_bundle.get("source", {})
+        imported_summary = imported_bundle.get("summary", {})
+        bundle_id = source.get("bundle_id") or "unknown bundle"
+        import_plan = imported_bundle.get("draft_import_plan", {})
+        lines.extend(
+            [
+                "",
+                f"### Bundle `{bundle_id}`",
+                f"- Source version: {source.get('source_version') or 'Not reported'}",
+                f"- Created at: {source.get('created_at') or 'Not reported'}",
+                f"- Ready for AOP review: {_yes_no(bool(imported_summary.get('ready_for_aop_review')))}",
+                f"- Evidence items: {imported_summary.get('evidence_item_count', 0)}",
+                f"- Direct applicability assessments: {imported_summary.get('direct_applicability_count', 0)}",
+                f"- Partial applicability assessments: {imported_summary.get('partial_applicability_count', 0)}",
+                f"- Indirect applicability assessments: {imported_summary.get('indirect_applicability_count', 0)}",
+                f"- Non-comparable applicability assessments: {imported_summary.get('not_comparable_applicability_count', 0)}",
+                f"- Suggested references: {len(import_plan.get('suggested_references', []))}",
+                f"- Attachable Registry artifact refs: {len(import_plan.get('attachable_registry_artifact_refs', []))}",
+            ]
+        )
+        for warning in imported_bundle.get("bounded_use_warnings", []):
+            lines.append(f"- Warning: {warning}")
+        for flag in imported_bundle.get("scientific_review_flags", []):
+            lines.append(f"- Scientific-review flag: {flag}")
+        for mapping_note in import_plan.get("required_manual_mapping", []):
+            lines.append(f"- Manual mapping: {mapping_note}")
 
 
 def _build_draft_review_recommendations(bundle: dict[str, Any]) -> list[str]:
@@ -1979,6 +2052,7 @@ def _draft_review_artifact_section_titles(
             "Quantitative Evidence",
             "Evidence Gaps",
             "Chemical Activity Overlay",
+            "External Support",
             "Recommended Next Actions",
             "Limitations and Interpretation",
         ]
@@ -1989,6 +2063,7 @@ def _draft_review_artifact_section_titles(
         "Quantitative Review",
         "Chemical Trace",
         "Evidence Gaps",
+        "External Support",
         "Recommended Next Actions",
         "Limitations",
     ]
@@ -2015,6 +2090,235 @@ def _infer_artifact_format_from_path(artifact_path: Path) -> str:
     return "markdown" if artifact_path.suffix.lower() == ".md" else "json"
 
 
+def _metadata_payload_sha256(payload: dict[str, Any]) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            default=repr,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _build_draft_version_integrity(version: Any) -> dict[str, str]:
+    metadata = version.metadata
+    provenance_checksum = getattr(
+        metadata,
+        "provenance_checksum",
+        "",
+    ) or compute_provenance_checksum(metadata.provenance)
+    return {
+        "checksum_algorithm": metadata.checksum_algorithm,
+        "graph_sha256": metadata.checksum,
+        "previous_graph_sha256": metadata.previous_checksum,
+        "provenance_checksum_algorithm": getattr(
+            metadata,
+            "provenance_checksum_algorithm",
+            "sha256-v1",
+        ),
+        "provenance_sha256": provenance_checksum,
+    }
+
+
+def _serialize_graph_entity(entity: Any) -> dict[str, Any]:
+    return {
+        "identifier": entity.identifier,
+        "type": entity.type,
+        "attributes": dict(entity.attributes),
+    }
+
+
+def _serialize_graph_relationship(relationship: Any) -> dict[str, Any]:
+    return {
+        "identifier": relationship.identifier,
+        "source": relationship.source,
+        "target": relationship.target,
+        "type": relationship.type,
+        "attributes": dict(relationship.attributes),
+    }
+
+
+def _serialize_signature(signature: Any) -> dict[str, Any]:
+    return {
+        "signer_user_id": signature.signer_user_id,
+        "signature_meaning": signature.signature_meaning,
+        "timestamp_utc": signature.timestamp_utc,
+        "content_hash": signature.content_hash,
+        "signature_value": signature.signature_value,
+        "cert_chain": list(signature.cert_chain),
+    }
+
+
+def _build_draft_snapshot_record(draft: Any, version: Any) -> dict[str, Any]:
+    entities = [
+        _serialize_graph_entity(entity)
+        for entity in sorted(
+            version.graph.entities.values(),
+            key=lambda item: item.identifier,
+        )
+    ]
+    relationships = [
+        _serialize_graph_relationship(relationship)
+        for relationship in sorted(
+            version.graph.relationships.values(),
+            key=lambda item: item.identifier,
+        )
+    ]
+    metadata = version.metadata
+    return {
+        "draft": {
+            "draft_id": draft.draft_id,
+            "title": draft.title,
+            "status": draft.status,
+            "created_at": _isoformat_utc(draft.created_at),
+            "updated_at": _isoformat_utc(draft.updated_at),
+            "tags": list(draft.tags),
+            "version_count": len(draft.versions),
+        },
+        "version": {
+            "version_id": version.version_id,
+            "author": metadata.author,
+            "summary": metadata.summary,
+            "created_at": _isoformat_utc(metadata.created_at),
+            "provenance": dict(metadata.provenance),
+            "checksum": metadata.checksum,
+            "previous_checksum": metadata.previous_checksum,
+            "checksum_algorithm": metadata.checksum_algorithm,
+            "provenance_checksum": metadata.provenance_checksum,
+            "provenance_checksum_algorithm": metadata.provenance_checksum_algorithm,
+            "signatures": [
+                _serialize_signature(signature)
+                for signature in metadata.signatures
+            ],
+        },
+        "graph": {
+            "entity_count": len(entities),
+            "relationship_count": len(relationships),
+            "entities": entities,
+            "relationships": relationships,
+        },
+        "diff_summary": {
+            "added_entity_count": len(version.diff.added_entities),
+            "removed_entity_count": len(version.diff.removed_entities),
+            "updated_entity_count": len(version.diff.updated_entities),
+            "added_relationship_count": len(version.diff.added_relationships),
+            "removed_relationship_count": len(version.diff.removed_relationships),
+            "updated_relationship_count": len(version.diff.updated_relationships),
+        },
+    }
+
+
+def _recent_tool_call_audit_records(limit: int) -> list[dict[str, Any]]:
+    if limit <= 0:
+        return []
+    return [
+        record.to_dict()
+        for record in tool_call_audit_log.list_records()[-limit:]
+    ]
+
+
+def _is_sha256_hex(value: Any) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value) is not None
+
+
+def _normalize_artifact_integrity(
+    metadata: dict[str, Any],
+    *,
+    actual_content_sha256: str,
+) -> dict[str, Any]:
+    raw_integrity = metadata.get("artifact_integrity")
+    integrity = raw_integrity if isinstance(raw_integrity, dict) else {}
+    content_sha256 = integrity.get("content_sha256") or metadata.get("sha256")
+    metadata_sha256 = integrity.get("metadata_sha256")
+    return {
+        "algorithm": "sha256-v1",
+        "content_sha256": content_sha256 if _is_sha256_hex(content_sha256) else actual_content_sha256,
+        "metadata_sha256": metadata_sha256 if _is_sha256_hex(metadata_sha256) else None,
+    }
+
+
+def _build_artifact_integrity_check(
+    *,
+    actual_content_sha256: str,
+    metadata: dict[str, Any] | None,
+    metadata_error: str | None = None,
+) -> dict[str, Any]:
+    content_status = "not_verifiable"
+    metadata_status = "not_verifiable"
+    expected_content_sha256: str | None = None
+    expected_metadata_sha256: str | None = None
+    actual_metadata_sha256: str | None = None
+    messages: list[str] = []
+
+    if metadata_error is not None:
+        metadata_status = "failed"
+        messages.append(metadata_error)
+    elif metadata is None:
+        messages.append(
+            "Metadata sidecar is unavailable, so stored artifact checksums could not be verified."
+        )
+    else:
+        raw_integrity = metadata.get("artifact_integrity")
+        integrity = raw_integrity if isinstance(raw_integrity, dict) else {}
+        algorithm = integrity.get("algorithm")
+        if raw_integrity is not None and algorithm != "sha256-v1":
+            content_status = "failed"
+            metadata_status = "failed"
+            messages.append(
+                f"Unsupported artifact integrity algorithm: {algorithm or 'not reported'}."
+            )
+
+        expected_content_sha256 = integrity.get("content_sha256") or metadata.get("sha256")
+        if content_status != "failed":
+            if expected_content_sha256 is None:
+                messages.append("No stored content checksum was available for verification.")
+            elif not _is_sha256_hex(expected_content_sha256):
+                content_status = "failed"
+                messages.append("Stored content checksum is not a valid SHA-256 hex digest.")
+            elif expected_content_sha256 == actual_content_sha256:
+                content_status = "verified"
+            else:
+                content_status = "failed"
+                messages.append("Artifact content checksum does not match the metadata sidecar.")
+
+        expected_metadata_sha256 = integrity.get("metadata_sha256")
+        if metadata_status != "failed":
+            if expected_metadata_sha256 is None:
+                messages.append("No stored metadata checksum was available for verification.")
+            elif not _is_sha256_hex(expected_metadata_sha256):
+                metadata_status = "failed"
+                messages.append("Stored metadata checksum is not a valid SHA-256 hex digest.")
+            else:
+                metadata_without_integrity = dict(metadata)
+                metadata_without_integrity.pop("artifact_integrity", None)
+                actual_metadata_sha256 = _metadata_payload_sha256(metadata_without_integrity)
+                if expected_metadata_sha256 == actual_metadata_sha256:
+                    metadata_status = "verified"
+                else:
+                    metadata_status = "failed"
+                    messages.append("Metadata sidecar checksum does not match its integrity record.")
+
+    if "failed" in {content_status, metadata_status}:
+        overall_status = "failed"
+    elif content_status == "verified" and metadata_status == "verified":
+        overall_status = "verified"
+    else:
+        overall_status = "not_verifiable"
+
+    return {
+        "overall_status": overall_status,
+        "content_status": content_status,
+        "metadata_status": metadata_status,
+        "content_sha256_actual": actual_content_sha256,
+        "content_sha256_expected": expected_content_sha256,
+        "metadata_sha256_actual": actual_metadata_sha256,
+        "metadata_sha256_expected": expected_metadata_sha256,
+        "messages": messages,
+    }
+
+
 def _build_saved_draft_review_artifact_index_item(
     artifact_path: Path,
     *,
@@ -2024,6 +2328,7 @@ def _build_saved_draft_review_artifact_index_item(
     metadata_path = _artifact_metadata_path(artifact_path)
     file_bytes = artifact_path.read_bytes()
     stat = artifact_path.stat()
+    content_sha256 = hashlib.sha256(file_bytes).hexdigest()
     item = {
         "filename": artifact_path.name,
         "path": str(resolved_path),
@@ -2034,18 +2339,40 @@ def _build_saved_draft_review_artifact_index_item(
         "draft_id": None,
         "version_id": None,
         "bytes_written": stat.st_size,
-        "sha256": hashlib.sha256(file_bytes).hexdigest(),
+        "sha256": content_sha256,
         "saved_at": _isoformat_utc(stat.st_mtime),
         "metadata_available": False,
         "metadata_path": str(metadata_path) if metadata_path.exists() else None,
         "bundle_summary": None,
         "evidence_gap_summary": None,
+        "artifact_integrity": {
+            "algorithm": "sha256-v1",
+            "content_sha256": content_sha256,
+            "metadata_sha256": None,
+        },
+        "draft_version_integrity": None,
+        "integrity_check": _build_artifact_integrity_check(
+            actual_content_sha256=content_sha256,
+            metadata=None,
+        ),
     }
 
     if metadata_path.exists():
         try:
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except OSError as exc:
+            item["integrity_check"] = _build_artifact_integrity_check(
+                actual_content_sha256=content_sha256,
+                metadata=None,
+                metadata_error=f"Metadata sidecar could not be read: {exc}",
+            )
+            return item
+        except json.JSONDecodeError as exc:
+            item["integrity_check"] = _build_artifact_integrity_check(
+                actual_content_sha256=content_sha256,
+                metadata=None,
+                metadata_error=f"Metadata sidecar could not be parsed as JSON: {exc.msg}",
+            )
             return item
 
         item.update(
@@ -2056,12 +2383,20 @@ def _build_saved_draft_review_artifact_index_item(
                 "version_id": metadata.get("version_id"),
                 "relative_path": metadata.get("relative_path", item["relative_path"]),
                 "bytes_written": metadata.get("bytes_written", item["bytes_written"]),
-                "sha256": metadata.get("sha256", item["sha256"]),
                 "saved_at": metadata.get("saved_at", item["saved_at"]),
                 "metadata_available": True,
                 "metadata_path": str(metadata_path),
                 "bundle_summary": metadata.get("bundle_summary"),
                 "evidence_gap_summary": metadata.get("evidence_gap_summary"),
+                "artifact_integrity": _normalize_artifact_integrity(
+                    metadata,
+                    actual_content_sha256=content_sha256,
+                ),
+                "draft_version_integrity": metadata.get("draft_version_integrity"),
+                "integrity_check": _build_artifact_integrity_check(
+                    actual_content_sha256=content_sha256,
+                    metadata=metadata,
+                ),
             }
         )
 
@@ -2556,6 +2891,22 @@ class ReviewDraftBundleInput(BaseModel):
     min_hitcall: float = Field(default=0.9, ge=0.0, le=1.0)
 
 
+class ReviewRegistryHandoffBundleInput(BaseModel):
+    bundle: dict[str, Any]
+
+
+async def review_registry_handoff_bundle(
+    params: ReviewRegistryHandoffBundleInput,
+) -> dict[str, Any]:
+    payload = build_registry_handoff_review(params.bundle)
+    validate_payload(
+        payload,
+        namespace="read",
+        name="review_registry_handoff_bundle.response.schema",
+    )
+    return payload
+
+
 async def review_draft_bundle(params: ReviewDraftBundleInput) -> dict[str, Any]:
     draft, version, entities, relationships = _load_draft_version_graph(
         params.draft_id,
@@ -2616,12 +2967,16 @@ async def review_draft_bundle(params: ReviewDraftBundleInput) -> dict[str, Any]:
         for item in validation["results"]
         if item["status"] == "fail"
     ]
+    external_support = build_imported_registry_support_summary(
+        version.metadata.provenance
+    )
     merged_limitations = list(
         dict.fromkeys(
             [
                 *failed_validation_messages,
                 *quantitative_review["limitations"],
                 *(chemical_trace["limitations"] if chemical_trace is not None else []),
+                *external_support["limitations"],
                 *limitations,
             ]
         )
@@ -2663,6 +3018,7 @@ async def review_draft_bundle(params: ReviewDraftBundleInput) -> dict[str, Any]:
         "validation": validation,
         "quantitative_review": quantitative_review,
         "chemical_trace": chemical_trace,
+        "external_support": external_support,
         "limitations": merged_limitations,
     }
     evidence_gaps = await _build_review_draft_evidence_gaps_payload(
@@ -2970,6 +3326,8 @@ async def save_draft_review_artifact(
     saved_at = _current_utc_timestamp()
     metadata_path = _artifact_metadata_path(target_path)
     relative_path = str(target_path.resolve().relative_to(artifact_root_dir))
+    _, version, _, _ = _load_draft_version_graph(export["draft_id"], export["version_id"])
+    content_sha256 = hashlib.sha256(content_bytes).hexdigest()
     metadata_payload = {
         "format": export["format"],
         "artifact_profile": export["artifact_profile"],
@@ -2981,9 +3339,15 @@ async def save_draft_review_artifact(
         "evidence_gap_summary": export.get("evidence_gap_summary"),
         "section_titles": export["section_titles"],
         "bytes_written": len(content_bytes),
-        "sha256": hashlib.sha256(content_bytes).hexdigest(),
+        "sha256": content_sha256,
         "saved_at": saved_at,
         "overwrote_existing_file": existed_before_write,
+        "draft_version_integrity": _build_draft_version_integrity(version),
+    }
+    metadata_payload["artifact_integrity"] = {
+        "algorithm": "sha256-v1",
+        "content_sha256": content_sha256,
+        "metadata_sha256": _metadata_payload_sha256(metadata_payload),
     }
     metadata_path.write_text(
         json.dumps(metadata_payload, indent=2, sort_keys=False, ensure_ascii=True) + "\n",
@@ -3059,6 +3423,15 @@ async def list_saved_draft_review_artifacts(
         )
         if not item["metadata_available"]:
             missing_metadata_count += 1
+        integrity_status = item.get("integrity_check", {}).get("overall_status")
+        if integrity_status == "failed":
+            warnings.append(
+                f"Integrity verification failed for saved artifact '{item['relative_path']}'."
+            )
+        elif integrity_status == "not_verifiable" and item["metadata_available"]:
+            warnings.append(
+                f"Integrity verification was incomplete for saved artifact '{item['relative_path']}'."
+            )
         if params.draft_id and item.get("draft_id") != params.draft_id:
             continue
         if params.artifact_profile and item.get("artifact_profile") != params.artifact_profile:
@@ -3099,6 +3472,104 @@ async def list_saved_draft_review_artifacts(
         payload,
         namespace="read",
         name="list_saved_draft_review_artifacts.response.schema",
+    )
+    return payload
+
+
+class ExportDraftReplayPackageInput(BaseModel):
+    draft_id: str
+    version_id: Optional[str] = None
+    artifact_path: Optional[str] = None
+    artifact_relative_path: Optional[str] = None
+    include_audit_records: bool = True
+    audit_record_limit: int = Field(default=25, ge=0, le=100)
+
+    @field_validator("artifact_relative_path")
+    @classmethod
+    def _validate_artifact_relative_path(cls, value: Optional[str]) -> Optional[str]:
+        return _normalize_artifact_relative_file_path(value)
+
+    @model_validator(mode="after")
+    def _validate_artifact_source(self) -> "ExportDraftReplayPackageInput":
+        if self.artifact_path is not None and self.artifact_relative_path is not None:
+            raise ValueError("Provide only one of artifact_path or artifact_relative_path")
+        return self
+
+
+async def export_draft_replay_package(
+    params: ExportDraftReplayPackageInput,
+) -> dict[str, Any]:
+    draft, version, _, _ = _load_draft_version_graph(
+        params.draft_id,
+        params.version_id,
+    )
+    generated_at = _current_utc_timestamp()
+    snapshot = _build_draft_snapshot_record(draft, version)
+    external_support = build_imported_registry_support_summary(
+        version.metadata.provenance
+    )
+    artifact_item: dict[str, Any] | None = None
+    limitations = [
+        "Replay package audit records are drawn from the process-local MCP audit buffer and may not include historical calls from prior server runs.",
+        "Replay package verifies stored checksums but does not provide an immutable ledger or third-party timestamp.",
+    ]
+
+    if params.artifact_path is not None or params.artifact_relative_path is not None:
+        artifact_path = _resolve_saved_artifact_path(
+            artifact_path=params.artifact_path,
+            artifact_relative_path=params.artifact_relative_path,
+        )
+        if not artifact_path.exists() or not artifact_path.is_file():
+            raise FileNotFoundError(f"Saved artifact '{artifact_path}' was not found")
+        artifact_item = _build_saved_draft_review_artifact_index_item(
+            artifact_path,
+            artifact_root_dir=_resolve_artifact_output_directory(),
+        )
+        if artifact_item.get("draft_id") not in {None, draft.draft_id}:
+            limitations.append(
+                "Attached saved artifact metadata draft_id does not match the requested draft."
+            )
+        if artifact_item.get("version_id") not in {None, version.version_id}:
+            limitations.append(
+                "Attached saved artifact metadata version_id does not match the requested draft version."
+            )
+        integrity_status = artifact_item.get("integrity_check", {}).get("overall_status")
+        if integrity_status != "verified":
+            limitations.append(
+                "Attached saved artifact integrity did not fully verify."
+            )
+
+    audit_records = (
+        _recent_tool_call_audit_records(params.audit_record_limit)
+        if params.include_audit_records
+        else []
+    )
+    payload = {
+        "package_schema_version": "draft-replay-package.v1",
+        "generated_at": generated_at,
+        "draft_id": draft.draft_id,
+        "version_id": version.version_id,
+        "draft_snapshot": snapshot,
+        "draft_integrity": {
+            **verify_draft_integrity(draft),
+            "selected_version": _build_draft_version_integrity(version),
+        },
+        "external_support": external_support,
+        "saved_artifact": artifact_item,
+        "audit_records": {
+            "scope": "process_local_recent_records",
+            "included": params.include_audit_records,
+            "limit": params.audit_record_limit,
+            "included_record_count": len(audit_records),
+            "records": audit_records,
+        },
+        "limitations": limitations,
+    }
+    payload["package_sha256"] = _metadata_payload_sha256(payload)
+    validate_payload(
+        payload,
+        namespace="read",
+        name="export_draft_replay_package.response.schema",
     )
     return payload
 
@@ -3225,6 +3696,13 @@ async def plan_linear_draft_review_document(
             warnings.append(
                 "Saved artifact metadata sidecar was unavailable, so some source fields were inferred from the file system."
             )
+        integrity_check = artifact_item.get("integrity_check", {})
+        if integrity_check.get("overall_status") != "verified":
+            detail = "; ".join(integrity_check.get("messages", []))
+            warnings.append(
+                "Saved artifact integrity did not fully verify"
+                + (f": {detail}" if detail else ".")
+            )
 
     linear_content = _build_linear_review_document_markdown(
         artifact_content=artifact_content,
@@ -3327,6 +3805,28 @@ async def create_draft_aop(params: CreateDraftInputModel) -> dict[str, Any]:
         author=params.author,
         summary=params.summary,
         tags=params.tags,
+    )
+    return result
+
+
+class AttachRegistryHandoffToDraftInputModel(BaseModel):
+    draft_id: str
+    version_id: str
+    author: str
+    summary: str
+    bundle: dict[str, Any]
+
+
+async def attach_registry_handoff_to_draft(
+    params: AttachRegistryHandoffToDraftInputModel,
+) -> dict[str, Any]:
+    write_tools = get_write_tools()
+    result = write_tools.attach_registry_handoff(
+        draft_id=params.draft_id,
+        version_id=params.version_id,
+        author=params.author,
+        summary=params.summary,
+        bundle=params.bundle,
     )
     return result
 
@@ -4332,6 +4832,7 @@ def _infer_draft_relationship_action_label(rel: Any) -> str | None:
 
 
 def _summarize_key_event(record: dict[str, Any]) -> dict[str, Any]:
+    mechanism_role = classify_key_event_role(record)
     return {
         "id": record.get("id"),
         "title": record.get("title"),
@@ -4342,6 +4843,9 @@ def _summarize_key_event(record: dict[str, Any]) -> dict[str, Any]:
         "level_of_biological_organization": record.get("level_of_biological_organization"),
         "organ_context": record.get("organ_context", []),
         "cell_type_context": record.get("cell_type_context", []),
+        "mechanism_role": mechanism_role["role"],
+        "mechanism_role_rationale": mechanism_role["rationale"],
+        "assay_artifact_risk": mechanism_role["artifactRisk"],
     }
 
 

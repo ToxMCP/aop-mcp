@@ -120,7 +120,7 @@ TOOLS_RESPONSE=$(rpc "$(jq -nc '{jsonrpc:"2.0",id:3,method:"tools/list",params:{
 echo -n "Testing tools/list for required workflow tools... "
 if json_check \
     "$TOOLS_RESPONSE" \
-    '.result.tools | map(.name) as $names | ["search_aops","get_applicability","review_draft_bundle","review_draft_evidence_gaps","export_draft_review_artifact","save_draft_review_artifact","list_saved_draft_review_artifacts","plan_linear_draft_review_document"] | all(. as $name | $names | index($name))'
+    '.result.tools | map(.name) as $names | ["search_aops","get_applicability","review_draft_bundle","review_draft_evidence_gaps","review_registry_handoff_bundle","attach_registry_handoff_to_draft","export_draft_review_artifact","save_draft_review_artifact","list_saved_draft_review_artifacts","plan_linear_draft_review_document"] | all(. as $name | $names | index($name))'
 then
     record_pass
 else

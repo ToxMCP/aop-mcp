@@ -63,6 +63,7 @@ class ToolDescription(BaseModel):
         alias="outputSchema",
         serialization_alias="outputSchema",
     )
+    annotations: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ListToolsResult(BaseModel):

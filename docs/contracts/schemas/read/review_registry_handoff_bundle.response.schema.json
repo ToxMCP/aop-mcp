@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "review_registry_handoff_bundle.response",
+  "type": "object",
+  "required": [
+    "source",
+    "summary",
+    "evidence_items",
+    "bounded_use_warnings",
+    "scientific_review_flags",
+    "draft_import_plan",
+    "limitations"
+  ],
+  "properties": {
+    "source": {
+      "type": "object",
+      "required": [
+        "bundle_id",
+        "source_version",
+        "created_at",
+        "target_consumer"
+      ],
+      "properties": {
+        "bundle_id": { "type": "string" },
+        "source_version": { "type": "string", "const": "1.1.0" },
+        "created_at": { "type": "string" },
+        "target_consumer": { "type": "string", "const": "aop_context" }
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "ready_for_aop_review",
+        "evidence_item_count",
+        "claim_item_count",
+        "applicability_item_count",
+        "direct_applicability_count",
+        "partial_applicability_count",
+        "indirect_applicability_count",
+        "not_comparable_applicability_count",
+        "blocking_issue_count",
+        "advisory_issue_count"
+      ],
+      "properties": {
+        "ready_for_aop_review": { "type": "boolean" },
+        "evidence_item_count": { "type": "integer" },
+        "claim_item_count": { "type": "integer" },
+        "applicability_item_count": { "type": "integer" },
+        "direct_applicability_count": { "type": "integer" },
+        "partial_applicability_count": { "type": "integer" },
+        "indirect_applicability_count": { "type": "integer" },
+        "not_comparable_applicability_count": { "type": "integer" },
+        "blocking_issue_count": { "type": "integer" },
+        "advisory_issue_count": { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+    "evidence_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "original_id",
+          "method_description",
+          "method_maturity",
+          "readiness_state",
+          "study_identifiers",
+          "review_caveats",
+          "scientific_review_gap_ids",
+          "registry_artifact_refs"
+        ],
+        "properties": {
+          "original_id": { "type": "string" },
+          "method_description": { "type": ["string", "null"] },
+          "method_maturity": { "type": ["string", "null"] },
+          "readiness_state": { "type": ["string", "null"] },
+          "study_identifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["identifier_type", "identifier_value"],
+              "properties": {
+                "identifier_type": { "type": "string" },
+                "identifier_value": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "review_caveats": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "scientific_review_gap_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "registry_artifact_refs": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "bounded_use_warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "scientific_review_flags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "draft_import_plan": {
+      "type": "object",
+      "required": [
+        "suggested_draft_title",
+        "suggested_adverse_outcome",
+        "suggested_ke_support_actions",
+        "suggested_ker_support_actions",
+        "suggested_stressor_link_actions",
+        "required_manual_mapping",
+        "suggested_references",
+        "attachable_registry_artifact_refs"
+      ],
+      "properties": {
+        "suggested_draft_title": { "type": ["string", "null"] },
+        "suggested_adverse_outcome": { "type": ["string", "null"] },
+        "suggested_ke_support_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggested_ker_support_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggested_stressor_link_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_manual_mapping": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggested_references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "accession", "record_id", "note"],
+            "properties": {
+              "label": { "type": ["string", "null"] },
+              "accession": { "type": ["string", "null"] },
+              "record_id": { "type": ["string", "null"] },
+              "note": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "attachable_registry_artifact_refs": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

@@ -11,6 +11,7 @@ from .model import (
     VersionMetadata,
     diff_graphs,
     compute_graph_checksum,
+    compute_provenance_checksum,
 )
 from .repository import DraftRepository, InMemoryDraftRepository, initialize_version
 from .service import DraftStoreService, CreateDraftInput, UpdateDraftInput
@@ -26,6 +27,7 @@ __all__ = [
     "VersionMetadata",
     "diff_graphs",
     "compute_graph_checksum",
+    "compute_provenance_checksum",
     "DraftRepository",
     "InMemoryDraftRepository",
     "initialize_version",

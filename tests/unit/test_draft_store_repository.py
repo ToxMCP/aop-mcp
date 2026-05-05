@@ -8,6 +8,7 @@ from src.services.draft_store import (
     VersionMetadata,
     DraftVersion,
     compute_graph_checksum,
+    compute_provenance_checksum,
     diff_graphs,
     InMemoryDraftRepository,
     initialize_version,
@@ -28,9 +29,15 @@ def make_snapshot() -> GraphSnapshot:
 
 def test_initialize_version_sets_checksum_and_diff() -> None:
     snapshot = make_snapshot()
-    metadata = VersionMetadata(author="alice", summary="initial")
+    metadata = VersionMetadata(
+        author="alice",
+        summary="initial",
+        provenance={"source": {"name": "curated fixture", "version": 1}},
+    )
     version = initialize_version("draft-1", "v1", snapshot, metadata)
     assert version.metadata.checksum is not None
+    assert version.metadata.provenance_checksum == compute_provenance_checksum(metadata.provenance)
+    assert version.metadata.provenance_checksum_algorithm == "sha256-v1"
     assert version.diff.added_entities[0].identifier == "KE:1"
 
 
@@ -57,6 +64,9 @@ def test_repository_appends_version_and_updates_audit_chain() -> None:
     assert stored is not None
     assert len(stored.versions) == 2
     assert stored.versions[-1].metadata.previous_checksum == stored.versions[0].metadata.checksum
+    assert stored.versions[-1].metadata.provenance_checksum == compute_provenance_checksum(
+        stored.versions[-1].metadata.provenance
+    )
 
 
 def test_repository_get_draft_returns_deep_copy() -> None:

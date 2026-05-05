@@ -76,6 +76,8 @@ class VersionMetadata:
     checksum: str = ""
     previous_checksum: str = ""
     checksum_algorithm: str = "sha256-v1"
+    provenance_checksum: str = ""
+    provenance_checksum_algorithm: str = "sha256-v1"
     signatures: list[ElectronicSignature] = field(default_factory=list)
 
     def add_signature(self, signature: ElectronicSignature) -> None:
@@ -178,6 +180,12 @@ def compute_graph_checksum(graph: GraphSnapshot) -> str:
             hasher.update(_canonical_json(rel.attributes[key]).encode("utf-8"))
 
     return hasher.hexdigest()
+
+
+def compute_provenance_checksum(provenance: Mapping[str, object] | None) -> str:
+    """Produces a deterministic checksum for draft version provenance metadata."""
+
+    return sha256(_canonical_json(dict(provenance or {})).encode("utf-8")).hexdigest()
 
 
 def _canonical_json(value: Any) -> str:

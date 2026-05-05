@@ -261,9 +261,9 @@ class AOPDBAdapter:
             name = chem.get("preferredName") or chem.get("name")
             cas = chem.get("casrn")
 
-            # Construct query params for map_chemical_to_aops
-            # map_chemical_to_aops expects name or cas or inchikey.
-            # It handles name and cas in the SPARQL template.
+            # Construct query params for map_chemical_to_aops.
+            # The adapter queries by CAS or stressor label; tool-layer
+            # compatibility may map legacy inchikey input into the name field.
             if name or cas:
                 try:
                     chem_aops = await self.map_chemical_to_aops(name=name, cas=cas)

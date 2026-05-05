@@ -17,6 +17,9 @@
           "artifact_profile",
           "bytes_written",
           "sha256",
+          "artifact_integrity",
+          "draft_version_integrity",
+          "integrity_check",
           "saved_at",
           "metadata_available",
           "bundle_summary"
@@ -32,6 +35,76 @@
           "version_id": {"type": ["string", "null"]},
           "bytes_written": {"type": "integer", "minimum": 0},
           "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "artifact_integrity": {
+            "type": "object",
+            "required": ["algorithm", "content_sha256", "metadata_sha256"],
+            "properties": {
+              "algorithm": {"type": "string", "const": "sha256-v1"},
+              "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "metadata_sha256": {
+                "type": ["string", "null"],
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "additionalProperties": false
+          },
+          "draft_version_integrity": {
+            "type": ["object", "null"],
+            "required": [
+              "checksum_algorithm",
+              "graph_sha256",
+              "previous_graph_sha256",
+              "provenance_checksum_algorithm",
+              "provenance_sha256"
+            ],
+            "properties": {
+              "checksum_algorithm": {"type": "string", "const": "sha256-v1"},
+              "graph_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "previous_graph_sha256": {"type": "string", "pattern": "^(|[a-f0-9]{64})$"},
+              "provenance_checksum_algorithm": {"type": "string", "const": "sha256-v1"},
+              "provenance_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            },
+            "additionalProperties": false
+          },
+          "integrity_check": {
+            "type": "object",
+            "required": [
+              "overall_status",
+              "content_status",
+              "metadata_status",
+              "content_sha256_actual",
+              "content_sha256_expected",
+              "metadata_sha256_actual",
+              "metadata_sha256_expected",
+              "messages"
+            ],
+            "properties": {
+              "overall_status": {
+                "type": "string",
+                "enum": ["verified", "failed", "not_verifiable"]
+              },
+              "content_status": {
+                "type": "string",
+                "enum": ["verified", "failed", "not_verifiable"]
+              },
+              "metadata_status": {
+                "type": "string",
+                "enum": ["verified", "failed", "not_verifiable"]
+              },
+              "content_sha256_actual": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "content_sha256_expected": {"type": ["string", "null"]},
+              "metadata_sha256_actual": {
+                "type": ["string", "null"],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "metadata_sha256_expected": {"type": ["string", "null"]},
+              "messages": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            },
+            "additionalProperties": false
+          },
           "saved_at": {"type": "string"},
           "metadata_available": {"type": "boolean"},
           "metadata_path": {"type": ["string", "null"]},

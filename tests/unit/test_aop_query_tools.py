@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from src.instrumentation.audit import ToolCallAuditRecord, tool_call_audit_log
 from src.server.tools import aop as aop_tools
 from src.services.draft_store import DraftStoreService, InMemoryDraftRepository
 from src.tools.write import WriteTools
@@ -1131,6 +1132,19 @@ async def test_review_draft_bundle_aggregates_validation_quantitative_review_and
     assert result["quantitative_review"]["relationships"][0]["assay_cutoff_ordering_call"] == "moderate"
     assert result["chemical_trace"]["chemical"]["preferred_name"] == "Perfluorooctanesulfonic acid"
     assert result["chemical_trace"]["summary"]["active_key_event_count"] == 2
+    assert result["external_support"] == {
+        "summary": {
+            "attached_bundle_count": 0,
+            "ready_bundle_count": 0,
+            "total_evidence_item_count": 0,
+            "total_bounded_use_warning_count": 0,
+            "total_scientific_review_flag_count": 0,
+            "blocking_issue_count": 0,
+            "advisory_issue_count": 0,
+        },
+        "imports": [],
+        "limitations": [],
+    }
     assert result["limitations"]
 
 
@@ -1437,12 +1451,14 @@ async def test_export_draft_review_artifact_supports_publication_markdown(monkey
         "Quantitative Evidence",
         "Evidence Gaps",
         "Chemical Activity Overlay",
+        "External Support",
         "Recommended Next Actions",
         "Limitations and Interpretation",
     ]
     assert "# Scientific Draft Review:" in result["content"]
     assert "## Executive Summary" in result["content"]
     assert "## Evidence Gaps" in result["content"]
+    assert "## External Support" in result["content"]
     assert "## Recommended Next Actions" in result["content"]
     assert "## Limitations and Interpretation" in result["content"]
 
@@ -1604,6 +1620,13 @@ async def test_save_draft_review_artifact_writes_file(monkeypatch, tmp_path) -> 
     assert result["bytes_written"] > 0
     assert result["overwrote_existing_file"] is False
     assert result["evidence_gap_summary"]["total_gap_count"] >= 1
+    assert result["artifact_integrity"]["algorithm"] == "sha256-v1"
+    assert result["artifact_integrity"]["content_sha256"] == result["sha256"]
+    assert len(result["artifact_integrity"]["metadata_sha256"]) == 64
+    assert result["draft_version_integrity"]["checksum_algorithm"] == "sha256-v1"
+    assert len(result["draft_version_integrity"]["graph_sha256"]) == 64
+    assert result["draft_version_integrity"]["provenance_checksum_algorithm"] == "sha256-v1"
+    assert len(result["draft_version_integrity"]["provenance_sha256"]) == 64
     assert saved_path.exists()
     assert metadata_path.exists()
     assert "# Scientific Draft Review:" in saved_path.read_text(encoding="utf-8")
@@ -1611,6 +1634,8 @@ async def test_save_draft_review_artifact_writes_file(monkeypatch, tmp_path) -> 
     assert metadata["draft_id"] == "draft-save"
     assert metadata["artifact_profile"] == "publication"
     assert metadata["evidence_gap_summary"]["total_gap_count"] >= 1
+    assert metadata["artifact_integrity"] == result["artifact_integrity"]
+    assert metadata["draft_version_integrity"] == result["draft_version_integrity"]
 
 
 @pytest.mark.asyncio
@@ -1732,8 +1757,21 @@ async def test_list_saved_draft_review_artifacts_returns_saved_files(monkeypatch
     assert by_filename["review_a.md"]["artifact_profile"] == "publication"
     assert by_filename["review_a.md"]["metadata_available"] is True
     assert by_filename["review_a.md"]["evidence_gap_summary"]["total_gap_count"] >= 1
+    assert (
+        by_filename["review_a.md"]["artifact_integrity"]["content_sha256"]
+        == by_filename["review_a.md"]["sha256"]
+    )
+    assert len(by_filename["review_a.md"]["artifact_integrity"]["metadata_sha256"]) == 64
+    assert by_filename["review_a.md"]["draft_version_integrity"]["checksum_algorithm"] == "sha256-v1"
+    assert by_filename["review_a.md"]["integrity_check"]["overall_status"] == "verified"
+    assert by_filename["review_a.md"]["integrity_check"]["content_status"] == "verified"
+    assert by_filename["review_a.md"]["integrity_check"]["metadata_status"] == "verified"
     assert by_filename["review_b.json"]["format"] == "json"
     assert by_filename["review_b.json"]["draft_id"] == "draft-indexed-2"
+    assert (
+        by_filename["review_b.json"]["draft_version_integrity"]["provenance_checksum_algorithm"]
+        == "sha256-v1"
+    )
 
     filtered = await aop_tools.list_saved_draft_review_artifacts(
         aop_tools.ListSavedDraftReviewArtifactsInput(
@@ -1745,6 +1783,206 @@ async def test_list_saved_draft_review_artifacts_returns_saved_files(monkeypatch
 
     assert filtered["diagnostics"]["returned_artifact_count"] == 1
     assert filtered["results"][0]["filename"] == "review_a.md"
+
+
+@pytest.mark.asyncio
+async def test_list_saved_draft_review_artifacts_flags_content_integrity_failure(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubDraftBundleDbAdapter())
+    monkeypatch.setattr(
+        aop_tools,
+        "get_settings",
+        lambda: SimpleNamespace(artifact_output_dir=str(tmp_path)),
+    )
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-content-tamper",
+            title="Content tamper draft",
+            description="Draft artifact integrity example.",
+            adverse_outcome="Liver steatosis",
+            author="tester",
+            summary="create draft",
+        )
+    )
+    saved = await aop_tools.save_draft_review_artifact(
+        aop_tools.SaveDraftReviewArtifactInput(
+            draft_id="draft-content-tamper",
+            format="json",
+            filename="review.json",
+        )
+    )
+
+    saved_path = tmp_path / "draft_reviews" / "review.json"
+    saved_path.write_text(
+        saved_path.read_text(encoding="utf-8") + "\ncontent tampered after save\n",
+        encoding="utf-8",
+    )
+
+    result = await aop_tools.list_saved_draft_review_artifacts(
+        aop_tools.ListSavedDraftReviewArtifactsInput(limit=10)
+    )
+
+    item = result["results"][0]
+    assert item["filename"] == "review.json"
+    assert item["sha256"] != saved["sha256"]
+    assert item["artifact_integrity"]["content_sha256"] == saved["sha256"]
+    assert item["integrity_check"]["overall_status"] == "failed"
+    assert item["integrity_check"]["content_status"] == "failed"
+    assert item["integrity_check"]["metadata_status"] == "verified"
+    assert item["integrity_check"]["content_sha256_actual"] == item["sha256"]
+    assert item["integrity_check"]["content_sha256_expected"] == saved["sha256"]
+    assert result["diagnostics"]["warnings"] == [
+        "Integrity verification failed for saved artifact 'review.json'."
+    ]
+
+
+@pytest.mark.asyncio
+async def test_list_saved_draft_review_artifacts_flags_metadata_integrity_failure(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubDraftBundleDbAdapter())
+    monkeypatch.setattr(
+        aop_tools,
+        "get_settings",
+        lambda: SimpleNamespace(artifact_output_dir=str(tmp_path)),
+    )
+
+    await aop_tools.create_draft_aop(
+        aop_tools.CreateDraftInputModel(
+            draft_id="draft-metadata-tamper",
+            title="Metadata tamper draft",
+            description="Draft artifact metadata integrity example.",
+            adverse_outcome="Liver fibrosis",
+            author="tester",
+            summary="create draft",
+        )
+    )
+    saved = await aop_tools.save_draft_review_artifact(
+        aop_tools.SaveDraftReviewArtifactInput(
+            draft_id="draft-metadata-tamper",
+            format="json",
+            filename="review.json",
+        )
+    )
+
+    metadata_path = tmp_path / "draft_reviews" / "review.json.meta.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["draft_id"] = "tampered-draft-id"
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=False, ensure_ascii=True) + "\n",
+        encoding="utf-8",
+    )
+
+    result = await aop_tools.list_saved_draft_review_artifacts(
+        aop_tools.ListSavedDraftReviewArtifactsInput(limit=10)
+    )
+
+    item = result["results"][0]
+    assert item["filename"] == "review.json"
+    assert item["sha256"] == saved["sha256"]
+    assert item["integrity_check"]["overall_status"] == "failed"
+    assert item["integrity_check"]["content_status"] == "verified"
+    assert item["integrity_check"]["metadata_status"] == "failed"
+    assert item["integrity_check"]["metadata_sha256_actual"] != (
+        item["integrity_check"]["metadata_sha256_expected"]
+    )
+    assert result["diagnostics"]["warnings"] == [
+        "Integrity verification failed for saved artifact 'review.json'."
+    ]
+
+
+@pytest.mark.asyncio
+async def test_export_draft_replay_package_includes_integrity_artifact_and_audit_records(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    draft_store = DraftStoreService(InMemoryDraftRepository())
+    write_tools = WriteTools(draft_service=draft_store)
+    monkeypatch.setattr(aop_tools, "get_draft_store", lambda: draft_store)
+    monkeypatch.setattr(aop_tools, "get_write_tools", lambda: write_tools)
+    monkeypatch.setattr(aop_tools, "get_aop_db_adapter", lambda: StubDraftBundleDbAdapter())
+    monkeypatch.setattr(
+        aop_tools,
+        "get_settings",
+        lambda: SimpleNamespace(artifact_output_dir=str(tmp_path)),
+    )
+    tool_call_audit_log.clear()
+    tool_call_audit_log.append(
+        ToolCallAuditRecord(
+            call_id="call-1",
+            tool_name="review_draft_bundle",
+            started_at="2026-04-12T12:00:00Z",
+            finished_at="2026-04-12T12:00:01Z",
+            duration_ms=10.0,
+            status="success",
+            argument_keys=["draft_id"],
+            request_hash="1" * 64,
+            response_hash="2" * 64,
+            output_schema_title="review_draft_bundle.response",
+            output_schema_hash="3" * 64,
+            output_validation_status="passed",
+            risk_class="read",
+            required_scopes=["toxmcp:read"],
+            granted_scopes=["toxmcp:read"],
+            requires_confirmation=False,
+            confirmation_provided=False,
+            policy_status="passed",
+        )
+    )
+
+    try:
+        await aop_tools.create_draft_aop(
+            aop_tools.CreateDraftInputModel(
+                draft_id="draft-replay",
+                title="Replay package draft",
+                description="Draft replay example.",
+                adverse_outcome="Liver steatosis",
+                author="tester",
+                summary="create draft",
+            )
+        )
+        saved = await aop_tools.save_draft_review_artifact(
+            aop_tools.SaveDraftReviewArtifactInput(
+                draft_id="draft-replay",
+                format="json",
+                filename="review.json",
+            )
+        )
+
+        result = await aop_tools.export_draft_replay_package(
+            aop_tools.ExportDraftReplayPackageInput(
+                draft_id="draft-replay",
+                artifact_relative_path=saved["relative_path"],
+                audit_record_limit=5,
+            )
+        )
+    finally:
+        tool_call_audit_log.clear()
+
+    assert result["package_schema_version"] == "draft-replay-package.v1"
+    assert result["draft_id"] == "draft-replay"
+    assert result["version_id"] == saved["version_id"]
+    assert result["draft_integrity"]["overall"] is True
+    assert result["draft_integrity"]["selected_version"] == saved["draft_version_integrity"]
+    assert result["external_support"]["summary"]["attached_bundle_count"] == 0
+    assert result["saved_artifact"]["filename"] == "review.json"
+    assert result["saved_artifact"]["integrity_check"]["overall_status"] == "verified"
+    assert result["audit_records"]["included"] is True
+    assert result["audit_records"]["included_record_count"] == 1
+    assert result["audit_records"]["records"][0]["tool_name"] == "review_draft_bundle"
+    assert len(result["package_sha256"]) == 64
 
 
 @pytest.mark.asyncio

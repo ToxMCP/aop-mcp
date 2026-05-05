@@ -20,6 +20,9 @@ class RegisteredTool:
         handler: Callable[[BaseModel], Any],
         input_model: type[BaseModel],
         output_schema: dict[str, Any] | None = None,
+        risk_class: str | None = None,
+        required_scopes: tuple[str, ...] | None = None,
+        requires_confirmation: bool | None = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -28,6 +31,19 @@ class RegisteredTool:
         self.output_schema = output_schema or {"type": "object"}
         # Ensure input_schema is always a dictionary, even if the model has no fields
         self.input_schema = input_model.model_json_schema() or {}
+        policy = classify_tool_policy(name, risk_class, required_scopes, requires_confirmation)
+        self.risk_class = policy["riskClass"]
+        self.required_scopes = tuple(policy["requiredScopes"])
+        self.requires_confirmation = bool(policy["requiresConfirmation"])
+        self.annotations = {
+            "readOnlyHint": self.risk_class in {"read", "live"},
+            "destructiveHint": self.risk_class in {"execute", "admin"},
+            "idempotentHint": self.risk_class in {"read", "live"},
+            "openWorldHint": self.risk_class == "live",
+            "riskClass": self.risk_class,
+            "requiredScopes": list(self.required_scopes),
+            "requiresConfirmation": self.requires_confirmation,
+        }
 
 
 class ToolRegistry:
@@ -42,6 +58,9 @@ class ToolRegistry:
         handler: Callable[[BaseModel], Any],
         input_model: type[BaseModel],
         output_schema: dict[str, Any] | None = None,
+        risk_class: str | None = None,
+        required_scopes: tuple[str, ...] | None = None,
+        requires_confirmation: bool | None = None,
     ) -> None:
         if name in self._tools:
             raise ValueError(f"Tool '{name}' already registered")
@@ -51,6 +70,9 @@ class ToolRegistry:
             handler=handler,
             input_model=input_model,
             output_schema=output_schema,
+            risk_class=risk_class,
+            required_scopes=required_scopes,
+            requires_confirmation=requires_confirmation,
         )
 
     def list_tools(self) -> list[ToolDescription]:
@@ -60,14 +82,18 @@ class ToolRegistry:
                 description=tool.description,
                 input_schema=tool.input_schema,
                 output_schema=tool.output_schema,
+                annotations=tool.annotations,
             )
             for tool in self._tools.values()
         ]
 
-    async def call_tool(self, name: str, params: dict[str, Any] | None) -> Any:
+    def get_tool(self, name: str) -> RegisteredTool:
         if name not in self._tools:
             raise KeyError(f"Tool '{name}' not found")
-        tool = self._tools[name]
+        return self._tools[name]
+
+    async def call_tool(self, name: str, params: dict[str, Any] | None) -> Any:
+        tool = self.get_tool(name)
         model_input = tool.input_model.model_validate(params or {})
         result = tool.handler(model_input)
         if asyncio.iscoroutine(result):
@@ -80,6 +106,39 @@ tool_registry = ToolRegistry()
 
 def _schema(namespace: str, name: str) -> dict[str, Any]:
     return load_schema(namespace, name)
+
+
+def classify_tool_policy(
+    name: str,
+    risk_class: str | None = None,
+    required_scopes: tuple[str, ...] | None = None,
+    requires_confirmation: bool | None = None,
+) -> dict[str, Any]:
+    if risk_class is None:
+        lowered = name.lower()
+        if lowered.startswith(("save_", "create_", "add_", "update_", "delete_")):
+            risk_class = "execute"
+        elif "export" in lowered or "packet" in lowered or "document" in lowered:
+            risk_class = "export"
+        elif any(token in lowered for token in ("search", "discover", "map_", "assay", "sparql", "comptox")):
+            risk_class = "live"
+        else:
+            risk_class = "read"
+
+    scope_by_class = {
+        "read": ("toxmcp:read",),
+        "live": ("toxmcp:live",),
+        "execute": ("toxmcp:execute",),
+        "export": ("toxmcp:export",),
+        "admin": ("toxmcp:admin",),
+    }
+    scopes = required_scopes or scope_by_class.get(risk_class, ("toxmcp:read",))
+    confirm = requires_confirmation if requires_confirmation is not None else risk_class in {"execute", "export", "admin"}
+    return {
+        "riskClass": risk_class,
+        "requiredScopes": tuple(scopes),
+        "requiresConfirmation": bool(confirm),
+    }
 
 # Register AOP tools
 from src.server.tools import aop  # noqa: E402  pylint: disable=wrong-import-position
@@ -264,6 +323,14 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="export_draft_replay_package",
+    description="Export a deterministic replay package for one draft version, including graph/provenance integrity, Registry support, optional saved artifact verification, and recent MCP audit records.",
+    handler=aop.export_draft_replay_package,
+    input_model=aop.ExportDraftReplayPackageInput,
+    output_schema=_schema("read", "export_draft_replay_package.response.schema"),
+)
+
+tool_registry.register(
     name="plan_linear_draft_review_document",
     description="Build a connector-ready Linear document payload from either a live draft review export or a previously saved draft review artifact.",
     handler=aop.plan_linear_draft_review_document,
@@ -304,6 +371,14 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="review_registry_handoff_bundle",
+    description="Review a Registry aop_context handoff bundle and return bounded-use import guidance for AOP draft review.",
+    handler=aop.review_registry_handoff_bundle,
+    input_model=aop.ReviewRegistryHandoffBundleInput,
+    output_schema=_schema("read", "review_registry_handoff_bundle.response.schema"),
+)
+
+tool_registry.register(
     name="review_draft_evidence_gaps",
     description="Mine one draft for concrete evidence gaps across root metadata, topology, KE assay coverage, KER evidence fields, and linked stressor resolvability.",
     handler=aop.review_draft_evidence_gaps,
@@ -333,6 +408,15 @@ tool_registry.register(
     handler=aop.create_draft_aop,
     input_model=aop.CreateDraftInputModel,
     output_schema=_schema("write", "create_draft_aop.response.schema"),
+)
+
+tool_registry.register(
+    name="attach_registry_handoff_to_draft",
+    description="Attach a validated Registry aop_context handoff bundle to a draft's provenance for later review/export.",
+    handler=aop.attach_registry_handoff_to_draft,
+    input_model=aop.AttachRegistryHandoffToDraftInputModel,
+    output_schema=_schema("write", "update_draft.response.schema"),
+    risk_class="execute",
 )
 
 tool_registry.register(
