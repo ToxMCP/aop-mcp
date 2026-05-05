@@ -195,12 +195,50 @@
     },
     "audit_records": {
       "type": "object",
-      "required": ["scope", "included", "limit", "included_record_count", "records"],
+      "required": [
+        "scope",
+        "included",
+        "limit",
+        "included_record_count",
+        "persistence",
+        "records"
+      ],
       "properties": {
         "scope": {"type": "string", "const": "process_local_recent_records"},
         "included": {"type": "boolean"},
         "limit": {"type": "integer", "minimum": 0, "maximum": 100},
         "included_record_count": {"type": "integer", "minimum": 0},
+        "persistence": {
+          "type": "object",
+          "required": ["enabled", "path", "last_error", "chain"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "path": {"type": ["string", "null"]},
+            "last_error": {"type": ["string", "null"]},
+            "chain": {
+              "type": "object",
+              "required": [
+                "algorithm",
+                "record_count",
+                "head_record_hash",
+                "verified",
+                "verification_error"
+              ],
+              "properties": {
+                "algorithm": {"type": "string", "const": "sha256-json-v1"},
+                "record_count": {"type": "integer", "minimum": 0},
+                "head_record_hash": {
+                  "type": ["string", "null"],
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "verified": {"type": ["boolean", "null"]},
+                "verification_error": {"type": ["string", "null"]}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "records": {
           "type": "array",
           "items": {"$ref": "#/$defs/tool_call_audit_record"}

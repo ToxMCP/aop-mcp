@@ -54,6 +54,7 @@ class Settings(BaseSettings):
 
     # Local artifact export
     artifact_output_dir: str = "output"
+    audit_log_path: str | None = None
 
     @property
     def is_production(self) -> bool:
@@ -78,6 +79,13 @@ class Settings(BaseSettings):
     def _split_csv_scopes(cls, value: object) -> object:
         if isinstance(value, str):
             return [part.strip() for part in value.split(",") if part.strip()]
+        return value
+
+    @field_validator("audit_log_path", mode="before")
+    @classmethod
+    def _empty_audit_log_path_to_none(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
         return value
 
     @field_validator("auth_mode")

@@ -3561,6 +3561,7 @@ async def export_draft_replay_package(
             "included": params.include_audit_records,
             "limit": params.audit_record_limit,
             "included_record_count": len(audit_records),
+            "persistence": tool_call_audit_log.persistence_status(),
             "records": audit_records,
         },
         "limitations": limitations,

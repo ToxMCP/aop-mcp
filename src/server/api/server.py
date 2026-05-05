@@ -7,6 +7,7 @@ import hmac
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from src.instrumentation.audit import tool_call_audit_log
 from src.server.config.settings import get_settings
 from src.server.mcp.router import router as mcp_router
 from src.server.version import get_app_version
@@ -18,6 +19,7 @@ def _is_allowed_local_origin(origin: str) -> bool:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    tool_call_audit_log.configure_jsonl_sink(settings.audit_log_path)
     app = FastAPI(
         title="AOP MCP Server",
         description="Model Context Protocol server for Adverse Outcome Pathway tooling",

@@ -229,6 +229,7 @@ Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/late
 | `AOP_MCP_COMPTOX_BIOACTIVITY_URL` | Optional | `https://comptox.epa.gov/ctx-api/` | Base URL for CompTox Bioactivity API (required for assay mapping). |
 | `AOP_MCP_COMPTOX_API_KEY` | Optional | – | API key for CompTox (required for assay mapping and higher quota). |
 | `AOP_MCP_ENABLE_FIXTURE_FALLBACK` | Optional | `0` | Set to `1` to serve fixture data when remote SPARQL endpoints are unavailable. |
+| `AOP_MCP_AUDIT_LOG_PATH` | Optional | – | When set, appends hash-chained MCP tool-call audit records as JSONL while preserving the in-memory audit buffer used by replay packages. |
 
 See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for the extended configuration surface (auth, retries, cache sizing, job service knobs).
 
