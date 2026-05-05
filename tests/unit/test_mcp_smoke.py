@@ -98,15 +98,23 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["list_tool_call_audit_records"]["annotations"]["riskClass"] == "read"
     assert by_name["list_saved_draft_review_artifacts"]["outputSchema"]["title"] == "list_saved_draft_review_artifacts.response"
     assert by_name["plan_linear_draft_review_document"]["outputSchema"]["title"] == "plan_linear_draft_review_document.response"
+    assert by_name["plan_linear_draft_review_document"]["annotations"]["riskClass"] == "export"
+    assert by_name["plan_linear_draft_review_document"]["annotations"]["readOnlyHint"] is True
     assert by_name["review_draft_evidence_gaps"]["outputSchema"]["title"] == "review_draft_evidence_gaps.response"
+    assert by_name["review_draft_evidence_gaps"]["annotations"]["riskClass"] == "live"
     assert by_name["review_registry_handoff_bundle"]["outputSchema"]["title"] == "review_registry_handoff_bundle.response"
     assert by_name["save_draft_review_artifact"]["outputSchema"]["title"] == "save_draft_review_artifact.response"
+    assert by_name["save_draft_review_artifact"]["annotations"]["riskClass"] == "execute"
+    assert by_name["save_draft_review_artifact"]["annotations"]["openWorldHint"] is True
     assert by_name["trace_chemical_on_draft"]["outputSchema"]["title"] == "trace_chemical_on_draft.response"
+    assert by_name["trace_chemical_on_draft"]["annotations"]["riskClass"] == "live"
     assert by_name["review_draft_assay_cutoff_ordering"]["outputSchema"]["title"] == "review_draft_assay_cutoff_ordering.response"
     assert by_name["review_draft_bundle"]["outputSchema"]["title"] == "review_draft_bundle.response"
+    assert by_name["review_draft_bundle"]["annotations"]["riskClass"] == "live"
     assert by_name["attach_registry_handoff_to_draft"]["outputSchema"]["title"] == "update_draft.response"
     assert by_name["verify_tool_call_audit_log"]["outputSchema"]["title"] == "verify_tool_call_audit_log.response"
     assert by_name["verify_tool_call_audit_log"]["annotations"]["riskClass"] == "read"
+    assert by_name["link_stressor"]["annotations"]["riskClass"] == "execute"
     assert all("title" in tool["outputSchema"] for tool in tools)
     assert by_name["map_assay_to_aops"]["description"].startswith(
         "Given an assay identifier, return related AOPs. Do not pass AOP IDs."

@@ -68,6 +68,7 @@ Current MCP tool surface exposed by `POST /mcp`.
 ## Notes
 
 - Tool schemas are exposed through MCP `tools/list` and validated by the server before tool execution.
+- Tool annotations expose standard MCP hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) plus local trust policy metadata (`riskClass`, `requiredScopes`, `requiresConfirmation`).
 - Response contracts live under `docs/contracts/schemas/`.
 - The trust and auditability model is documented in `docs/trust-auditability.md`.
 - Use `search_aops` for discovery and `get_aop` for fetching a known identifier.
