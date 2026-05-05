@@ -63,6 +63,7 @@ def test_tools_list_includes_registered_tools() -> None:
         "discover_orphan_stressors_for_query",
         "export_draft_review_artifact",
         "export_draft_replay_package",
+        "list_tool_call_audit_records",
         "list_saved_draft_review_artifacts",
         "plan_linear_draft_review_document",
         "review_draft_evidence_gaps",
@@ -89,6 +90,8 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["discover_orphan_stressors_for_query"]["outputSchema"]["title"] == "discover_orphan_stressors_for_query.response"
     assert by_name["export_draft_review_artifact"]["outputSchema"]["title"] == "export_draft_review_artifact.response"
     assert by_name["export_draft_replay_package"]["outputSchema"]["title"] == "export_draft_replay_package.response"
+    assert by_name["list_tool_call_audit_records"]["outputSchema"]["title"] == "list_tool_call_audit_records.response"
+    assert by_name["list_tool_call_audit_records"]["annotations"]["riskClass"] == "read"
     assert by_name["list_saved_draft_review_artifacts"]["outputSchema"]["title"] == "list_saved_draft_review_artifacts.response"
     assert by_name["plan_linear_draft_review_document"]["outputSchema"]["title"] == "plan_linear_draft_review_document.response"
     assert by_name["review_draft_evidence_gaps"]["outputSchema"]["title"] == "review_draft_evidence_gaps.response"
@@ -109,6 +112,7 @@ def test_tools_list_includes_registered_tools() -> None:
     assert "cross-AOP support" in by_name["discover_orphan_stressors_for_aops"]["description"]
     assert "phenotype or mechanism query" in by_name["discover_orphan_stressors_for_query"]["description"]
     assert "deterministic replay package" in by_name["export_draft_replay_package"]["description"]
+    assert "process-local MCP tool-call audit records" in by_name["list_tool_call_audit_records"]["description"]
     assert "audit JSONL hash chain" in by_name["verify_tool_call_audit_log"]["description"]
     assert "saved local draft review artifacts" in by_name["list_saved_draft_review_artifacts"]["description"]
     assert "Linear document payload" in by_name["plan_linear_draft_review_document"]["description"]

@@ -3519,6 +3519,22 @@ class VerifyToolCallAuditLogInput(BaseModel):
         return normalized
 
 
+class ListToolCallAuditRecordsInput(BaseModel):
+    limit: int = Field(default=25, ge=0, le=100)
+    tool_name: Optional[str] = None
+    status: Optional[Literal["success", "error"]] = None
+
+    @field_validator("tool_name")
+    @classmethod
+    def _validate_tool_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("tool_name cannot be blank")
+        return normalized
+
+
 async def export_draft_replay_package(
     params: ExportDraftReplayPackageInput,
 ) -> dict[str, Any]:
@@ -3594,6 +3610,43 @@ async def export_draft_replay_package(
         payload,
         namespace="read",
         name="export_draft_replay_package.response.schema",
+    )
+    return payload
+
+
+async def list_tool_call_audit_records(
+    params: ListToolCallAuditRecordsInput,
+) -> dict[str, Any]:
+    all_records = [record.to_dict() for record in tool_call_audit_log.list_records()]
+    filtered_records = [
+        record
+        for record in all_records
+        if (params.tool_name is None or record["tool_name"] == params.tool_name)
+        and (params.status is None or record["status"] == params.status)
+    ]
+    returned_records = filtered_records[-params.limit:] if params.limit else []
+    payload = {
+        "scope": "process_local_recent_records",
+        "limit": params.limit,
+        "filters": {
+            "tool_name": params.tool_name,
+            "status": params.status,
+        },
+        "available_record_count": len(all_records),
+        "matched_record_count": len(filtered_records),
+        "returned_record_count": len(returned_records),
+        "returned_order": "oldest_to_newest",
+        "persistence": tool_call_audit_log.persistence_status(),
+        "records": returned_records,
+        "limitations": [
+            "Audit records are drawn from the process-local MCP audit buffer and may not include historical calls from prior server runs.",
+            "Durable audit history must be verified separately with verify_tool_call_audit_log when AOP_MCP_AUDIT_LOG_PATH is configured.",
+        ],
+    }
+    validate_payload(
+        payload,
+        namespace="read",
+        name="list_tool_call_audit_records.response.schema",
     )
     return payload
 

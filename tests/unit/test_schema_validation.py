@@ -895,6 +895,65 @@ def test_export_draft_replay_package_schema_validation() -> None:
     )
 
 
+def test_list_tool_call_audit_records_schema_validation() -> None:
+    record = {
+        "call_id": "call-1",
+        "tool_name": "fake_tool",
+        "started_at": "2026-04-12T12:00:00Z",
+        "finished_at": "2026-04-12T12:00:01Z",
+        "duration_ms": 12.5,
+        "status": "success",
+        "argument_keys": ["alpha"],
+        "request_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "response_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "output_schema_title": "fake_tool.response",
+        "output_schema_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "output_validation_status": "passed",
+        "risk_class": "read",
+        "required_scopes": ["toxmcp:read"],
+        "granted_scopes": ["toxmcp:read"],
+        "requires_confirmation": False,
+        "confirmation_provided": False,
+        "policy_status": "passed",
+        "error_type": None,
+        "error_message": None,
+    }
+    payload = {
+        "scope": "process_local_recent_records",
+        "limit": 25,
+        "filters": {
+            "tool_name": None,
+            "status": None,
+        },
+        "available_record_count": 1,
+        "matched_record_count": 1,
+        "returned_record_count": 1,
+        "returned_order": "oldest_to_newest",
+        "persistence": {
+            "enabled": True,
+            "path": "/tmp/aop-mcp/tool-calls.jsonl",
+            "last_error": None,
+            "chain": {
+                "algorithm": "sha256-json-v1",
+                "record_count": 1,
+                "head_record_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+                "verified": True,
+                "verification_error": None,
+            },
+        },
+        "records": [record],
+        "limitations": [
+            "Audit records are drawn from the process-local MCP audit buffer and may not include historical calls from prior server runs."
+        ],
+    }
+
+    validate_payload(
+        payload,
+        namespace="read",
+        name="list_tool_call_audit_records.response.schema",
+    )
+
+
 def test_verify_tool_call_audit_log_schema_validation() -> None:
     payload = {
         "configured": True,

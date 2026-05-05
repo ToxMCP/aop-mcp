@@ -331,6 +331,14 @@ tool_registry.register(
 )
 
 tool_registry.register(
+    name="list_tool_call_audit_records",
+    description="List recent process-local MCP tool-call audit records with optional tool-name and status filters, plus durable audit persistence status.",
+    handler=aop.list_tool_call_audit_records,
+    input_model=aop.ListToolCallAuditRecordsInput,
+    output_schema=_schema("read", "list_tool_call_audit_records.response.schema"),
+)
+
+tool_registry.register(
     name="verify_tool_call_audit_log",
     description="Verify the durable MCP tool-call audit JSONL hash chain from the configured audit log path or an explicit local path.",
     handler=aop.verify_tool_call_audit_log,

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "list_tool_call_audit_records.response",
+  "type": "object",
+  "required": [
+    "scope",
+    "limit",
+    "filters",
+    "available_record_count",
+    "matched_record_count",
+    "returned_record_count",
+    "returned_order",
+    "persistence",
+    "records",
+    "limitations"
+  ],
+  "properties": {
+    "scope": {"type": "string", "const": "process_local_recent_records"},
+    "limit": {"type": "integer", "minimum": 0, "maximum": 100},
+    "filters": {
+      "type": "object",
+      "required": ["tool_name", "status"],
+      "properties": {
+        "tool_name": {"type": ["string", "null"]},
+        "status": {"type": ["string", "null"], "enum": ["success", "error", null]}
+      },
+      "additionalProperties": false
+    },
+    "available_record_count": {"type": "integer", "minimum": 0},
+    "matched_record_count": {"type": "integer", "minimum": 0},
+    "returned_record_count": {"type": "integer", "minimum": 0},
+    "returned_order": {"type": "string", "const": "oldest_to_newest"},
+    "persistence": {
+      "type": "object",
+      "required": ["enabled", "path", "last_error", "chain"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "path": {"type": ["string", "null"]},
+        "last_error": {"type": ["string", "null"]},
+        "chain": {"$ref": "#/$defs/audit_chain_status"}
+      },
+      "additionalProperties": false
+    },
+    "records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/tool_call_audit_record"}
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "$defs": {
+    "audit_chain_status": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "record_count",
+        "head_record_hash",
+        "verified",
+        "verification_error"
+      ],
+      "properties": {
+        "algorithm": {"type": "string", "const": "sha256-json-v1"},
+        "record_count": {"type": "integer", "minimum": 0},
+        "head_record_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verified": {"type": ["boolean", "null"]},
+        "verification_error": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "tool_call_audit_record": {
+      "type": "object",
+      "required": [
+        "call_id",
+        "tool_name",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "argument_keys",
+        "request_hash",
+        "response_hash",
+        "output_schema_title",
+        "output_schema_hash",
+        "output_validation_status",
+        "risk_class",
+        "required_scopes",
+        "granted_scopes",
+        "requires_confirmation",
+        "confirmation_provided",
+        "policy_status",
+        "error_type",
+        "error_message"
+      ],
+      "properties": {
+        "call_id": {"type": "string"},
+        "tool_name": {"type": "string"},
+        "started_at": {"type": "string"},
+        "finished_at": {"type": "string"},
+        "duration_ms": {"type": "number"},
+        "status": {"type": "string"},
+        "argument_keys": {"type": "array", "items": {"type": "string"}},
+        "request_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "response_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "output_schema_title": {"type": ["string", "null"]},
+        "output_schema_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "output_validation_status": {"type": "string"},
+        "risk_class": {"type": ["string", "null"]},
+        "required_scopes": {"type": "array", "items": {"type": "string"}},
+        "granted_scopes": {"type": "array", "items": {"type": "string"}},
+        "requires_confirmation": {"type": ["boolean", "null"]},
+        "confirmation_provided": {"type": "boolean"},
+        "policy_status": {"type": "string"},
+        "error_type": {"type": ["string", "null"]},
+        "error_message": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
