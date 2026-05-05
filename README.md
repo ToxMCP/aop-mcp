@@ -120,6 +120,7 @@ The AOP MCP server wraps those workflows in a **secure, programmable interface**
 | 🔬 **Scientific review** | OECD-oriented KE/KER review helpers, citation concordance, conservative taxonomic LCA inference, supplemental assay-cutoff ordering checks, and confidence review surfaces that combine narrative and assay-derived signals. |
 | ✍️ **Draft review and authoring** | Create/update drafts, key events, relationships, and stressor links with provenance and diff support, plus topology validation, directional concordance review, evidence-gap analysis, quantitative KER review, and chemical trace overlays. |
 | 📦 **Artifacts and handoff** | Export review bundles as JSON or Markdown, save indexed local review artifacts, build publication-style reports, review and attach Registry `aop_context` handoff bundles with preserved caveats/provenance, surface attached Registry support automatically inside normal draft review exports, produce Linear-ready document payloads, and export assay tables in `csv`/`tsv`. |
+| 🔎 **Trust and auditability** | Export replay packages with runtime manifests, verify durable MCP audit-log hash chains, list recent process-local audit records, and export bounded durable audit evidence packages for review. |
 | ⚙️ **Configurable transports** | FastAPI JSON-RPC service with configurable endpoints, retries, and observability hooks. |
 | 🤖 **Agent friendly** | Verified with Codex CLI, Gemini CLI, and Claude Code; includes quick-start snippets, live scientific examples, and an end-to-end MCP smoke script. |
 
@@ -245,6 +246,7 @@ See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for 
 | Assay aggregation | `list_assays_for_aops`, `get_assays_for_aops`, `list_assays_for_query`, `export_assays_table`, `discover_orphan_stressors_for_aop`, `discover_orphan_stressors_for_aops`, `discover_orphan_stressors_for_query` | Deduplicates assay evidence across multiple AOPs, surfaces diagnostics for empty assay lookups, exports the ranked assay table as `csv` or `tsv`, and can now surface orphan chemical candidates that are active in an AOP's strongest assays but are not already curated as linked stressors, for one pathway, across several pathways, or from a phenotype/mechanism query. Ranked assay outputs are discovery-oriented and specificity-aware, not curated ontology truth. |
 | Semantic helpers | `get_applicability`, `get_evidence_matrix` | CURIE normalization plus evidence matrix builder for review packages. |
 | Draft authoring | `create_draft_aop`, `add_or_update_ke`, `add_or_update_ker`, `link_stressor`, `attach_registry_handoff_to_draft`, `validate_draft_oecd`, `review_draft_assay_cutoff_ordering`, `review_draft_bundle`, `review_draft_evidence_gaps`, `review_registry_handoff_bundle`, `export_draft_review_artifact`, `save_draft_review_artifact`, `list_saved_draft_review_artifacts`, `plan_linear_draft_review_document`, `trace_chemical_on_draft` | In-memory draft graph edits with provenance plus OECD-style completeness checks, draft-graph topology checks, a unified draft review bundle that now carries structured evidence-gap findings and any attached Registry support, an action-oriented evidence-gap review surface, Registry handoff review/import planning for bounded AOP-support evidence, exportable review artifacts with both review and publication-style markdown profiles, a persistent local artifact-save path plus on-disk indexing for handoff files, a connector-ready Linear document handoff planner, a detailed draft KER assay-cutoff ordering review surface, and a chemical-trace overlay that projects one chemical's CompTox activity onto draft key events. |
+| Trust and replay | `export_draft_replay_package`, `list_tool_call_audit_records`, `verify_tool_call_audit_log`, `export_tool_call_audit_log_evidence` | Packages draft integrity, imported Registry support, saved artifact checks, recent audit records, and runtime/tool/schema fingerprints; inspects process-local audit records; verifies durable JSONL hash chains; and exports bounded durable audit evidence with verified-prefix behavior after tamper detection. |
 
 Every response is validated against JSON Schemas in `docs/contracts/schemas/`. Refer to `docs/contracts/tool-catalog.md` for full definitions and examples.
 
@@ -336,6 +338,18 @@ For an OECD-style draft workflow with explicit KE essentiality capture:
 12. Call `plan_linear_draft_review_document` when you want a connector-ready Linear document payload built from either a live publication-profile export or one of the saved artifact files. Its response now preserves both the exported bundle summary and the evidence-gap summary.
 
 To make directional concordance assessable, store KE polarity under fields such as `attributes.direction_of_change` when the title is not explicit enough, and store KER polarity under fields such as `attributes.relationship_effect` when the relationship is clearly activating versus inhibiting. To make draft assay-cutoff ordering assessable, link stressors with resolvable chemical metadata such as a recognizable label, CAS-like source value, or DTXSID-like source value.
+
+### Example trust and auditability flow
+
+For a reproducibility review of a draft and the MCP calls around it:
+
+1. Set `AOP_MCP_AUDIT_LOG_PATH` before starting the server when durable audit evidence is needed.
+2. Call `export_draft_replay_package` for the draft version under review. Inspect `draft_integrity`, `external_support`, `audit_records.persistence`, and `runtime_manifest`.
+3. Call `list_tool_call_audit_records` when you need the recent process-local view for the current server run.
+4. Call `verify_tool_call_audit_log` to verify the durable JSONL hash chain.
+5. Call `export_tool_call_audit_log_evidence` when the durable audit envelopes themselves need to be handed off. If the chain is invalid, the export is limited to the verified prefix before the first failure.
+
+See `docs/trust-auditability.md` for the trust model and current limits, and `docs/evaluations/trust-scenarios.md` for stable read-only trust evaluation scenarios.
 
 Example `tools/call` payloads:
 
@@ -545,7 +559,9 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 - **Saved draft review files** – `save_draft_review_artifact` can persist review/profile exports under `AOP_MCP_ARTIFACT_OUTPUT_DIR` (default `output/draft_reviews/`) for downstream handoff.
 - **Artifact inventory** – `list_saved_draft_review_artifacts` can index those saved files, using metadata sidecars when available and filesystem inference for older artifacts.
 - **Connector-ready review handoff** – `plan_linear_draft_review_document` can turn a live or saved review artifact into a Linear document payload for downstream review systems.
-- **Audit + provenance** – draft edits capture author, summary, and version metadata for downstream review queues.
+- **Replay packages** – `export_draft_replay_package` packages draft integrity, imported Registry support, saved artifact verification, recent audit records, durable audit persistence status, and a runtime manifest.
+- **Audit + provenance** – draft edits capture author, summary, and version metadata for downstream review queues. Optional `AOP_MCP_AUDIT_LOG_PATH` writes hash-chained durable MCP tool-call JSONL records.
+- **Durable audit evidence** – `verify_tool_call_audit_log` verifies the JSONL hash chain, and `export_tool_call_audit_log_evidence` exports a bounded verified evidence package.
 - **Metrics & logs** – in-process metrics recorder (`src/instrumentation/metrics.py`) and structured logs (`src/instrumentation/logging.py`) for SPARQL/cache and job lifecycle events.
 - **Fixture captures** – optional local fixtures for offline testing when `AOP_MCP_ENABLE_FIXTURE_FALLBACK=1`.
 
@@ -554,6 +570,8 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 ## Security checklist
 
 - ✅ Structured logging + audit chain validation (`src/instrumentation/audit.py`).
+- ✅ Optional durable tool-call audit JSONL sink with hash-chain verification and bounded evidence export.
+- ✅ Replay packages include draft, artifact, audit, schema, tool-catalog, and runtime fingerprints.
 - ✅ SPARQL + CompTox clients respect retry/backoff limits; tune via settings.
 - ✅ MCP tools enforce JSON Schema validation before returning data to agents.
 - 🔲 Optional auth middleware (see `docs/adr/architecture-drivers.md`) – integrate with your gateway before production exposure.

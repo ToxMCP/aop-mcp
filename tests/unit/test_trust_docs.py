@@ -36,3 +36,21 @@ def test_trust_evaluation_scenarios_are_stable_and_read_only() -> None:
         "docs/trust-auditability.md",
     ]:
         assert term in text
+
+
+def test_public_docs_surface_trust_tools() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    catalog = (ROOT / "docs" / "contracts" / "tool-catalog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in [readme, catalog]:
+        for term in [
+            "export_draft_replay_package",
+            "list_tool_call_audit_records",
+            "verify_tool_call_audit_log",
+            "export_tool_call_audit_log_evidence",
+            "AOP_MCP_AUDIT_LOG_PATH",
+            "docs/trust-auditability.md",
+        ]:
+            assert term in text
