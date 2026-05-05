@@ -357,7 +357,7 @@ For a reproducibility review of a draft and the MCP calls around it:
 4. Call `verify_tool_call_audit_log` to verify the durable JSONL hash chain.
 5. Call `export_tool_call_audit_log_evidence` when the durable audit envelopes themselves need to be handed off. If the chain is invalid, the export is limited to the verified prefix before the first failure.
 
-See `docs/trust-auditability.md` for the trust model and current limits, and `docs/evaluations/trust-scenarios.md` for stable read-only trust evaluation scenarios.
+See `docs/trust-auditability.md` for the trust model and current limits, `docs/evaluations/trust-scenarios.md` for stable read-only trust evaluation scenarios, and `docs/evaluations/trust-scenarios.xml` for the machine-readable Q/A pack.
 
 Example `tools/call` payloads:
 
