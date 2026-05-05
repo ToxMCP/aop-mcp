@@ -77,6 +77,14 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
+## What's new in v0.9.0
+
+- **Research-grade trust layer** - added a documented trust and auditability model for draft replay, durable MCP tool-call audit logs, bounded audit evidence export, and explicit regulatory limits.
+- **Registry handoff support** - added `review_registry_handoff_bundle` and `attach_registry_handoff_to_draft`, and now surface imported Registry support plus limitations inside normal draft review bundles and artifacts.
+- **Durable MCP audit evidence** - added optional `AOP_MCP_AUDIT_LOG_PATH` JSONL persistence, hash-chain verification with `verify_tool_call_audit_log`, recent process-local audit inspection with `list_tool_call_audit_records`, and bounded durable evidence export with `export_tool_call_audit_log_evidence`.
+- **Replay package reproducibility** - `export_draft_replay_package` now includes draft integrity, external support, saved artifact verification, audit persistence status, recent audit records, and a `runtime_manifest` with server/runtime/config posture, schema hashes, tool catalog hash, and best-effort git commit.
+- **Trust docs and scenarios** - added `docs/trust-auditability.md`, `docs/evaluations/trust-scenarios.md`, and README/tool-catalog guidance for reproducing and reviewing the audit trail.
+
 ## What's new in v0.8.2
 
 - **Hardened SPARQL query construction (AOP-01)** — replaced unsafe `template.format(**params)` interpolation with `TemplateCatalog.render_safe()`, which escapes string literals, validates URI schemes, and separates trusted structural fragments from user-facing parameters. Fixed a CAS-URI injection path in `map_chemical_to_aops`.
@@ -585,6 +593,7 @@ Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutd
 - `scripts/test_mcp_endpoints.sh` – exercise the MCP catalog end-to-end.
 - `make contract` – regenerate/validate JSON Schema docs (if available in your tooling setup).
 - `python scripts/benchmarks.py` – baseline latency testing (extend with real workloads).
+- `CHANGELOG.md` – release-facing summary of shipped MCP contract, trust, and review-surface changes.
 - `docs/opensourcing-checklist.md` – final checks before switching repository visibility to public.
 - `docs/contracts/oecd-aligned-schema.md` – OECD-aligned target payload model and current coverage audit for `AOP`, `KE`, `KER`, and assessment outputs.
 - Keep docs in sync: update `docs/contracts/endpoint-matrix.md`, `docs/quickstarts/`, and schema files when payloads change.
