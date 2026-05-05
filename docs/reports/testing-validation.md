@@ -1,6 +1,6 @@
 # Testing & Validation Status — AOP MCP
 
-_Last updated: 2025-11-05_
+_Last updated: 2026-04-17_
 
 ## Coverage snapshot
 
@@ -9,6 +9,8 @@ _Last updated: 2025-11-05_
   - `tests/unit/test_semantic_tools.py`
   - `tests/unit/test_write_tools.py`
   Each schema under `docs/contracts/schemas/` is asserted via `validate_payload` against recorded fixtures.
+- **Cross-suite golden lane**: `python -m pytest tests/unit/test_registry_aop_draft_review_golden.py -q`
+  - Rebuilds a deterministic draft with attached Registry `aop_context` support and verifies the frozen `Registry -> AOP draft review artifact` outputs under `tests/golden/cross_suite/`.
 - **MCP JSON-RPC smoke suite**: `make smoke`
   - Drives `/mcp` endpoint through `initialize`, `tools/list`, and a golden `tools/call` (`search_aops`).
   - Live call retained under `@pytest.mark.skip` for network-enabled environments.
@@ -21,6 +23,7 @@ _Last updated: 2025-11-05_
 | Tier | Command | Frequency | Notes |
 | --- | --- | --- | --- |
 | Unit/contract | `make contract` | PR / CI | Covers read+semantic+write schemas with golden fixtures |
+| Cross-suite goldens | `python -m pytest tests/unit/test_registry_aop_draft_review_golden.py -q` | PR / CI | Verifies the deterministic Registry-attached draft review/export seam |
 | Smoke (offline) | `make smoke` | PR / CI | Skips live network call; verifies JSON-RPC response envelope |
 | Endpoint health | `make check-endpoints` | Nightly / on-demand | Requires outbound HTTPS to AOP-Wiki/AOP-DB; capture live samples |
 | Endpoint health (offline) | `make check-endpoints-offline` | Local quick check | Skips network to verify script wiring |
@@ -28,11 +31,10 @@ _Last updated: 2025-11-05_
 
 ## Recent results
 
-- `pytest`: 70 passed, 1 skipped (2025-11-05)
-- `make contract`: 15 passed (2025-11-05)
-- `make smoke`: 4 passed, 1 deselected (2025-11-05)
-- `make check-endpoints-offline`: pass (2025-11-05)
-- Endpoint documentation catalog captured in `docs/contracts/endpoint-docs.md` (2025-11-05)
+- Local `pytest -q -ra`: 231 passed, 1 skipped in 5.95s (2026-04-17)
+- The single skipped test remains `tests/unit/test_mcp_smoke.py::test_tools_call_search_aops_live`, which requires live SPARQL network access.
+- GitHub Actions CI for PR `#10` / release `v0.8.2` succeeded on 2026-04-16 across `Lint`, `Runtime Contract`, `test (3.11)`, and `test (3.12)`.
+- Validated live-scientific example walkthrough captured in `docs/quickstarts/live-scientific-examples.md` using a running server on 2026-04-12.
 
 ## Outstanding items
 

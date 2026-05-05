@@ -62,9 +62,11 @@ def test_tools_list_includes_registered_tools() -> None:
         "get_assays_for_aops",
         "discover_orphan_stressors_for_query",
         "export_draft_review_artifact",
+        "export_draft_replay_package",
         "list_saved_draft_review_artifacts",
         "plan_linear_draft_review_document",
         "review_draft_evidence_gaps",
+        "review_registry_handoff_bundle",
         "save_draft_review_artifact",
         "search_assays_for_key_event",
         "trace_chemical_on_draft",
@@ -72,6 +74,7 @@ def test_tools_list_includes_registered_tools() -> None:
         "review_draft_bundle",
         "validate_draft_oecd",
         "create_draft_aop",
+        "attach_registry_handoff_to_draft",
     }.issubset(tool_names)
 
     by_name = {tool["name"]: tool for tool in tools}
@@ -84,13 +87,16 @@ def test_tools_list_includes_registered_tools() -> None:
     assert by_name["get_assays_for_aops"]["outputSchema"]["title"] == "list_assays_for_aops.response"
     assert by_name["discover_orphan_stressors_for_query"]["outputSchema"]["title"] == "discover_orphan_stressors_for_query.response"
     assert by_name["export_draft_review_artifact"]["outputSchema"]["title"] == "export_draft_review_artifact.response"
+    assert by_name["export_draft_replay_package"]["outputSchema"]["title"] == "export_draft_replay_package.response"
     assert by_name["list_saved_draft_review_artifacts"]["outputSchema"]["title"] == "list_saved_draft_review_artifacts.response"
     assert by_name["plan_linear_draft_review_document"]["outputSchema"]["title"] == "plan_linear_draft_review_document.response"
     assert by_name["review_draft_evidence_gaps"]["outputSchema"]["title"] == "review_draft_evidence_gaps.response"
+    assert by_name["review_registry_handoff_bundle"]["outputSchema"]["title"] == "review_registry_handoff_bundle.response"
     assert by_name["save_draft_review_artifact"]["outputSchema"]["title"] == "save_draft_review_artifact.response"
     assert by_name["trace_chemical_on_draft"]["outputSchema"]["title"] == "trace_chemical_on_draft.response"
     assert by_name["review_draft_assay_cutoff_ordering"]["outputSchema"]["title"] == "review_draft_assay_cutoff_ordering.response"
     assert by_name["review_draft_bundle"]["outputSchema"]["title"] == "review_draft_bundle.response"
+    assert by_name["attach_registry_handoff_to_draft"]["outputSchema"]["title"] == "update_draft.response"
     assert all("title" in tool["outputSchema"] for tool in tools)
     assert by_name["map_assay_to_aops"]["description"].startswith(
         "Given an assay identifier, return related AOPs. Do not pass AOP IDs."
@@ -99,6 +105,7 @@ def test_tools_list_includes_registered_tools() -> None:
     assert "strongest assay candidates" in by_name["discover_orphan_stressors_for_aop"]["description"]
     assert "cross-AOP support" in by_name["discover_orphan_stressors_for_aops"]["description"]
     assert "phenotype or mechanism query" in by_name["discover_orphan_stressors_for_query"]["description"]
+    assert "deterministic replay package" in by_name["export_draft_replay_package"]["description"]
     assert "saved local draft review artifacts" in by_name["list_saved_draft_review_artifacts"]["description"]
     assert "Linear document payload" in by_name["plan_linear_draft_review_document"]["description"]
     assert "concrete evidence gaps" in by_name["review_draft_evidence_gaps"]["description"]

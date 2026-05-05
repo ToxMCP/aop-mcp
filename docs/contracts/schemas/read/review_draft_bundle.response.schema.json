@@ -13,6 +13,7 @@
     "validation",
     "quantitative_review",
     "chemical_trace",
+    "external_support",
     "evidence_gaps",
     "limitations"
   ],
@@ -172,6 +173,37 @@
           "additionalProperties": false
         }
       ]
+    },
+    "external_support": {
+      "type": "object",
+      "required": ["summary", "imports", "limitations"],
+      "properties": {
+        "summary": {
+          "type": "object",
+          "required": [
+            "attached_bundle_count",
+            "ready_bundle_count",
+            "total_evidence_item_count",
+            "total_bounded_use_warning_count",
+            "total_scientific_review_flag_count",
+            "blocking_issue_count",
+            "advisory_issue_count"
+          ],
+          "properties": {
+            "attached_bundle_count": {"type": "integer"},
+            "ready_bundle_count": {"type": "integer"},
+            "total_evidence_item_count": {"type": "integer"},
+            "total_bounded_use_warning_count": {"type": "integer"},
+            "total_scientific_review_flag_count": {"type": "integer"},
+            "blocking_issue_count": {"type": "integer"},
+            "advisory_issue_count": {"type": "integer"}
+          },
+          "additionalProperties": false
+        },
+        "imports": {"type": "array", "items": {"type": "object"}},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
     },
     "evidence_gaps": {
       "type": "object",

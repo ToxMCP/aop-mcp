@@ -1,0 +1,1030 @@
+{
+  "applicabilityItems": [
+    {
+      "affectedObjectIds": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43"
+      ],
+      "dimensionAssessments": [
+        {
+          "dimension": "mechanistic_support",
+          "evidenceValue": "context_only",
+          "rationale": "Registry readiness for target \"aop_context\" is context_only. Registry mechanistic-context metadata is suitable for bounded AOP context use when explicit review caveats remain attached.",
+          "status": "direct",
+          "targetValue": "context_or_metadata_supported"
+        }
+      ],
+      "evidenceClass": "method_quality",
+      "gapTriggered": false,
+      "intendedUse": "aop_context_support",
+      "materiality": "minor",
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45:routeability",
+      "overallStatus": "direct",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a46"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "b818d9f948e15e8efff12836b65b771b7b97c4463c17161e8f554a3ff7cae150"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "reviewFlag": "auto_assessed"
+    },
+    {
+      "affectedObjectIds": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43"
+      ],
+      "dimensionAssessments": [
+        {
+          "dimension": "mechanistic_support",
+          "evidenceValue": "controls=unknown | replicates=unknown | protocol=partial | manual_review_reasons=Mechanistic context does not by itself establish KE essentiality or direct KER empirical support. | study_design_flags=mechanistic_context_not_direct_empirical_proof",
+          "rationale": "controls=unknown | replicates=unknown | protocol=partial | manual_review_reasons=Mechanistic context does not by itself establish KE essentiality or direct KER empirical support. | study_design_flags=mechanistic_context_not_direct_empirical_proof",
+          "status": "partial",
+          "targetValue": "controls=present; replicates=present; protocol=present"
+        }
+      ],
+      "evidenceClass": "method_quality",
+      "gapTriggered": true,
+      "intendedUse": "aop_context_support",
+      "materiality": "material",
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49:scientific_review",
+      "overallStatus": "partial",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a48"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "reviewFlag": "requires_reviewer_check"
+    },
+    {
+      "affectedObjectIds": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43"
+      ],
+      "dimensionAssessments": [
+        {
+          "dimension": "mechanistic_support",
+          "evidenceValue": "context_not_assay",
+          "rationale": "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support.",
+          "status": "partial",
+          "targetValue": "no bounded-use warnings"
+        }
+      ],
+      "evidenceClass": "method_quality",
+      "gapTriggered": true,
+      "intendedUse": "aop_context_support",
+      "materiality": "minor",
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51:bounded_use_warning",
+      "overallStatus": "partial",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a50"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "reviewFlag": "requires_reviewer_check"
+    }
+  ],
+  "bundleId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a63",
+  "claimItems": [
+    {
+      "applicabilityRecordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45:routeability",
+      "claimText": "Registry routing recommendation for AOP context: Registry mechanistic-context metadata is suitable for bounded AOP context use when explicit review caveats remain attached.",
+      "claimType": "qualitative",
+      "confidence": "high",
+      "evidenceObjectIds": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43"
+      ],
+      "lineOfEvidenceId": "study_registry_aop_context",
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47:consumer_fit",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a46"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "b818d9f948e15e8efff12836b65b771b7b97c4463c17161e8f554a3ff7cae150"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "rationale": "Registry mechanistic-context metadata is suitable for bounded AOP context use when explicit review caveats remain attached.",
+      "supportStatus": "supports"
+    }
+  ],
+  "createdAt": "2026-04-21T13:00:00Z",
+  "createdBy": "evidence_registry",
+  "evidenceItems": [
+    {
+      "evidenceClass": "method_quality",
+      "methodDescription": "Diazinon mechanistic context for steatosis pathway review | Mechanistic pathway context intended for bounded AOP support and reviewer-guided draft evidence use. | StudyRecord: Diazinon mechanistic context for steatosis pathway review",
+      "methodMaturity": "valid:pending_review",
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "d5b1b7b6da0c4faf24ed7c03e2303f8db76543abf609947015568ccf8f6d9f8a"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "readinessState": "context_only",
+      "registryArtifactRefs": [
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+          "cachedSnapshot": {
+            "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+            "subjectRefs": [
+              "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+            ],
+            "unresolvedBlockers": []
+          },
+          "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "IngestionReviewPacket",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+          "schemaVersion": "1.1.0"
+        },
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+          "cachedSnapshot": {
+            "aggregateSeverity": "informational",
+            "lossCount": 0,
+            "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+          },
+          "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "SemanticLossRegister",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+          "schemaVersion": "1.1.0"
+        },
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+          "cachedSnapshot": {
+            "manualReviewRequired": true,
+            "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+            "unresolvedStudyDesignFlags": [
+              "mechanistic_context_not_direct_empirical_proof"
+            ]
+          },
+          "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "EvidenceQualityReviewRecord",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+          "schemaVersion": "1.1.0"
+        },
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+          "cachedSnapshot": {
+            "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+            "warningClasses": [
+              "context_not_assay"
+            ]
+          },
+          "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "OverinterpretationWarningRegister",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+          "schemaVersion": "1.1.0"
+        }
+      ],
+      "reviewCaveats": [
+        "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+        "mechanistic_context_not_direct_empirical_proof",
+        "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+      ],
+      "schemaVersion": "1.1.0",
+      "scientificReviewGapIds": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49"
+      ],
+      "sourceModule": "evidence_registry",
+      "studyIdentifiers": [
+        {
+          "identifierType": "study_id",
+          "identifierValue": "WP554-diazinon-steatosis"
+        },
+        {
+          "identifierType": "source_accession",
+          "identifierValue": "WP554"
+        }
+      ]
+    },
+    {
+      "evidenceClass": "method_quality",
+      "methodDescription": "ProtocolContextRecord: ProtocolContextRecord",
+      "methodMaturity": "valid:pending_review",
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "d92b883822cae3e6a17d9a2de200e859420ea73874370e5fbd3103458010a298"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "readinessState": "context_only",
+      "registryArtifactRefs": [
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+          "cachedSnapshot": {
+            "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+            "subjectRefs": [
+              "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+            ],
+            "unresolvedBlockers": []
+          },
+          "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "IngestionReviewPacket",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+          "schemaVersion": "1.1.0"
+        },
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+          "cachedSnapshot": {
+            "aggregateSeverity": "informational",
+            "lossCount": 0,
+            "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+          },
+          "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "SemanticLossRegister",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+          "schemaVersion": "1.1.0"
+        },
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+          "cachedSnapshot": {
+            "manualReviewRequired": true,
+            "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+            "unresolvedStudyDesignFlags": [
+              "mechanistic_context_not_direct_empirical_proof"
+            ]
+          },
+          "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "EvidenceQualityReviewRecord",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+          "schemaVersion": "1.1.0"
+        },
+        {
+          "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+          "cachedSnapshot": {
+            "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+            "warningClasses": [
+              "context_not_assay"
+            ]
+          },
+          "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180",
+          "objectType": "typedHandoffRef",
+          "objectTypeRef": "OverinterpretationWarningRegister",
+          "producerModule": "evidence_registry",
+          "producerVersion": "1.1.0",
+          "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+          "schemaVersion": "1.1.0"
+        }
+      ],
+      "reviewCaveats": [
+        "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+        "mechanistic_context_not_direct_empirical_proof",
+        "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+      ],
+      "schemaVersion": "1.1.0",
+      "scientificReviewGapIds": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49"
+      ],
+      "sourceModule": "evidence_registry",
+      "studyIdentifiers": []
+    }
+  ],
+  "linkItems": [
+    {
+      "bidirectional": false,
+      "originalId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47:consumer_fit:supports",
+      "provenance": {
+        "createdAt": "2026-04-21T13:00:00Z",
+        "createdBy": "evidence_registry",
+        "parentObjectIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47:consumer_fit"
+        ],
+        "sourceHashes": [
+          {
+            "algorithm": "sha256",
+            "value": "4495705f81933847f79f30bf47efbabcf6ea630328a0e0a6b74d3d972ffeccba"
+          }
+        ],
+        "toolRunId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "upstreamRunIds": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61"
+        ]
+      },
+      "rationale": "Registry canonical method-quality evidence supports the exported consumer-fit claim.",
+      "relationType": "supports",
+      "sourceId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+      "sourceType": "evidence",
+      "strength": "direct",
+      "targetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47:consumer_fit",
+      "targetType": "claim"
+    }
+  ],
+  "registryArtifactRefs": [
+    {
+      "artifactId": "db484191-c4f8-4e84-866b-47909b4744d5",
+      "cachedSnapshot": {
+        "bundleId": "db484191-c4f8-4e84-866b-47909b4744d5",
+        "bundleType": "context_qualification_bundle",
+        "primaryTarget": "aop_context",
+        "readinessState": "context_only"
+      },
+      "integrityHash": "sha256:4a197546816a6319fcce73b4fa1182bbe0d1db9da7274497665b91071b256eb1",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "HandoffBundle",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/db484191-c4f8-4e84-866b-47909b4744d5",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+      "cachedSnapshot": {
+        "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+        "subjectRefs": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+        ],
+        "unresolvedBlockers": []
+      },
+      "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "IngestionReviewPacket",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+      "cachedSnapshot": {
+        "blockingIssues": [],
+        "readinessId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+        "readinessState": "context_only",
+        "target": "aop_context"
+      },
+      "integrityHash": "sha256:b536a06f814fcf5a5e199e028a7297574ee9965b43a1beaf5abb4c551d7ba884",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "StudyReadinessRecord",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+      "cachedSnapshot": {
+        "blockedTargets": [
+          "bioactivity_pod",
+          "ivive_ber",
+          "toxclaw"
+        ],
+        "eligibleTargets": [
+          "aop_context",
+          "general_registry"
+        ],
+        "preferredTargets": [
+          "aop_context"
+        ],
+        "recommendationId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47"
+      },
+      "integrityHash": "sha256:b818d9f948e15e8efff12836b65b771b7b97c4463c17161e8f554a3ff7cae150",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "RoutingRecommendationRecord",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+      "cachedSnapshot": {
+        "aggregateSeverity": "informational",
+        "lossCount": 0,
+        "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+      },
+      "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "SemanticLossRegister",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+      "cachedSnapshot": {
+        "manualReviewRequired": true,
+        "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+        "unresolvedStudyDesignFlags": [
+          "mechanistic_context_not_direct_empirical_proof"
+        ]
+      },
+      "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "EvidenceQualityReviewRecord",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+      "cachedSnapshot": {
+        "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+        "warningClasses": [
+          "context_not_assay"
+        ]
+      },
+      "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "OverinterpretationWarningRegister",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+      "cachedSnapshot": {
+        "objectType": "StudyRecord",
+        "recordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+        "summary": "StudyRecord: Diazinon mechanistic context for steatosis pathway review"
+      },
+      "integrityHash": "sha256:d5b1b7b6da0c4faf24ed7c03e2303f8db76543abf609947015568ccf8f6d9f8a",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "StudyRecord",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+      "schemaVersion": "1.1.0"
+    },
+    {
+      "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+      "cachedSnapshot": {
+        "objectType": "ProtocolContextRecord",
+        "recordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+        "summary": "ProtocolContextRecord: ProtocolContextRecord"
+      },
+      "integrityHash": "sha256:d92b883822cae3e6a17d9a2de200e859420ea73874370e5fbd3103458010a298",
+      "objectType": "typedHandoffRef",
+      "objectTypeRef": "ProtocolContextRecord",
+      "producerModule": "evidence_registry",
+      "producerVersion": "1.1.0",
+      "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+      "schemaVersion": "1.1.0"
+    }
+  ],
+  "registryArtifacts": {
+    "canonicalRecords": [
+      {
+        "created_at": "2026-04-21T13:00:00Z",
+        "dataset_refs": [],
+        "description": "Mechanistic pathway context intended for bounded AOP support and reviewer-guided draft evidence use.",
+        "object_type": "StudyRecord",
+        "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+        "review_state": "pending_review",
+        "rule_pack_version": "1.1.0",
+        "schema_version": "1.1.0",
+        "source_accessions": [
+          "WP554"
+        ],
+        "source_refs": [
+          {
+            "accession": "WP554",
+            "source_family": "mechanistic_context",
+            "source_id": "wikipathways_context"
+          }
+        ],
+        "study_id": "WP554-diazinon-steatosis",
+        "study_kind": "review",
+        "title": "Diazinon mechanistic context for steatosis pathway review",
+        "validation_state": "valid"
+      },
+      {
+        "created_at": "2026-04-21T13:00:00Z",
+        "measurement_context": "Mechanistic pathway context linking diazinon-responsive signaling, oxidative stress, and steatosis-relevant pathway review.",
+        "object_type": "ProtocolContextRecord",
+        "platform_or_method": "WikiPathways curated pathway context",
+        "protocol_id": "ctx-diazinon-pxr-001",
+        "protocol_type": "mechanistic_context",
+        "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+        "review_state": "pending_review",
+        "rule_pack_version": "1.1.0",
+        "schema_version": "1.1.0",
+        "source_refs": [
+          {
+            "accession": "WP554",
+            "source_family": "mechanistic_context",
+            "source_id": "wikipathways_context"
+          }
+        ],
+        "source_text_ref": "WP554",
+        "system_descriptor": "hepatocellular mechanistic context",
+        "validation_state": "valid"
+      }
+    ],
+    "evidenceQualityReview": {
+      "controls_status": "unknown",
+      "created_at": "2026-04-21T13:00:00Z",
+      "manual_review_reasons": [
+        "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support."
+      ],
+      "manual_review_required": true,
+      "object_type": "EvidenceQualityReviewRecord",
+      "protocol_completeness": "partial",
+      "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+      "qc_artifact_refs": [],
+      "quality_review_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+      "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a48",
+      "replicates_status": "unknown",
+      "review_state": "pending_review",
+      "reviewed_at": "2026-04-21T13:00:00Z",
+      "reviewer_guidance": [
+        "Attach this evidence only as supporting mechanistic context and retain explicit bounded-use caveats in AOP review artifacts."
+      ],
+      "routeability_boundary_note": "Scientific quality review flags are advisory for human review and must not be treated as an automated adequacy verdict.",
+      "rule_pack_version": "1.1.0",
+      "schema_version": "1.1.0",
+      "source_refs": [
+        {
+          "accession": "WP554",
+          "source_family": "mechanistic_context",
+          "source_id": "wikipathways_context"
+        }
+      ],
+      "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+      "unresolved_study_design_flags": [
+        "mechanistic_context_not_direct_empirical_proof"
+      ],
+      "validation_state": "valid"
+    },
+    "handoffBundle": {
+      "artifacts": [
+        {
+          "artifact_type": "canonical_record",
+          "object_type": "StudyRecord",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+          "summary": "Canonical StudyRecord for subject b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+        },
+        {
+          "artifact_type": "canonical_record",
+          "object_type": "ProtocolContextRecord",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+          "summary": "Canonical ProtocolContextRecord for subject b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+        },
+        {
+          "artifact_type": "readiness_record",
+          "object_type": "StudyReadinessRecord",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+          "summary": "Readiness context_only for target aop_context"
+        },
+        {
+          "artifact_type": "routing_recommendation",
+          "object_type": "RoutingRecommendationRecord",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+          "summary": "Routing recommendation: preferred=[aop_context], eligible=[aop_context, general_registry]"
+        },
+        {
+          "artifact_type": "provenance_bundle",
+          "object_type": "ProvenanceBundle",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+          "summary": "Provenance bundle with 1 activities"
+        },
+        {
+          "artifact_type": "verification_summary",
+          "object_type": "IngestionVerificationSummary",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a58",
+          "summary": "Verification pass: 0 errors, 0 warnings"
+        }
+      ],
+      "blocking_issues": [],
+      "bundle_id": "db484191-c4f8-4e84-866b-47909b4744d5",
+      "bundle_type": "context_qualification_bundle",
+      "canonical_records": [
+        {
+          "created_at": "2026-04-21T13:00:00Z",
+          "dataset_refs": [],
+          "description": "Mechanistic pathway context intended for bounded AOP support and reviewer-guided draft evidence use.",
+          "object_type": "StudyRecord",
+          "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+          "review_state": "pending_review",
+          "rule_pack_version": "1.1.0",
+          "schema_version": "1.1.0",
+          "source_accessions": [
+            "WP554"
+          ],
+          "source_refs": [
+            {
+              "accession": "WP554",
+              "source_family": "mechanistic_context",
+              "source_id": "wikipathways_context"
+            }
+          ],
+          "study_id": "WP554-diazinon-steatosis",
+          "study_kind": "review",
+          "title": "Diazinon mechanistic context for steatosis pathway review",
+          "validation_state": "valid"
+        },
+        {
+          "created_at": "2026-04-21T13:00:00Z",
+          "measurement_context": "Mechanistic pathway context linking diazinon-responsive signaling, oxidative stress, and steatosis-relevant pathway review.",
+          "object_type": "ProtocolContextRecord",
+          "platform_or_method": "WikiPathways curated pathway context",
+          "protocol_id": "ctx-diazinon-pxr-001",
+          "protocol_type": "mechanistic_context",
+          "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+          "review_state": "pending_review",
+          "rule_pack_version": "1.1.0",
+          "schema_version": "1.1.0",
+          "source_refs": [
+            {
+              "accession": "WP554",
+              "source_family": "mechanistic_context",
+              "source_id": "wikipathways_context"
+            }
+          ],
+          "source_text_ref": "WP554",
+          "system_descriptor": "hepatocellular mechanistic context",
+          "validation_state": "valid"
+        }
+      ],
+      "created_at": "2026-04-21T13:00:00Z",
+      "machine_summary": {
+        "bundle_type": "context_qualification_bundle",
+        "canonical_record_types": [
+          "StudyRecord",
+          "ProtocolContextRecord"
+        ],
+        "eligible_targets": [
+          "aop_context",
+          "general_registry"
+        ],
+        "has_blocking_issues": false,
+        "has_semantic_losses": false,
+        "primary_target": "aop_context",
+        "provenance_complete": true,
+        "readiness_state": "context_only",
+        "required_curation_actions_count": 1,
+        "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+        "verification_state": "pass"
+      },
+      "object_type": "HandoffBundle",
+      "provenance_bundle_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+      "readiness_records": [
+        {
+          "blocking_issues": [],
+          "confidence_axes": [],
+          "created_at": "2026-04-21T13:00:00Z",
+          "evaluated_at": "2026-04-21T13:00:00Z",
+          "object_type": "StudyReadinessRecord",
+          "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+          "readiness_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+          "readiness_state": "context_only",
+          "recommended_action": "Use as bounded mechanistic-supporting context and keep overinterpretation warnings visible in AOP review.",
+          "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+          "review_state": "pending_review",
+          "rule_pack_version": "1.1.0",
+          "schema_version": "1.1.0",
+          "semantic_loss_refs": [],
+          "source_refs": [
+            {
+              "accession": "WP554",
+              "source_family": "mechanistic_context",
+              "source_id": "wikipathways_context"
+            }
+          ],
+          "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+          "target": "aop_context",
+          "validation_state": "valid"
+        }
+      ],
+      "required_curation_actions": [
+        "Map the supporting context manually to relevant KE or KER review sections."
+      ],
+      "routing_recommendation": {
+        "blocked_target_explanations": [
+          {
+            "reason": "Mechanistic context must not be promoted to compute-ready assay use.",
+            "target": "bioactivity_pod"
+          },
+          {
+            "reason": "Mechanistic context must not be promoted to compute-ready bridge use.",
+            "target": "ivive_ber"
+          },
+          {
+            "reason": "Mechanistic context is not an assay-ready toxicity rule input.",
+            "target": "toxclaw"
+          }
+        ],
+        "blocked_targets": [
+          "bioactivity_pod",
+          "ivive_ber",
+          "toxclaw"
+        ],
+        "created_at": "2026-04-21T13:00:00Z",
+        "deferred_targets": [
+          "woe"
+        ],
+        "eligible_targets": [
+          "aop_context",
+          "general_registry"
+        ],
+        "generated_at": "2026-04-21T13:00:00Z",
+        "handoff_bundle_type": "context_qualification_bundle",
+        "justification": "Registry mechanistic-context metadata is suitable for bounded AOP context use when explicit review caveats remain attached.",
+        "object_type": "RoutingRecommendationRecord",
+        "preferred_handoff_bundle_types": [
+          "context_qualification_bundle"
+        ],
+        "preferred_targets": [
+          "aop_context"
+        ],
+        "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "readiness_record_refs": [
+          "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45"
+        ],
+        "recommendation_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+        "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a46",
+        "required_curation_actions": [
+          "Map the supporting context manually to relevant KE or KER review sections."
+        ],
+        "review_state": "pending_review",
+        "rule_pack_version": "1.1.0",
+        "schema_version": "1.1.0",
+        "source_refs": [
+          {
+            "accession": "WP554",
+            "source_family": "mechanistic_context",
+            "source_id": "wikipathways_context"
+          }
+        ],
+        "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+        "validation_state": "valid"
+      },
+      "schema_version": "1.1.0",
+      "semantic_loss_refs": [],
+      "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+      "verification_summary_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a58"
+    },
+    "overinterpretationWarningRegister": {
+      "created_at": "2026-04-21T13:00:00Z",
+      "object_type": "OverinterpretationWarningRegister",
+      "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+      "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a50",
+      "register_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+      "review_state": "pending_review",
+      "rule_pack_version": "1.1.0",
+      "schema_version": "1.1.0",
+      "source_refs": [
+        {
+          "accession": "WP554",
+          "source_family": "mechanistic_context",
+          "source_id": "wikipathways_context"
+        }
+      ],
+      "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+      "validation_state": "valid",
+      "warnings": [
+        {
+          "affected_artifacts": [
+            "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+            "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43"
+          ],
+          "message": "Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support.",
+          "severity": "warning",
+          "warning_class": "context_not_assay",
+          "warning_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a57"
+        }
+      ]
+    },
+    "readinessRecords": [
+      {
+        "blocking_issues": [],
+        "confidence_axes": [],
+        "created_at": "2026-04-21T13:00:00Z",
+        "evaluated_at": "2026-04-21T13:00:00Z",
+        "object_type": "StudyReadinessRecord",
+        "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+        "readiness_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+        "readiness_state": "context_only",
+        "recommended_action": "Use as bounded mechanistic-supporting context and keep overinterpretation warnings visible in AOP review.",
+        "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+        "review_state": "pending_review",
+        "rule_pack_version": "1.1.0",
+        "schema_version": "1.1.0",
+        "semantic_loss_refs": [],
+        "source_refs": [
+          {
+            "accession": "WP554",
+            "source_family": "mechanistic_context",
+            "source_id": "wikipathways_context"
+          }
+        ],
+        "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+        "target": "aop_context",
+        "validation_state": "valid"
+      }
+    ],
+    "reviewPacket": {
+      "attached_reports": [],
+      "created_at": "2026-04-21T13:00:00Z",
+      "evidence_quality_review_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+      "normalisation_report_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a59",
+      "object_type": "IngestionReviewPacket",
+      "overinterpretation_warning_register_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a50",
+      "packet_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+      "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+      "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a54",
+      "review_state": "pending_review",
+      "reviewer_checklist": [
+        "Keep context-only and bounded-use caveats explicit in downstream AOP review."
+      ],
+      "routing_recommendation_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+      "rule_pack_version": "1.1.0",
+      "schema_version": "1.1.0",
+      "semantic_loss_register_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a52",
+      "source_refs": [
+        {
+          "accession": "WP554",
+          "source_family": "mechanistic_context",
+          "source_id": "wikipathways_context"
+        }
+      ],
+      "subject_refs": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+      ],
+      "unresolved_blockers": [],
+      "validation_state": "valid",
+      "verification_summary_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a58"
+    },
+    "routingRecommendation": {
+      "blocked_target_explanations": [
+        {
+          "reason": "Mechanistic context must not be promoted to compute-ready assay use.",
+          "target": "bioactivity_pod"
+        },
+        {
+          "reason": "Mechanistic context must not be promoted to compute-ready bridge use.",
+          "target": "ivive_ber"
+        },
+        {
+          "reason": "Mechanistic context is not an assay-ready toxicity rule input.",
+          "target": "toxclaw"
+        }
+      ],
+      "blocked_targets": [
+        "bioactivity_pod",
+        "ivive_ber",
+        "toxclaw"
+      ],
+      "created_at": "2026-04-21T13:00:00Z",
+      "deferred_targets": [
+        "woe"
+      ],
+      "eligible_targets": [
+        "aop_context",
+        "general_registry"
+      ],
+      "generated_at": "2026-04-21T13:00:00Z",
+      "handoff_bundle_type": "context_qualification_bundle",
+      "justification": "Registry mechanistic-context metadata is suitable for bounded AOP context use when explicit review caveats remain attached.",
+      "object_type": "RoutingRecommendationRecord",
+      "preferred_handoff_bundle_types": [
+        "context_qualification_bundle"
+      ],
+      "preferred_targets": [
+        "aop_context"
+      ],
+      "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+      "readiness_record_refs": [
+        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45"
+      ],
+      "recommendation_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+      "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a46",
+      "required_curation_actions": [
+        "Map the supporting context manually to relevant KE or KER review sections."
+      ],
+      "review_state": "pending_review",
+      "rule_pack_version": "1.1.0",
+      "schema_version": "1.1.0",
+      "source_refs": [
+        {
+          "accession": "WP554",
+          "source_family": "mechanistic_context",
+          "source_id": "wikipathways_context"
+        }
+      ],
+      "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+      "validation_state": "valid"
+    },
+    "semanticLossRegister": {
+      "aggregate_severity": "informational",
+      "created_at": "2026-04-21T13:00:00Z",
+      "losses": [],
+      "object_type": "SemanticLossRegister",
+      "provenance_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40",
+      "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a52",
+      "register_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+      "review_state": "pending_review",
+      "rule_pack_version": "1.1.0",
+      "schema_version": "1.1.0",
+      "source_refs": [
+        {
+          "accession": "WP554",
+          "source_family": "mechanistic_context",
+          "source_id": "wikipathways_context"
+        }
+      ],
+      "subject_ref": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41",
+      "validation_state": "valid"
+    }
+  },
+  "schemaVersion": "1.1.0",
+  "sourceFormat": "structured_json_bundle",
+  "sourceVersion": "1.1.0",
+  "targetConsumer": "aop_context"
+}

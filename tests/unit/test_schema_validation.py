@@ -494,6 +494,19 @@ def test_review_draft_bundle_schema_validation() -> None:
             "limitations": [],
         },
         "chemical_trace": None,
+        "external_support": {
+            "summary": {
+                "attached_bundle_count": 0,
+                "ready_bundle_count": 0,
+                "total_evidence_item_count": 0,
+                "total_bounded_use_warning_count": 0,
+                "total_scientific_review_flag_count": 0,
+                "blocking_issue_count": 0,
+                "advisory_issue_count": 0,
+            },
+            "imports": [],
+            "limitations": [],
+        },
         "evidence_gaps": {
             "draft_id": "draft-1",
             "version_id": "v5",
@@ -606,6 +619,7 @@ def test_export_draft_review_artifact_schema_validation() -> None:
             "Quantitative Review",
             "Chemical Trace",
             "Evidence Gaps",
+            "External Support",
             "Recommended Next Actions",
             "Limitations"
         ],
@@ -661,11 +675,24 @@ def test_save_draft_review_artifact_schema_validation() -> None:
             "Quantitative Evidence",
             "Evidence Gaps",
             "Chemical Activity Overlay",
+            "External Support",
             "Recommended Next Actions",
             "Limitations and Interpretation"
         ],
         "bytes_written": 2048,
         "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "artifact_integrity": {
+            "algorithm": "sha256-v1",
+            "content_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "metadata_sha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        },
+        "draft_version_integrity": {
+            "checksum_algorithm": "sha256-v1",
+            "graph_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+            "previous_graph_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "provenance_checksum_algorithm": "sha256-v1",
+            "provenance_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        },
         "saved_at": "2026-04-12T12:00:00Z",
         "overwrote_existing_file": False,
     }
@@ -691,6 +718,28 @@ def test_list_saved_draft_review_artifacts_schema_validation() -> None:
                 "version_id": "v5",
                 "bytes_written": 2048,
                 "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                "artifact_integrity": {
+                    "algorithm": "sha256-v1",
+                    "content_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                    "metadata_sha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+                },
+                "draft_version_integrity": {
+                    "checksum_algorithm": "sha256-v1",
+                    "graph_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+                    "previous_graph_sha256": "",
+                    "provenance_checksum_algorithm": "sha256-v1",
+                    "provenance_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+                },
+                "integrity_check": {
+                    "overall_status": "verified",
+                    "content_status": "verified",
+                    "metadata_status": "verified",
+                    "content_sha256_actual": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                    "content_sha256_expected": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                    "metadata_sha256_actual": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+                    "metadata_sha256_expected": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+                    "messages": [],
+                },
                 "saved_at": "2026-04-12T12:00:00Z",
                 "metadata_available": True,
                 "metadata_path": "/tmp/output/draft_reviews/handoff/scientist_review.md.meta.json",
@@ -734,6 +783,103 @@ def test_list_saved_draft_review_artifacts_schema_validation() -> None:
         payload,
         namespace="read",
         name="list_saved_draft_review_artifacts.response.schema",
+    )
+
+
+def test_export_draft_replay_package_schema_validation() -> None:
+    payload = {
+        "package_schema_version": "draft-replay-package.v1",
+        "generated_at": "2026-04-12T12:00:00Z",
+        "draft_id": "draft-1",
+        "version_id": "v1",
+        "draft_snapshot": {
+            "draft": {
+                "draft_id": "draft-1",
+                "title": "Example draft",
+                "status": "draft",
+                "created_at": "2026-04-12T12:00:00Z",
+                "updated_at": "2026-04-12T12:00:00Z",
+                "tags": [],
+                "version_count": 1,
+            },
+            "version": {
+                "version_id": "v1",
+                "author": "tester",
+                "summary": "create draft",
+                "created_at": "2026-04-12T12:00:00Z",
+                "provenance": {},
+                "checksum": "1111111111111111111111111111111111111111111111111111111111111111",
+                "previous_checksum": "",
+                "checksum_algorithm": "sha256-v1",
+                "provenance_checksum": "2222222222222222222222222222222222222222222222222222222222222222",
+                "provenance_checksum_algorithm": "sha256-v1",
+                "signatures": [],
+            },
+            "graph": {
+                "entity_count": 1,
+                "relationship_count": 0,
+                "entities": [
+                    {
+                        "identifier": "AOP:draft-1",
+                        "type": "AdverseOutcomePathway",
+                        "attributes": {"title": "Example draft"},
+                    }
+                ],
+                "relationships": [],
+            },
+            "diff_summary": {
+                "added_entity_count": 1,
+                "removed_entity_count": 0,
+                "updated_entity_count": 0,
+                "added_relationship_count": 0,
+                "removed_relationship_count": 0,
+                "updated_relationship_count": 0,
+            },
+        },
+        "draft_integrity": {
+            "audit_chain": True,
+            "provenance": True,
+            "overall": True,
+            "selected_version": {
+                "checksum_algorithm": "sha256-v1",
+                "graph_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+                "previous_graph_sha256": "",
+                "provenance_checksum_algorithm": "sha256-v1",
+                "provenance_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            },
+        },
+        "external_support": {
+            "summary": {
+                "attached_bundle_count": 0,
+                "ready_bundle_count": 0,
+                "total_evidence_item_count": 0,
+                "total_bounded_use_warning_count": 0,
+                "total_scientific_review_flag_count": 0,
+                "blocking_issue_count": 0,
+                "advisory_issue_count": 0,
+            },
+            "imports": [],
+            "limitations": [],
+        },
+        "saved_artifact": None,
+        "audit_records": {
+            "scope": "process_local_recent_records",
+            "included": False,
+            "limit": 0,
+            "included_record_count": 0,
+            "records": [],
+        },
+        "limitations": [
+            "Replay package audit records are drawn from the process-local MCP audit buffer and may not include historical calls from prior server runs.",
+            "Replay package verifies stored checksums but does not provide an immutable ledger or third-party timestamp.",
+        ],
+        "package_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    }
+
+    validate_payload(
+        payload,
+        namespace="read",
+        name="export_draft_replay_package.response.schema",
     )
 
 

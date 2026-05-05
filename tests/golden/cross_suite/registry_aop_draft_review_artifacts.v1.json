@@ -1,0 +1,2515 @@
+{
+  "review_bundle": {
+    "draft_id": "draft-registry-aop-golden",
+    "version_id": "v5",
+    "draft": {
+      "aop_entity_id": "AOP:draft-registry-aop-golden",
+      "title": "Registry-supported mechanistic context review",
+      "adverse_outcome": "Liver steatosis"
+    },
+    "review_parameters": {
+      "assay_limit": 3,
+      "stressor_limit": 5,
+      "min_hitcall": 0.9,
+      "chemical_trace_requested": false
+    },
+    "chemical_query": {
+      "dtxsid": null,
+      "cas": null,
+      "inchikey": null,
+      "name": null
+    },
+    "bundle_summary": {
+      "ready_for_review": true,
+      "validator_error_count": 0,
+      "validator_warning_count": 12,
+      "assay_cutoff_assessable_relationship_count": 0,
+      "assay_cutoff_discordant_relationship_count": 0,
+      "chemical_trace_included": false,
+      "traced_key_event_count": 0,
+      "active_key_event_count": 0,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15
+    },
+    "validation": {
+      "draft_id": "draft-registry-aop-golden",
+      "version_id": "v5",
+      "summary": {
+        "error_count": 0,
+        "warning_count": 12,
+        "ready_for_review": true,
+        "score": 40
+      },
+      "results": [
+        {
+          "id": "aop_root",
+          "label": "Draft contains a root AOP entity",
+          "status": "pass",
+          "severity": "error",
+          "message": "Create a draft AOP root entity before running OECD-style checks."
+        },
+        {
+          "id": "title_present",
+          "label": "AOP root includes a title",
+          "status": "pass",
+          "severity": "error",
+          "message": "Add a descriptive AOP title."
+        },
+        {
+          "id": "title_format",
+          "label": "Title follows OECD 'MIE leading to AO' guidance",
+          "status": "fail",
+          "severity": "warning",
+          "message": "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible."
+        },
+        {
+          "id": "description_present",
+          "label": "AOP root includes a summary or abstract",
+          "status": "pass",
+          "severity": "warning",
+          "message": "Add a concise abstract/summary describing the pathway and major knowledge gaps."
+        },
+        {
+          "id": "adverse_outcome_present",
+          "label": "AOP root records an adverse outcome",
+          "status": "pass",
+          "severity": "warning",
+          "message": "Set the adverse outcome on the root AOP entity."
+        },
+        {
+          "id": "applicability_present",
+          "label": "AOP root captures applicability metadata",
+          "status": "fail",
+          "severity": "warning",
+          "message": "Add species / life stage / sex applicability metadata on the draft root."
+        },
+        {
+          "id": "references_present",
+          "label": "AOP root has references",
+          "status": "fail",
+          "severity": "warning",
+          "message": "Add at least one reference supporting the AOP summary."
+        },
+        {
+          "id": "graphical_representation_present",
+          "label": "AOP root includes a graphical representation reference",
+          "status": "fail",
+          "severity": "warning",
+          "message": "Store a diagram or reference to a graphical AOP representation on the root entity."
+        },
+        {
+          "id": "contact_present",
+          "label": "AOP root includes author/contact metadata",
+          "status": "fail",
+          "severity": "warning",
+          "message": "Add corresponding author / point-of-contact metadata for review workflows."
+        },
+        {
+          "id": "key_event_count",
+          "label": "Draft contains at least two key events",
+          "status": "pass",
+          "severity": "error",
+          "message": "Add the key events that define the pathway before review."
+        },
+        {
+          "id": "ker_count",
+          "label": "Draft contains at least one key event relationship",
+          "status": "pass",
+          "severity": "error",
+          "message": "Add the KERs connecting the draft key events."
+        },
+        {
+          "id": "stressor_links",
+          "label": "Draft contains at least one linked stressor",
+          "status": "fail",
+          "severity": "warning",
+          "message": "Link one or more stressors where known; this is especially useful for MIE-centric review."
+        },
+        {
+          "id": "ke_measurement_coverage",
+          "label": "Key events include measurement/detection guidance",
+          "status": "pass",
+          "severity": "warning",
+          "message": "2/2 key events include measurement guidance."
+        },
+        {
+          "id": "ke_applicability_coverage",
+          "label": "Key events include applicability metadata",
+          "status": "fail",
+          "severity": "warning",
+          "message": "1/2 key events include applicability metadata."
+        },
+        {
+          "id": "ke_essentiality_shape",
+          "label": "Governed KE essentiality records follow the draft contract",
+          "status": "pass",
+          "severity": "error",
+          "message": "Key-event essentiality metadata must use the governed object form {evidence_call, rationale, references?, provenance?}."
+        },
+        {
+          "id": "ke_essentiality_coverage",
+          "label": "Key events include explicit essentiality status",
+          "status": "fail",
+          "severity": "warning",
+          "message": "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage."
+        },
+        {
+          "id": "ke_event_role_coverage",
+          "label": "Key events include explicit topology roles",
+          "status": "pass",
+          "severity": "warning",
+          "message": "2/2 key events include explicit event_role metadata."
+        },
+        {
+          "id": "ker_plausibility_coverage",
+          "label": "KERs include biological plausibility text",
+          "status": "pass",
+          "severity": "warning",
+          "message": "1/1 KERs include biological plausibility support."
+        },
+        {
+          "id": "ker_empirical_support_coverage",
+          "label": "KERs include empirical support",
+          "status": "fail",
+          "severity": "warning",
+          "message": "0/1 KERs include empirical support content."
+        },
+        {
+          "id": "ker_quantitative_support_coverage",
+          "label": "KERs include quantitative understanding",
+          "status": "fail",
+          "severity": "warning",
+          "message": "0/1 KERs include quantitative understanding content."
+        },
+        {
+          "id": "topology_anchor_inference_used",
+          "label": "Topology validation used explicit anchors instead of graph inference",
+          "status": "pass",
+          "severity": "warning",
+          "message": "Topology validation used explicit event_role anchors."
+        },
+        {
+          "id": "topology_mie_present",
+          "label": "At least one MIE anchor can be identified",
+          "status": "pass",
+          "severity": "error",
+          "message": "Add an explicit mie event_role or ensure at least one key event has zero incoming KERs and at least one outgoing KER."
+        },
+        {
+          "id": "topology_ao_present",
+          "label": "At least one AO anchor can be identified",
+          "status": "pass",
+          "severity": "error",
+          "message": "Add an explicit ao event_role or ensure at least one key event has zero outgoing KERs and at least one incoming KER."
+        },
+        {
+          "id": "topology_cycle_free",
+          "label": "KER graph is acyclic",
+          "status": "pass",
+          "severity": "error",
+          "message": "Remove directed cycles from the draft KER graph before review."
+        },
+        {
+          "id": "topology_mie_to_ao_path_exists",
+          "label": "At least one directed MIE-to-AO path exists",
+          "status": "pass",
+          "severity": "error",
+          "message": "Add or repair KERs so at least one directed path connects an MIE anchor to an AO anchor."
+        },
+        {
+          "id": "topology_anchor_degree_consistency",
+          "label": "Explicit MIE/AO anchors have consistent graph degree",
+          "status": "pass",
+          "severity": "warning",
+          "message": "Explicit anchor roles are consistent with graph degree."
+        },
+        {
+          "id": "topology_unanchored_key_events",
+          "label": "All key events participate in at least one MIE-to-AO path",
+          "status": "pass",
+          "severity": "warning",
+          "message": "Every key event participates in at least one MIE-to-AO path."
+        },
+        {
+          "id": "topology_directional_concordance_assessable",
+          "label": "Draft exposes enough polarity metadata for directional concordance checks",
+          "status": "fail",
+          "severity": "warning",
+          "message": "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect)."
+        },
+        {
+          "id": "topology_directional_concordance",
+          "label": "Assessable KER steps are directionally concordant",
+          "status": "pass",
+          "severity": "warning",
+          "message": "No directional polarity contradictions were detected across assessable KER steps."
+        },
+        {
+          "id": "ker_assay_cutoff_ordering_assessable",
+          "label": "Draft exposes enough stressor and assay evidence for KER cutoff-ordering review",
+          "status": "fail",
+          "severity": "warning",
+          "message": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived."
+        },
+        {
+          "id": "ker_assay_cutoff_ordering",
+          "label": "Assessable draft KERs are quantitatively concordant by assay cutoff ordering",
+          "status": "pass",
+          "severity": "warning",
+          "message": "No discordant assay-cutoff ordering conflicts were detected because no draft KERs were assessable."
+        }
+      ]
+    },
+    "quantitative_review": {
+      "draft_id": "draft-registry-aop-golden",
+      "version_id": "v5",
+      "draft": {
+        "aop_entity_id": "AOP:draft-registry-aop-golden",
+        "title": "Registry-supported mechanistic context review",
+        "adverse_outcome": "Liver steatosis"
+      },
+      "review_parameters": {
+        "assay_limit": 3,
+        "stressor_limit": 5,
+        "min_hitcall": 0.9
+      },
+      "summary": {
+        "key_event_count": 2,
+        "relationship_count": 1,
+        "linked_stressor_count": 0,
+        "scanned_stressor_count": 0,
+        "searchable_stressor_count": 0,
+        "assessable_relationship_count": 0,
+        "concordant_relationship_count": 0,
+        "discordant_relationship_count": 0,
+        "not_reported_relationship_count": 1,
+        "supporting_chemical_count": 0
+      },
+      "stressors": [],
+      "key_events": [
+        {
+          "id": "KE:1",
+          "title": "Activation, Pregnane-X receptor, NR1I2",
+          "event_type": null,
+          "event_role": "mie"
+        },
+        {
+          "id": "KE:2",
+          "title": "Liver steatosis",
+          "event_type": null,
+          "event_role": "ao"
+        }
+      ],
+      "relationships": [
+        {
+          "id": "KER:1",
+          "source": "KE:1",
+          "target": "KE:2",
+          "type": "KeyEventRelationship",
+          "plausibility": "Mechanistic support remains bounded and contextual.",
+          "status": null,
+          "assay_cutoff_ordering_call": "not_reported",
+          "assay_cutoff_supporting_chemical_count": 0,
+          "assay_cutoff_ordering": {
+            "heuristic_call": "not_reported",
+            "basis": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+            "upstream_candidate_assay_count": 0,
+            "downstream_candidate_assay_count": 0,
+            "supporting_chemical_count": 0,
+            "concordant_chemical_count": 0,
+            "discordant_chemical_count": 0,
+            "supporting_chemicals": [],
+            "provenance": [
+              {
+                "source": "derived_from_ke_assays_and_comptox_bioactivity",
+                "field": "assay_cutoff_ordering",
+                "transformation": "phase4_assay_cutoff_ordering_missing_comptox",
+                "confidence": "low"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "Draft does not currently contain any linked stressors for quantitative review.",
+        "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived."
+      ]
+    },
+    "chemical_trace": null,
+    "external_support": {
+      "summary": {
+        "attached_bundle_count": 1,
+        "ready_bundle_count": 1,
+        "total_evidence_item_count": 2,
+        "total_bounded_use_warning_count": 1,
+        "total_scientific_review_flag_count": 2,
+        "blocking_issue_count": 0,
+        "advisory_issue_count": 5
+      },
+      "imports": [
+        {
+          "source": {
+            "bundle_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a63",
+            "source_version": "1.1.0",
+            "created_at": "2026-04-21T13:00:00Z",
+            "target_consumer": "aop_context"
+          },
+          "summary": {
+            "ready_for_aop_review": true,
+            "evidence_item_count": 2,
+            "claim_item_count": 1,
+            "applicability_item_count": 3,
+            "direct_applicability_count": 1,
+            "partial_applicability_count": 2,
+            "indirect_applicability_count": 0,
+            "not_comparable_applicability_count": 0,
+            "blocking_issue_count": 0,
+            "advisory_issue_count": 5
+          },
+          "evidence_items": [
+            {
+              "original_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+              "method_description": "Diazinon mechanistic context for steatosis pathway review | Mechanistic pathway context intended for bounded AOP support and reviewer-guided draft evidence use. | StudyRecord: Diazinon mechanistic context for steatosis pathway review",
+              "method_maturity": "valid:pending_review",
+              "readiness_state": "context_only",
+              "study_identifiers": [
+                {
+                  "identifier_type": "study_id",
+                  "identifier_value": "WP554-diazinon-steatosis"
+                },
+                {
+                  "identifier_type": "source_accession",
+                  "identifier_value": "WP554"
+                }
+              ],
+              "review_caveats": [
+                "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+                "mechanistic_context_not_direct_empirical_proof",
+                "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+              ],
+              "scientific_review_gap_ids": [
+                "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49"
+              ],
+              "registry_artifact_refs": [
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "IngestionReviewPacket",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "cachedSnapshot": {
+                    "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "subjectRefs": [
+                      "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+                    ],
+                    "unresolvedBlockers": []
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "SemanticLossRegister",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                  "cachedSnapshot": {
+                    "aggregateSeverity": "informational",
+                    "lossCount": 0,
+                    "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "EvidenceQualityReviewRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "cachedSnapshot": {
+                    "manualReviewRequired": true,
+                    "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "unresolvedStudyDesignFlags": [
+                      "mechanistic_context_not_direct_empirical_proof"
+                    ]
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "OverinterpretationWarningRegister",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "cachedSnapshot": {
+                    "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "warningClasses": [
+                      "context_not_assay"
+                    ]
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+                }
+              ]
+            },
+            {
+              "original_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+              "method_description": "ProtocolContextRecord: ProtocolContextRecord",
+              "method_maturity": "valid:pending_review",
+              "readiness_state": "context_only",
+              "study_identifiers": [],
+              "review_caveats": [
+                "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+                "mechanistic_context_not_direct_empirical_proof",
+                "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+              ],
+              "scientific_review_gap_ids": [
+                "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49"
+              ],
+              "registry_artifact_refs": [
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "IngestionReviewPacket",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "cachedSnapshot": {
+                    "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "subjectRefs": [
+                      "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+                    ],
+                    "unresolvedBlockers": []
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "SemanticLossRegister",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                  "cachedSnapshot": {
+                    "aggregateSeverity": "informational",
+                    "lossCount": 0,
+                    "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "EvidenceQualityReviewRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "cachedSnapshot": {
+                    "manualReviewRequired": true,
+                    "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "unresolvedStudyDesignFlags": [
+                      "mechanistic_context_not_direct_empirical_proof"
+                    ]
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "OverinterpretationWarningRegister",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "cachedSnapshot": {
+                    "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "warningClasses": [
+                      "context_not_assay"
+                    ]
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+                }
+              ]
+            }
+          ],
+          "bounded_use_warnings": [
+            "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+          ],
+          "scientific_review_flags": [
+            "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+            "study_design_flag: mechanistic_context_not_direct_empirical_proof"
+          ],
+          "draft_import_plan": {
+            "suggested_draft_title": "Diazinon mechanistic context for steatosis pathway review",
+            "suggested_adverse_outcome": null,
+            "suggested_ke_support_actions": [
+              "Map the imported Registry support manually to the relevant draft key event(s); the handoff bundle preserves supporting evidence but does not identify KE targets automatically.",
+              "Use Registry evidence as supporting mechanistic context or bounded essentiality/applicability rationale only where the draft author can justify the mapping."
+            ],
+            "suggested_ker_support_actions": [
+              "Use the imported Registry bundle to support bounded plausibility or contextual rationale for relevant KER review sections, not as automatic empirical-support proof.",
+              "Keep all imported scientific-review gaps and overinterpretation warnings visible when citing Registry evidence in KER review text."
+            ],
+            "suggested_stressor_link_actions": [
+              "Only create stressor links when the draft author can trace the Registry evidence to a concrete chemical/stressor identity already supported by AOP or CompTox-side evidence."
+            ],
+            "required_manual_mapping": [
+              "Manual KE/KER mapping is required before Registry evidence can be attached to draft-specific review claims.",
+              "Imported AOP-context bundles preserve provenance and caveats, but they do not establish causal directionality or direct empirical sufficiency on their own."
+            ],
+            "suggested_references": [
+              {
+                "label": "Diazinon mechanistic context for steatosis pathway review",
+                "accession": "WP554",
+                "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                "note": "Registry-imported supporting evidence; preserve bounded-use caveats and do not treat as direct KE/KER proof without additional empirical support."
+              },
+              {
+                "label": "ProtocolContextRecord",
+                "accession": "WP554",
+                "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                "note": "Registry-imported supporting evidence; preserve bounded-use caveats and do not treat as direct KE/KER proof without additional empirical support."
+              }
+            ],
+            "attachable_registry_artifact_refs": [
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "HandoffBundle",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/db484191-c4f8-4e84-866b-47909b4744d5",
+                "cachedSnapshot": {
+                  "bundleId": "db484191-c4f8-4e84-866b-47909b4744d5",
+                  "bundleType": "context_qualification_bundle",
+                  "primaryTarget": "aop_context",
+                  "readinessState": "context_only"
+                },
+                "artifactId": "db484191-c4f8-4e84-866b-47909b4744d5",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:4a197546816a6319fcce73b4fa1182bbe0d1db9da7274497665b91071b256eb1"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "IngestionReviewPacket",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                "cachedSnapshot": {
+                  "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "subjectRefs": [
+                    "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+                  ],
+                  "unresolvedBlockers": []
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "StudyReadinessRecord",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+                "cachedSnapshot": {
+                  "blockingIssues": [],
+                  "readinessId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+                  "readinessState": "context_only",
+                  "target": "aop_context"
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:b536a06f814fcf5a5e199e028a7297574ee9965b43a1beaf5abb4c551d7ba884"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "RoutingRecommendationRecord",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+                "cachedSnapshot": {
+                  "blockedTargets": [
+                    "bioactivity_pod",
+                    "ivive_ber",
+                    "toxclaw"
+                  ],
+                  "eligibleTargets": [
+                    "aop_context",
+                    "general_registry"
+                  ],
+                  "preferredTargets": [
+                    "aop_context"
+                  ],
+                  "recommendationId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47"
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:b818d9f948e15e8efff12836b65b771b7b97c4463c17161e8f554a3ff7cae150"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "SemanticLossRegister",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                "cachedSnapshot": {
+                  "aggregateSeverity": "informational",
+                  "lossCount": 0,
+                  "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "EvidenceQualityReviewRecord",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                "cachedSnapshot": {
+                  "manualReviewRequired": true,
+                  "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "unresolvedStudyDesignFlags": [
+                    "mechanistic_context_not_direct_empirical_proof"
+                  ]
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "OverinterpretationWarningRegister",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                "cachedSnapshot": {
+                  "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "warningClasses": [
+                    "context_not_assay"
+                  ]
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "StudyRecord",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                "cachedSnapshot": {
+                  "objectType": "StudyRecord",
+                  "recordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                  "summary": "StudyRecord: Diazinon mechanistic context for steatosis pathway review"
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:d5b1b7b6da0c4faf24ed7c03e2303f8db76543abf609947015568ccf8f6d9f8a"
+              },
+              {
+                "objectType": "typedHandoffRef",
+                "schemaVersion": "1.1.0",
+                "objectTypeRef": "ProtocolContextRecord",
+                "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                "cachedSnapshot": {
+                  "objectType": "ProtocolContextRecord",
+                  "recordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                  "summary": "ProtocolContextRecord: ProtocolContextRecord"
+                },
+                "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                "producerModule": "evidence_registry",
+                "producerVersion": "1.1.0",
+                "integrityHash": "sha256:d92b883822cae3e6a17d9a2de200e859420ea73874370e5fbd3103458010a298"
+              }
+            ]
+          },
+          "limitations": [
+            "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+            "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence."
+          ]
+        }
+      ],
+      "limitations": [
+        "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+        "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence."
+      ]
+    },
+    "limitations": [
+      "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+      "Add species / life stage / sex applicability metadata on the draft root.",
+      "Add at least one reference supporting the AOP summary.",
+      "Store a diagram or reference to a graphical AOP representation on the root entity.",
+      "Add corresponding author / point-of-contact metadata for review workflows.",
+      "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+      "1/2 key events include applicability metadata.",
+      "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage.",
+      "0/1 KERs include empirical support content.",
+      "0/1 KERs include quantitative understanding content.",
+      "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+      "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+      "Draft does not currently contain any linked stressors for quantitative review.",
+      "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+      "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence.",
+      "Chemical trace was not included because no chemical identifier was supplied."
+    ],
+    "evidence_gap_summary": {
+      "ready_for_review": true,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15,
+      "global_gap_count": 8,
+      "key_event_gap_count": 4,
+      "relationship_gap_count": 3,
+      "stressor_gap_count": 0,
+      "assay_mapping_gap_count": 1
+    },
+    "evidence_gaps": {
+      "draft_id": "draft-registry-aop-golden",
+      "version_id": "v5",
+      "draft": {
+        "aop_entity_id": "AOP:draft-registry-aop-golden",
+        "title": "Registry-supported mechanistic context review",
+        "adverse_outcome": "Liver steatosis"
+      },
+      "review_parameters": {
+        "assay_limit": 3,
+        "stressor_limit": 5,
+        "min_hitcall": 0.9
+      },
+      "bundle_summary": {
+        "ready_for_review": true,
+        "validator_error_count": 0,
+        "validator_warning_count": 12,
+        "assay_cutoff_assessable_relationship_count": 0,
+        "assay_cutoff_discordant_relationship_count": 0,
+        "chemical_trace_included": false,
+        "traced_key_event_count": 0,
+        "active_key_event_count": 0,
+        "total_gap_count": 15,
+        "blocking_gap_count": 0,
+        "advisory_gap_count": 15
+      },
+      "summary": {
+        "ready_for_review": true,
+        "total_gap_count": 15,
+        "blocking_gap_count": 0,
+        "advisory_gap_count": 15,
+        "global_gap_count": 8,
+        "key_event_gap_count": 4,
+        "relationship_gap_count": 3,
+        "stressor_gap_count": 0,
+        "assay_mapping_gap_count": 1
+      },
+      "global_gaps": [
+        {
+          "id": "title_format",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "Title follows OECD 'MIE leading to AO' guidance",
+          "detail": "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+          "source": "validation",
+          "related_check_ids": [
+            "title_format"
+          ]
+        },
+        {
+          "id": "applicability_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root captures applicability metadata",
+          "detail": "Add species / life stage / sex applicability metadata on the draft root.",
+          "source": "validation",
+          "related_check_ids": [
+            "applicability_present"
+          ]
+        },
+        {
+          "id": "references_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root has references",
+          "detail": "Add at least one reference supporting the AOP summary.",
+          "source": "validation",
+          "related_check_ids": [
+            "references_present"
+          ]
+        },
+        {
+          "id": "graphical_representation_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root includes a graphical representation reference",
+          "detail": "Store a diagram or reference to a graphical AOP representation on the root entity.",
+          "source": "validation",
+          "related_check_ids": [
+            "graphical_representation_present"
+          ]
+        },
+        {
+          "id": "contact_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root includes author/contact metadata",
+          "detail": "Add corresponding author / point-of-contact metadata for review workflows.",
+          "source": "validation",
+          "related_check_ids": [
+            "contact_present"
+          ]
+        },
+        {
+          "id": "stressor_links",
+          "severity": "warning",
+          "category": "stressor",
+          "title": "Draft contains at least one linked stressor",
+          "detail": "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+          "source": "validation",
+          "related_check_ids": [
+            "stressor_links"
+          ]
+        },
+        {
+          "id": "topology_directional_concordance_assessable",
+          "severity": "warning",
+          "category": "topology",
+          "title": "Draft exposes enough polarity metadata for directional concordance checks",
+          "detail": "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+          "source": "validation",
+          "related_check_ids": [
+            "topology_directional_concordance_assessable"
+          ]
+        },
+        {
+          "id": "ker_assay_cutoff_ordering_assessable",
+          "severity": "warning",
+          "category": "quantitative",
+          "title": "Draft exposes enough stressor and assay evidence for KER cutoff-ordering review",
+          "detail": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+          "source": "validation",
+          "related_check_ids": [
+            "ker_assay_cutoff_ordering_assessable"
+          ]
+        }
+      ],
+      "key_events": [
+        {
+          "id": "KE:1",
+          "title": "Activation, Pregnane-X receptor, NR1I2",
+          "event_type": null,
+          "event_role": "mie",
+          "assay_candidate_count": 1,
+          "top_assay_name": "ATG_PXRE_CIS",
+          "top_assay_specificity_score": 0.92,
+          "assay_search_limitations": [
+            "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+          ],
+          "gap_count": 1,
+          "gaps": [
+            {
+              "id": "missing_essentiality",
+              "severity": "warning",
+              "category": "essentiality",
+              "title": "Key event is missing explicit essentiality metadata",
+              "detail": "Provide a governed essentiality object even when the current call is `not_assessed` or `not_reported`.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ke_essentiality_coverage"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "KE:2",
+          "title": "Liver steatosis",
+          "event_type": null,
+          "event_role": "ao",
+          "assay_candidate_count": 0,
+          "top_assay_name": null,
+          "top_assay_specificity_score": null,
+          "assay_search_limitations": [
+            "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+          ],
+          "gap_count": 3,
+          "gaps": [
+            {
+              "id": "missing_applicability_metadata",
+              "severity": "warning",
+              "category": "applicability",
+              "title": "Key event is missing applicability metadata",
+              "detail": "Add species, life stage, sex, or broader applicability metadata for this key event.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ke_applicability_coverage"
+              ]
+            },
+            {
+              "id": "missing_essentiality",
+              "severity": "warning",
+              "category": "essentiality",
+              "title": "Key event is missing explicit essentiality metadata",
+              "detail": "Provide a governed essentiality object even when the current call is `not_assessed` or `not_reported`.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ke_essentiality_coverage"
+              ]
+            },
+            {
+              "id": "no_assay_candidates",
+              "severity": "warning",
+              "category": "assay_mapping",
+              "title": "No candidate assays were found for this key event",
+              "detail": "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping.",
+              "source": "assay_search",
+              "related_check_ids": []
+            }
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "id": "KER:1",
+          "source": "KE:1",
+          "target": "KE:2",
+          "type": "KeyEventRelationship",
+          "plausibility": "Mechanistic support remains bounded and contextual.",
+          "status": null,
+          "assay_cutoff_ordering_call": "not_reported",
+          "assay_cutoff_supporting_chemical_count": 0,
+          "gap_count": 3,
+          "gaps": [
+            {
+              "id": "missing_empirical_support",
+              "severity": "warning",
+              "category": "evidence",
+              "title": "KER is missing empirical support evidence",
+              "detail": "Add empirical evidence or observations supporting this key event relationship.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ker_empirical_support_coverage"
+              ]
+            },
+            {
+              "id": "missing_quantitative_understanding",
+              "severity": "warning",
+              "category": "quantitative",
+              "title": "KER is missing quantitative understanding",
+              "detail": "Add response-response or other quantitative understanding details for this relationship where known.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ker_quantitative_support_coverage"
+              ]
+            },
+            {
+              "id": "assay_cutoff_not_assessable",
+              "severity": "warning",
+              "category": "quantitative",
+              "title": "Assay cutoff ordering is not assessable for this KER",
+              "detail": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+              "source": "quantitative_review",
+              "related_check_ids": [
+                "ker_assay_cutoff_ordering_assessable"
+              ]
+            }
+          ]
+        }
+      ],
+      "stressors": [],
+      "recommendations": [
+        "Bring every key event up to the governed review baseline with measurement guidance, applicability metadata, and explicit essentiality status.",
+        "Tighten KE assay routing by enriching key-event titles, structured gene identifiers, and measurement metadata so assay mapping is more specific and complete.",
+        "Fill the missing KER evidence fields explicitly: biological plausibility, empirical support, and quantitative understanding.",
+        "Normalize linked stressors to CAS RN or DTXSID where possible so quantitative ordering review can resolve chemicals deterministically.",
+        "Add explicit KE directionality and KER effect metadata so directional concordance can be reviewed deterministically."
+      ],
+      "limitations": [
+        "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+        "Add species / life stage / sex applicability metadata on the draft root.",
+        "Add at least one reference supporting the AOP summary.",
+        "Store a diagram or reference to a graphical AOP representation on the root entity.",
+        "Add corresponding author / point-of-contact metadata for review workflows.",
+        "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+        "1/2 key events include applicability metadata.",
+        "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage.",
+        "0/1 KERs include empirical support content.",
+        "0/1 KERs include quantitative understanding content.",
+        "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+        "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+        "Draft does not currently contain any linked stressors for quantitative review.",
+        "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+        "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence.",
+        "Chemical trace was not included because no chemical identifier was supplied.",
+        "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+      ]
+    }
+  },
+  "review_markdown_response": {
+    "format": "markdown",
+    "artifact_profile": "review",
+    "filename": "draft_review_draft_registry_aop_golden.md",
+    "draft_id": "draft-registry-aop-golden",
+    "version_id": "v5",
+    "bundle_summary": {
+      "ready_for_review": true,
+      "validator_error_count": 0,
+      "validator_warning_count": 12,
+      "assay_cutoff_assessable_relationship_count": 0,
+      "assay_cutoff_discordant_relationship_count": 0,
+      "chemical_trace_included": false,
+      "traced_key_event_count": 0,
+      "active_key_event_count": 0,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15
+    },
+    "evidence_gap_summary": {
+      "ready_for_review": true,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15,
+      "global_gap_count": 8,
+      "key_event_gap_count": 4,
+      "relationship_gap_count": 3,
+      "stressor_gap_count": 0,
+      "assay_mapping_gap_count": 1
+    },
+    "section_titles": [
+      "Draft Review Summary",
+      "Validation Findings",
+      "Quantitative Review",
+      "Chemical Trace",
+      "Evidence Gaps",
+      "External Support",
+      "Recommended Next Actions",
+      "Limitations"
+    ]
+  },
+  "publication_markdown_response": {
+    "format": "markdown",
+    "artifact_profile": "publication",
+    "filename": "draft_review_draft_registry_aop_golden_publication.md",
+    "draft_id": "draft-registry-aop-golden",
+    "version_id": "v5",
+    "bundle_summary": {
+      "ready_for_review": true,
+      "validator_error_count": 0,
+      "validator_warning_count": 12,
+      "assay_cutoff_assessable_relationship_count": 0,
+      "assay_cutoff_discordant_relationship_count": 0,
+      "chemical_trace_included": false,
+      "traced_key_event_count": 0,
+      "active_key_event_count": 0,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15
+    },
+    "evidence_gap_summary": {
+      "ready_for_review": true,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15,
+      "global_gap_count": 8,
+      "key_event_gap_count": 4,
+      "relationship_gap_count": 3,
+      "stressor_gap_count": 0,
+      "assay_mapping_gap_count": 1
+    },
+    "section_titles": [
+      "Executive Summary",
+      "Draft Context",
+      "Review Findings",
+      "Quantitative Evidence",
+      "Evidence Gaps",
+      "Chemical Activity Overlay",
+      "External Support",
+      "Recommended Next Actions",
+      "Limitations and Interpretation"
+    ]
+  },
+  "json_export_response": {
+    "format": "json",
+    "artifact_profile": "review",
+    "filename": "draft_review_draft_registry_aop_golden.json",
+    "draft_id": "draft-registry-aop-golden",
+    "version_id": "v5",
+    "bundle_summary": {
+      "ready_for_review": true,
+      "validator_error_count": 0,
+      "validator_warning_count": 12,
+      "assay_cutoff_assessable_relationship_count": 0,
+      "assay_cutoff_discordant_relationship_count": 0,
+      "chemical_trace_included": false,
+      "traced_key_event_count": 0,
+      "active_key_event_count": 0,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15
+    },
+    "evidence_gap_summary": {
+      "ready_for_review": true,
+      "total_gap_count": 15,
+      "blocking_gap_count": 0,
+      "advisory_gap_count": 15,
+      "global_gap_count": 8,
+      "key_event_gap_count": 4,
+      "relationship_gap_count": 3,
+      "stressor_gap_count": 0,
+      "assay_mapping_gap_count": 1
+    },
+    "section_titles": [
+      "Draft Review Summary",
+      "Validation Findings",
+      "Quantitative Review",
+      "Chemical Trace",
+      "Evidence Gaps",
+      "External Support",
+      "Recommended Next Actions",
+      "Limitations"
+    ]
+  },
+  "json_export_content": {
+    "bundle": {
+      "draft_id": "draft-registry-aop-golden",
+      "version_id": "v5",
+      "draft": {
+        "aop_entity_id": "AOP:draft-registry-aop-golden",
+        "title": "Registry-supported mechanistic context review",
+        "adverse_outcome": "Liver steatosis"
+      },
+      "review_parameters": {
+        "assay_limit": 3,
+        "stressor_limit": 5,
+        "min_hitcall": 0.9,
+        "chemical_trace_requested": false
+      },
+      "chemical_query": {
+        "dtxsid": null,
+        "cas": null,
+        "inchikey": null,
+        "name": null
+      },
+      "bundle_summary": {
+        "ready_for_review": true,
+        "validator_error_count": 0,
+        "validator_warning_count": 12,
+        "assay_cutoff_assessable_relationship_count": 0,
+        "assay_cutoff_discordant_relationship_count": 0,
+        "chemical_trace_included": false,
+        "traced_key_event_count": 0,
+        "active_key_event_count": 0,
+        "total_gap_count": 15,
+        "blocking_gap_count": 0,
+        "advisory_gap_count": 15
+      },
+      "validation": {
+        "draft_id": "draft-registry-aop-golden",
+        "version_id": "v5",
+        "summary": {
+          "error_count": 0,
+          "warning_count": 12,
+          "ready_for_review": true,
+          "score": 40
+        },
+        "results": [
+          {
+            "id": "aop_root",
+            "label": "Draft contains a root AOP entity",
+            "status": "pass",
+            "severity": "error",
+            "message": "Create a draft AOP root entity before running OECD-style checks."
+          },
+          {
+            "id": "title_present",
+            "label": "AOP root includes a title",
+            "status": "pass",
+            "severity": "error",
+            "message": "Add a descriptive AOP title."
+          },
+          {
+            "id": "title_format",
+            "label": "Title follows OECD 'MIE leading to AO' guidance",
+            "status": "fail",
+            "severity": "warning",
+            "message": "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible."
+          },
+          {
+            "id": "description_present",
+            "label": "AOP root includes a summary or abstract",
+            "status": "pass",
+            "severity": "warning",
+            "message": "Add a concise abstract/summary describing the pathway and major knowledge gaps."
+          },
+          {
+            "id": "adverse_outcome_present",
+            "label": "AOP root records an adverse outcome",
+            "status": "pass",
+            "severity": "warning",
+            "message": "Set the adverse outcome on the root AOP entity."
+          },
+          {
+            "id": "applicability_present",
+            "label": "AOP root captures applicability metadata",
+            "status": "fail",
+            "severity": "warning",
+            "message": "Add species / life stage / sex applicability metadata on the draft root."
+          },
+          {
+            "id": "references_present",
+            "label": "AOP root has references",
+            "status": "fail",
+            "severity": "warning",
+            "message": "Add at least one reference supporting the AOP summary."
+          },
+          {
+            "id": "graphical_representation_present",
+            "label": "AOP root includes a graphical representation reference",
+            "status": "fail",
+            "severity": "warning",
+            "message": "Store a diagram or reference to a graphical AOP representation on the root entity."
+          },
+          {
+            "id": "contact_present",
+            "label": "AOP root includes author/contact metadata",
+            "status": "fail",
+            "severity": "warning",
+            "message": "Add corresponding author / point-of-contact metadata for review workflows."
+          },
+          {
+            "id": "key_event_count",
+            "label": "Draft contains at least two key events",
+            "status": "pass",
+            "severity": "error",
+            "message": "Add the key events that define the pathway before review."
+          },
+          {
+            "id": "ker_count",
+            "label": "Draft contains at least one key event relationship",
+            "status": "pass",
+            "severity": "error",
+            "message": "Add the KERs connecting the draft key events."
+          },
+          {
+            "id": "stressor_links",
+            "label": "Draft contains at least one linked stressor",
+            "status": "fail",
+            "severity": "warning",
+            "message": "Link one or more stressors where known; this is especially useful for MIE-centric review."
+          },
+          {
+            "id": "ke_measurement_coverage",
+            "label": "Key events include measurement/detection guidance",
+            "status": "pass",
+            "severity": "warning",
+            "message": "2/2 key events include measurement guidance."
+          },
+          {
+            "id": "ke_applicability_coverage",
+            "label": "Key events include applicability metadata",
+            "status": "fail",
+            "severity": "warning",
+            "message": "1/2 key events include applicability metadata."
+          },
+          {
+            "id": "ke_essentiality_shape",
+            "label": "Governed KE essentiality records follow the draft contract",
+            "status": "pass",
+            "severity": "error",
+            "message": "Key-event essentiality metadata must use the governed object form {evidence_call, rationale, references?, provenance?}."
+          },
+          {
+            "id": "ke_essentiality_coverage",
+            "label": "Key events include explicit essentiality status",
+            "status": "fail",
+            "severity": "warning",
+            "message": "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage."
+          },
+          {
+            "id": "ke_event_role_coverage",
+            "label": "Key events include explicit topology roles",
+            "status": "pass",
+            "severity": "warning",
+            "message": "2/2 key events include explicit event_role metadata."
+          },
+          {
+            "id": "ker_plausibility_coverage",
+            "label": "KERs include biological plausibility text",
+            "status": "pass",
+            "severity": "warning",
+            "message": "1/1 KERs include biological plausibility support."
+          },
+          {
+            "id": "ker_empirical_support_coverage",
+            "label": "KERs include empirical support",
+            "status": "fail",
+            "severity": "warning",
+            "message": "0/1 KERs include empirical support content."
+          },
+          {
+            "id": "ker_quantitative_support_coverage",
+            "label": "KERs include quantitative understanding",
+            "status": "fail",
+            "severity": "warning",
+            "message": "0/1 KERs include quantitative understanding content."
+          },
+          {
+            "id": "topology_anchor_inference_used",
+            "label": "Topology validation used explicit anchors instead of graph inference",
+            "status": "pass",
+            "severity": "warning",
+            "message": "Topology validation used explicit event_role anchors."
+          },
+          {
+            "id": "topology_mie_present",
+            "label": "At least one MIE anchor can be identified",
+            "status": "pass",
+            "severity": "error",
+            "message": "Add an explicit mie event_role or ensure at least one key event has zero incoming KERs and at least one outgoing KER."
+          },
+          {
+            "id": "topology_ao_present",
+            "label": "At least one AO anchor can be identified",
+            "status": "pass",
+            "severity": "error",
+            "message": "Add an explicit ao event_role or ensure at least one key event has zero outgoing KERs and at least one incoming KER."
+          },
+          {
+            "id": "topology_cycle_free",
+            "label": "KER graph is acyclic",
+            "status": "pass",
+            "severity": "error",
+            "message": "Remove directed cycles from the draft KER graph before review."
+          },
+          {
+            "id": "topology_mie_to_ao_path_exists",
+            "label": "At least one directed MIE-to-AO path exists",
+            "status": "pass",
+            "severity": "error",
+            "message": "Add or repair KERs so at least one directed path connects an MIE anchor to an AO anchor."
+          },
+          {
+            "id": "topology_anchor_degree_consistency",
+            "label": "Explicit MIE/AO anchors have consistent graph degree",
+            "status": "pass",
+            "severity": "warning",
+            "message": "Explicit anchor roles are consistent with graph degree."
+          },
+          {
+            "id": "topology_unanchored_key_events",
+            "label": "All key events participate in at least one MIE-to-AO path",
+            "status": "pass",
+            "severity": "warning",
+            "message": "Every key event participates in at least one MIE-to-AO path."
+          },
+          {
+            "id": "topology_directional_concordance_assessable",
+            "label": "Draft exposes enough polarity metadata for directional concordance checks",
+            "status": "fail",
+            "severity": "warning",
+            "message": "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect)."
+          },
+          {
+            "id": "topology_directional_concordance",
+            "label": "Assessable KER steps are directionally concordant",
+            "status": "pass",
+            "severity": "warning",
+            "message": "No directional polarity contradictions were detected across assessable KER steps."
+          },
+          {
+            "id": "ker_assay_cutoff_ordering_assessable",
+            "label": "Draft exposes enough stressor and assay evidence for KER cutoff-ordering review",
+            "status": "fail",
+            "severity": "warning",
+            "message": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived."
+          },
+          {
+            "id": "ker_assay_cutoff_ordering",
+            "label": "Assessable draft KERs are quantitatively concordant by assay cutoff ordering",
+            "status": "pass",
+            "severity": "warning",
+            "message": "No discordant assay-cutoff ordering conflicts were detected because no draft KERs were assessable."
+          }
+        ]
+      },
+      "quantitative_review": {
+        "draft_id": "draft-registry-aop-golden",
+        "version_id": "v5",
+        "draft": {
+          "aop_entity_id": "AOP:draft-registry-aop-golden",
+          "title": "Registry-supported mechanistic context review",
+          "adverse_outcome": "Liver steatosis"
+        },
+        "review_parameters": {
+          "assay_limit": 3,
+          "stressor_limit": 5,
+          "min_hitcall": 0.9
+        },
+        "summary": {
+          "key_event_count": 2,
+          "relationship_count": 1,
+          "linked_stressor_count": 0,
+          "scanned_stressor_count": 0,
+          "searchable_stressor_count": 0,
+          "assessable_relationship_count": 0,
+          "concordant_relationship_count": 0,
+          "discordant_relationship_count": 0,
+          "not_reported_relationship_count": 1,
+          "supporting_chemical_count": 0
+        },
+        "stressors": [],
+        "key_events": [
+          {
+            "id": "KE:1",
+            "title": "Activation, Pregnane-X receptor, NR1I2",
+            "event_type": null,
+            "event_role": "mie"
+          },
+          {
+            "id": "KE:2",
+            "title": "Liver steatosis",
+            "event_type": null,
+            "event_role": "ao"
+          }
+        ],
+        "relationships": [
+          {
+            "id": "KER:1",
+            "source": "KE:1",
+            "target": "KE:2",
+            "type": "KeyEventRelationship",
+            "plausibility": "Mechanistic support remains bounded and contextual.",
+            "status": null,
+            "assay_cutoff_ordering_call": "not_reported",
+            "assay_cutoff_supporting_chemical_count": 0,
+            "assay_cutoff_ordering": {
+              "heuristic_call": "not_reported",
+              "basis": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+              "upstream_candidate_assay_count": 0,
+              "downstream_candidate_assay_count": 0,
+              "supporting_chemical_count": 0,
+              "concordant_chemical_count": 0,
+              "discordant_chemical_count": 0,
+              "supporting_chemicals": [],
+              "provenance": [
+                {
+                  "source": "derived_from_ke_assays_and_comptox_bioactivity",
+                  "field": "assay_cutoff_ordering",
+                  "transformation": "phase4_assay_cutoff_ordering_missing_comptox",
+                  "confidence": "low"
+                }
+              ]
+            }
+          }
+        ],
+        "limitations": [
+          "Draft does not currently contain any linked stressors for quantitative review.",
+          "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived."
+        ]
+      },
+      "chemical_trace": null,
+      "external_support": {
+        "summary": {
+          "attached_bundle_count": 1,
+          "ready_bundle_count": 1,
+          "total_evidence_item_count": 2,
+          "total_bounded_use_warning_count": 1,
+          "total_scientific_review_flag_count": 2,
+          "blocking_issue_count": 0,
+          "advisory_issue_count": 5
+        },
+        "imports": [
+          {
+            "source": {
+              "bundle_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a63",
+              "source_version": "1.1.0",
+              "created_at": "2026-04-21T13:00:00Z",
+              "target_consumer": "aop_context"
+            },
+            "summary": {
+              "ready_for_aop_review": true,
+              "evidence_item_count": 2,
+              "claim_item_count": 1,
+              "applicability_item_count": 3,
+              "direct_applicability_count": 1,
+              "partial_applicability_count": 2,
+              "indirect_applicability_count": 0,
+              "not_comparable_applicability_count": 0,
+              "blocking_issue_count": 0,
+              "advisory_issue_count": 5
+            },
+            "evidence_items": [
+              {
+                "original_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                "method_description": "Diazinon mechanistic context for steatosis pathway review | Mechanistic pathway context intended for bounded AOP support and reviewer-guided draft evidence use. | StudyRecord: Diazinon mechanistic context for steatosis pathway review",
+                "method_maturity": "valid:pending_review",
+                "readiness_state": "context_only",
+                "study_identifiers": [
+                  {
+                    "identifier_type": "study_id",
+                    "identifier_value": "WP554-diazinon-steatosis"
+                  },
+                  {
+                    "identifier_type": "source_accession",
+                    "identifier_value": "WP554"
+                  }
+                ],
+                "review_caveats": [
+                  "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+                  "mechanistic_context_not_direct_empirical_proof",
+                  "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+                ],
+                "scientific_review_gap_ids": [
+                  "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49"
+                ],
+                "registry_artifact_refs": [
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "IngestionReviewPacket",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "cachedSnapshot": {
+                      "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                      "subjectRefs": [
+                        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+                      ],
+                      "unresolvedBlockers": []
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b"
+                  },
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "SemanticLossRegister",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                    "cachedSnapshot": {
+                      "aggregateSeverity": "informational",
+                      "lossCount": 0,
+                      "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4"
+                  },
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "EvidenceQualityReviewRecord",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "cachedSnapshot": {
+                      "manualReviewRequired": true,
+                      "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                      "unresolvedStudyDesignFlags": [
+                        "mechanistic_context_not_direct_empirical_proof"
+                      ]
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+                  },
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "OverinterpretationWarningRegister",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "cachedSnapshot": {
+                      "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                      "warningClasses": [
+                        "context_not_assay"
+                      ]
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+                  }
+                ]
+              },
+              {
+                "original_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                "method_description": "ProtocolContextRecord: ProtocolContextRecord",
+                "method_maturity": "valid:pending_review",
+                "readiness_state": "context_only",
+                "study_identifiers": [],
+                "review_caveats": [
+                  "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+                  "mechanistic_context_not_direct_empirical_proof",
+                  "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+                ],
+                "scientific_review_gap_ids": [
+                  "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49"
+                ],
+                "registry_artifact_refs": [
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "IngestionReviewPacket",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "cachedSnapshot": {
+                      "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                      "subjectRefs": [
+                        "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+                      ],
+                      "unresolvedBlockers": []
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b"
+                  },
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "SemanticLossRegister",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                    "cachedSnapshot": {
+                      "aggregateSeverity": "informational",
+                      "lossCount": 0,
+                      "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4"
+                  },
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "EvidenceQualityReviewRecord",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "cachedSnapshot": {
+                      "manualReviewRequired": true,
+                      "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                      "unresolvedStudyDesignFlags": [
+                        "mechanistic_context_not_direct_empirical_proof"
+                      ]
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+                  },
+                  {
+                    "objectType": "typedHandoffRef",
+                    "schemaVersion": "1.1.0",
+                    "objectTypeRef": "OverinterpretationWarningRegister",
+                    "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "cachedSnapshot": {
+                      "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                      "warningClasses": [
+                        "context_not_assay"
+                      ]
+                    },
+                    "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "producerModule": "evidence_registry",
+                    "producerVersion": "1.1.0",
+                    "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+                  }
+                ]
+              }
+            ],
+            "bounded_use_warnings": [
+              "context_not_assay: Mechanistic context must not be reinterpreted as direct empirical assay evidence for KE or KER support."
+            ],
+            "scientific_review_flags": [
+              "Mechanistic context does not by itself establish KE essentiality or direct KER empirical support.",
+              "study_design_flag: mechanistic_context_not_direct_empirical_proof"
+            ],
+            "draft_import_plan": {
+              "suggested_draft_title": "Diazinon mechanistic context for steatosis pathway review",
+              "suggested_adverse_outcome": null,
+              "suggested_ke_support_actions": [
+                "Map the imported Registry support manually to the relevant draft key event(s); the handoff bundle preserves supporting evidence but does not identify KE targets automatically.",
+                "Use Registry evidence as supporting mechanistic context or bounded essentiality/applicability rationale only where the draft author can justify the mapping."
+              ],
+              "suggested_ker_support_actions": [
+                "Use the imported Registry bundle to support bounded plausibility or contextual rationale for relevant KER review sections, not as automatic empirical-support proof.",
+                "Keep all imported scientific-review gaps and overinterpretation warnings visible when citing Registry evidence in KER review text."
+              ],
+              "suggested_stressor_link_actions": [
+                "Only create stressor links when the draft author can trace the Registry evidence to a concrete chemical/stressor identity already supported by AOP or CompTox-side evidence."
+              ],
+              "required_manual_mapping": [
+                "Manual KE/KER mapping is required before Registry evidence can be attached to draft-specific review claims.",
+                "Imported AOP-context bundles preserve provenance and caveats, but they do not establish causal directionality or direct empirical sufficiency on their own."
+              ],
+              "suggested_references": [
+                {
+                  "label": "Diazinon mechanistic context for steatosis pathway review",
+                  "accession": "WP554",
+                  "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                  "note": "Registry-imported supporting evidence; preserve bounded-use caveats and do not treat as direct KE/KER proof without additional empirical support."
+                },
+                {
+                  "label": "ProtocolContextRecord",
+                  "accession": "WP554",
+                  "record_id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                  "note": "Registry-imported supporting evidence; preserve bounded-use caveats and do not treat as direct KE/KER proof without additional empirical support."
+                }
+              ],
+              "attachable_registry_artifact_refs": [
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "HandoffBundle",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/db484191-c4f8-4e84-866b-47909b4744d5",
+                  "cachedSnapshot": {
+                    "bundleId": "db484191-c4f8-4e84-866b-47909b4744d5",
+                    "bundleType": "context_qualification_bundle",
+                    "primaryTarget": "aop_context",
+                    "readinessState": "context_only"
+                  },
+                  "artifactId": "db484191-c4f8-4e84-866b-47909b4744d5",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:4a197546816a6319fcce73b4fa1182bbe0d1db9da7274497665b91071b256eb1"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "IngestionReviewPacket",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "cachedSnapshot": {
+                    "packetId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                    "subjectRefs": [
+                      "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41"
+                    ],
+                    "unresolvedBlockers": []
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:aab7223aad9a20aa2c9db3370cad5210934312ab85721c1507e071d9d549a93b"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "StudyReadinessRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+                  "cachedSnapshot": {
+                    "blockingIssues": [],
+                    "readinessId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+                    "readinessState": "context_only",
+                    "target": "aop_context"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a45",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:b536a06f814fcf5a5e199e028a7297574ee9965b43a1beaf5abb4c551d7ba884"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "RoutingRecommendationRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+                  "cachedSnapshot": {
+                    "blockedTargets": [
+                      "bioactivity_pod",
+                      "ivive_ber",
+                      "toxclaw"
+                    ],
+                    "eligibleTargets": [
+                      "aop_context",
+                      "general_registry"
+                    ],
+                    "preferredTargets": [
+                      "aop_context"
+                    ],
+                    "recommendationId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a47",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:b818d9f948e15e8efff12836b65b771b7b97c4463c17161e8f554a3ff7cae150"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "SemanticLossRegister",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                  "cachedSnapshot": {
+                    "aggregateSeverity": "informational",
+                    "lossCount": 0,
+                    "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a53",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:b44064e3fc625fca3b8bcab6f49db2aab9eae5cdd74ca93faaa41d110164fca4"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "EvidenceQualityReviewRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "cachedSnapshot": {
+                    "manualReviewRequired": true,
+                    "qualityReviewId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                    "unresolvedStudyDesignFlags": [
+                      "mechanistic_context_not_direct_empirical_proof"
+                    ]
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a49",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:1a5e7de2ff3ec2a8a92c6eada3e280fd71b6515ac2580f8c292dd59f3f6aff9e"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "OverinterpretationWarningRegister",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "cachedSnapshot": {
+                    "registerId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                    "warningClasses": [
+                      "context_not_assay"
+                    ]
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:2d74910f9e87704937155350f63e7b05da9144bf5d73d192971e6a3a7ae81180"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "StudyRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                  "cachedSnapshot": {
+                    "objectType": "StudyRecord",
+                    "recordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                    "summary": "StudyRecord: Diazinon mechanistic context for steatosis pathway review"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:d5b1b7b6da0c4faf24ed7c03e2303f8db76543abf609947015568ccf8f6d9f8a"
+                },
+                {
+                  "objectType": "typedHandoffRef",
+                  "schemaVersion": "1.1.0",
+                  "objectTypeRef": "ProtocolContextRecord",
+                  "retrievalEndpoint": "registry://fixtures/registry-aop-roundtrip/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                  "cachedSnapshot": {
+                    "objectType": "ProtocolContextRecord",
+                    "recordId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                    "summary": "ProtocolContextRecord: ProtocolContextRecord"
+                  },
+                  "artifactId": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43",
+                  "producerModule": "evidence_registry",
+                  "producerVersion": "1.1.0",
+                  "integrityHash": "sha256:d92b883822cae3e6a17d9a2de200e859420ea73874370e5fbd3103458010a298"
+                }
+              ]
+            },
+            "limitations": [
+              "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+              "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence."
+            ]
+          }
+        ],
+        "limitations": [
+          "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+          "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence."
+        ]
+      },
+      "limitations": [
+        "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+        "Add species / life stage / sex applicability metadata on the draft root.",
+        "Add at least one reference supporting the AOP summary.",
+        "Store a diagram or reference to a graphical AOP representation on the root entity.",
+        "Add corresponding author / point-of-contact metadata for review workflows.",
+        "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+        "1/2 key events include applicability metadata.",
+        "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage.",
+        "0/1 KERs include empirical support content.",
+        "0/1 KERs include quantitative understanding content.",
+        "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+        "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+        "Draft does not currently contain any linked stressors for quantitative review.",
+        "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+        "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence.",
+        "Chemical trace was not included because no chemical identifier was supplied."
+      ],
+      "evidence_gap_summary": {
+        "ready_for_review": true,
+        "total_gap_count": 15,
+        "blocking_gap_count": 0,
+        "advisory_gap_count": 15,
+        "global_gap_count": 8,
+        "key_event_gap_count": 4,
+        "relationship_gap_count": 3,
+        "stressor_gap_count": 0,
+        "assay_mapping_gap_count": 1
+      },
+      "evidence_gaps": {
+        "draft_id": "draft-registry-aop-golden",
+        "version_id": "v5",
+        "draft": {
+          "aop_entity_id": "AOP:draft-registry-aop-golden",
+          "title": "Registry-supported mechanistic context review",
+          "adverse_outcome": "Liver steatosis"
+        },
+        "review_parameters": {
+          "assay_limit": 3,
+          "stressor_limit": 5,
+          "min_hitcall": 0.9
+        },
+        "bundle_summary": {
+          "ready_for_review": true,
+          "validator_error_count": 0,
+          "validator_warning_count": 12,
+          "assay_cutoff_assessable_relationship_count": 0,
+          "assay_cutoff_discordant_relationship_count": 0,
+          "chemical_trace_included": false,
+          "traced_key_event_count": 0,
+          "active_key_event_count": 0,
+          "total_gap_count": 15,
+          "blocking_gap_count": 0,
+          "advisory_gap_count": 15
+        },
+        "summary": {
+          "ready_for_review": true,
+          "total_gap_count": 15,
+          "blocking_gap_count": 0,
+          "advisory_gap_count": 15,
+          "global_gap_count": 8,
+          "key_event_gap_count": 4,
+          "relationship_gap_count": 3,
+          "stressor_gap_count": 0,
+          "assay_mapping_gap_count": 1
+        },
+        "global_gaps": [
+          {
+            "id": "title_format",
+            "severity": "warning",
+            "category": "metadata",
+            "title": "Title follows OECD 'MIE leading to AO' guidance",
+            "detail": "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+            "source": "validation",
+            "related_check_ids": [
+              "title_format"
+            ]
+          },
+          {
+            "id": "applicability_present",
+            "severity": "warning",
+            "category": "metadata",
+            "title": "AOP root captures applicability metadata",
+            "detail": "Add species / life stage / sex applicability metadata on the draft root.",
+            "source": "validation",
+            "related_check_ids": [
+              "applicability_present"
+            ]
+          },
+          {
+            "id": "references_present",
+            "severity": "warning",
+            "category": "metadata",
+            "title": "AOP root has references",
+            "detail": "Add at least one reference supporting the AOP summary.",
+            "source": "validation",
+            "related_check_ids": [
+              "references_present"
+            ]
+          },
+          {
+            "id": "graphical_representation_present",
+            "severity": "warning",
+            "category": "metadata",
+            "title": "AOP root includes a graphical representation reference",
+            "detail": "Store a diagram or reference to a graphical AOP representation on the root entity.",
+            "source": "validation",
+            "related_check_ids": [
+              "graphical_representation_present"
+            ]
+          },
+          {
+            "id": "contact_present",
+            "severity": "warning",
+            "category": "metadata",
+            "title": "AOP root includes author/contact metadata",
+            "detail": "Add corresponding author / point-of-contact metadata for review workflows.",
+            "source": "validation",
+            "related_check_ids": [
+              "contact_present"
+            ]
+          },
+          {
+            "id": "stressor_links",
+            "severity": "warning",
+            "category": "stressor",
+            "title": "Draft contains at least one linked stressor",
+            "detail": "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+            "source": "validation",
+            "related_check_ids": [
+              "stressor_links"
+            ]
+          },
+          {
+            "id": "topology_directional_concordance_assessable",
+            "severity": "warning",
+            "category": "topology",
+            "title": "Draft exposes enough polarity metadata for directional concordance checks",
+            "detail": "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+            "source": "validation",
+            "related_check_ids": [
+              "topology_directional_concordance_assessable"
+            ]
+          },
+          {
+            "id": "ker_assay_cutoff_ordering_assessable",
+            "severity": "warning",
+            "category": "quantitative",
+            "title": "Draft exposes enough stressor and assay evidence for KER cutoff-ordering review",
+            "detail": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+            "source": "validation",
+            "related_check_ids": [
+              "ker_assay_cutoff_ordering_assessable"
+            ]
+          }
+        ],
+        "key_events": [
+          {
+            "id": "KE:1",
+            "title": "Activation, Pregnane-X receptor, NR1I2",
+            "event_type": null,
+            "event_role": "mie",
+            "assay_candidate_count": 1,
+            "top_assay_name": "ATG_PXRE_CIS",
+            "top_assay_specificity_score": 0.92,
+            "assay_search_limitations": [
+              "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+            ],
+            "gap_count": 1,
+            "gaps": [
+              {
+                "id": "missing_essentiality",
+                "severity": "warning",
+                "category": "essentiality",
+                "title": "Key event is missing explicit essentiality metadata",
+                "detail": "Provide a governed essentiality object even when the current call is `not_assessed` or `not_reported`.",
+                "source": "draft_record",
+                "related_check_ids": [
+                  "ke_essentiality_coverage"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "KE:2",
+            "title": "Liver steatosis",
+            "event_type": null,
+            "event_role": "ao",
+            "assay_candidate_count": 0,
+            "top_assay_name": null,
+            "top_assay_specificity_score": null,
+            "assay_search_limitations": [
+              "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+            ],
+            "gap_count": 3,
+            "gaps": [
+              {
+                "id": "missing_applicability_metadata",
+                "severity": "warning",
+                "category": "applicability",
+                "title": "Key event is missing applicability metadata",
+                "detail": "Add species, life stage, sex, or broader applicability metadata for this key event.",
+                "source": "draft_record",
+                "related_check_ids": [
+                  "ke_applicability_coverage"
+                ]
+              },
+              {
+                "id": "missing_essentiality",
+                "severity": "warning",
+                "category": "essentiality",
+                "title": "Key event is missing explicit essentiality metadata",
+                "detail": "Provide a governed essentiality object even when the current call is `not_assessed` or `not_reported`.",
+                "source": "draft_record",
+                "related_check_ids": [
+                  "ke_essentiality_coverage"
+                ]
+              },
+              {
+                "id": "no_assay_candidates",
+                "severity": "warning",
+                "category": "assay_mapping",
+                "title": "No candidate assays were found for this key event",
+                "detail": "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping.",
+                "source": "assay_search",
+                "related_check_ids": []
+              }
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "id": "KER:1",
+            "source": "KE:1",
+            "target": "KE:2",
+            "type": "KeyEventRelationship",
+            "plausibility": "Mechanistic support remains bounded and contextual.",
+            "status": null,
+            "assay_cutoff_ordering_call": "not_reported",
+            "assay_cutoff_supporting_chemical_count": 0,
+            "gap_count": 3,
+            "gaps": [
+              {
+                "id": "missing_empirical_support",
+                "severity": "warning",
+                "category": "evidence",
+                "title": "KER is missing empirical support evidence",
+                "detail": "Add empirical evidence or observations supporting this key event relationship.",
+                "source": "draft_record",
+                "related_check_ids": [
+                  "ker_empirical_support_coverage"
+                ]
+              },
+              {
+                "id": "missing_quantitative_understanding",
+                "severity": "warning",
+                "category": "quantitative",
+                "title": "KER is missing quantitative understanding",
+                "detail": "Add response-response or other quantitative understanding details for this relationship where known.",
+                "source": "draft_record",
+                "related_check_ids": [
+                  "ker_quantitative_support_coverage"
+                ]
+              },
+              {
+                "id": "assay_cutoff_not_assessable",
+                "severity": "warning",
+                "category": "quantitative",
+                "title": "Assay cutoff ordering is not assessable for this KER",
+                "detail": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+                "source": "quantitative_review",
+                "related_check_ids": [
+                  "ker_assay_cutoff_ordering_assessable"
+                ]
+              }
+            ]
+          }
+        ],
+        "stressors": [],
+        "recommendations": [
+          "Bring every key event up to the governed review baseline with measurement guidance, applicability metadata, and explicit essentiality status.",
+          "Tighten KE assay routing by enriching key-event titles, structured gene identifiers, and measurement metadata so assay mapping is more specific and complete.",
+          "Fill the missing KER evidence fields explicitly: biological plausibility, empirical support, and quantitative understanding.",
+          "Normalize linked stressors to CAS RN or DTXSID where possible so quantitative ordering review can resolve chemicals deterministically.",
+          "Add explicit KE directionality and KER effect metadata so directional concordance can be reviewed deterministically."
+        ],
+        "limitations": [
+          "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+          "Add species / life stage / sex applicability metadata on the draft root.",
+          "Add at least one reference supporting the AOP summary.",
+          "Store a diagram or reference to a graphical AOP representation on the root entity.",
+          "Add corresponding author / point-of-contact metadata for review workflows.",
+          "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+          "1/2 key events include applicability metadata.",
+          "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage.",
+          "0/1 KERs include empirical support content.",
+          "0/1 KERs include quantitative understanding content.",
+          "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+          "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+          "Draft does not currently contain any linked stressors for quantitative review.",
+          "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+          "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence.",
+          "Chemical trace was not included because no chemical identifier was supplied.",
+          "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+        ]
+      }
+    },
+    "evidence_gaps": {
+      "draft_id": "draft-registry-aop-golden",
+      "version_id": "v5",
+      "draft": {
+        "aop_entity_id": "AOP:draft-registry-aop-golden",
+        "title": "Registry-supported mechanistic context review",
+        "adverse_outcome": "Liver steatosis"
+      },
+      "review_parameters": {
+        "assay_limit": 3,
+        "stressor_limit": 5,
+        "min_hitcall": 0.9
+      },
+      "bundle_summary": {
+        "ready_for_review": true,
+        "validator_error_count": 0,
+        "validator_warning_count": 12,
+        "assay_cutoff_assessable_relationship_count": 0,
+        "assay_cutoff_discordant_relationship_count": 0,
+        "chemical_trace_included": false,
+        "traced_key_event_count": 0,
+        "active_key_event_count": 0,
+        "total_gap_count": 15,
+        "blocking_gap_count": 0,
+        "advisory_gap_count": 15
+      },
+      "summary": {
+        "ready_for_review": true,
+        "total_gap_count": 15,
+        "blocking_gap_count": 0,
+        "advisory_gap_count": 15,
+        "global_gap_count": 8,
+        "key_event_gap_count": 4,
+        "relationship_gap_count": 3,
+        "stressor_gap_count": 0,
+        "assay_mapping_gap_count": 1
+      },
+      "global_gaps": [
+        {
+          "id": "title_format",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "Title follows OECD 'MIE leading to AO' guidance",
+          "detail": "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+          "source": "validation",
+          "related_check_ids": [
+            "title_format"
+          ]
+        },
+        {
+          "id": "applicability_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root captures applicability metadata",
+          "detail": "Add species / life stage / sex applicability metadata on the draft root.",
+          "source": "validation",
+          "related_check_ids": [
+            "applicability_present"
+          ]
+        },
+        {
+          "id": "references_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root has references",
+          "detail": "Add at least one reference supporting the AOP summary.",
+          "source": "validation",
+          "related_check_ids": [
+            "references_present"
+          ]
+        },
+        {
+          "id": "graphical_representation_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root includes a graphical representation reference",
+          "detail": "Store a diagram or reference to a graphical AOP representation on the root entity.",
+          "source": "validation",
+          "related_check_ids": [
+            "graphical_representation_present"
+          ]
+        },
+        {
+          "id": "contact_present",
+          "severity": "warning",
+          "category": "metadata",
+          "title": "AOP root includes author/contact metadata",
+          "detail": "Add corresponding author / point-of-contact metadata for review workflows.",
+          "source": "validation",
+          "related_check_ids": [
+            "contact_present"
+          ]
+        },
+        {
+          "id": "stressor_links",
+          "severity": "warning",
+          "category": "stressor",
+          "title": "Draft contains at least one linked stressor",
+          "detail": "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+          "source": "validation",
+          "related_check_ids": [
+            "stressor_links"
+          ]
+        },
+        {
+          "id": "topology_directional_concordance_assessable",
+          "severity": "warning",
+          "category": "topology",
+          "title": "Draft exposes enough polarity metadata for directional concordance checks",
+          "detail": "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+          "source": "validation",
+          "related_check_ids": [
+            "topology_directional_concordance_assessable"
+          ]
+        },
+        {
+          "id": "ker_assay_cutoff_ordering_assessable",
+          "severity": "warning",
+          "category": "quantitative",
+          "title": "Draft exposes enough stressor and assay evidence for KER cutoff-ordering review",
+          "detail": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+          "source": "validation",
+          "related_check_ids": [
+            "ker_assay_cutoff_ordering_assessable"
+          ]
+        }
+      ],
+      "key_events": [
+        {
+          "id": "KE:1",
+          "title": "Activation, Pregnane-X receptor, NR1I2",
+          "event_type": null,
+          "event_role": "mie",
+          "assay_candidate_count": 1,
+          "top_assay_name": "ATG_PXRE_CIS",
+          "top_assay_specificity_score": 0.92,
+          "assay_search_limitations": [
+            "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+          ],
+          "gap_count": 1,
+          "gaps": [
+            {
+              "id": "missing_essentiality",
+              "severity": "warning",
+              "category": "essentiality",
+              "title": "Key event is missing explicit essentiality metadata",
+              "detail": "Provide a governed essentiality object even when the current call is `not_assessed` or `not_reported`.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ke_essentiality_coverage"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "KE:2",
+          "title": "Liver steatosis",
+          "event_type": null,
+          "event_role": "ao",
+          "assay_candidate_count": 0,
+          "top_assay_name": null,
+          "top_assay_specificity_score": null,
+          "assay_search_limitations": [
+            "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+          ],
+          "gap_count": 3,
+          "gaps": [
+            {
+              "id": "missing_applicability_metadata",
+              "severity": "warning",
+              "category": "applicability",
+              "title": "Key event is missing applicability metadata",
+              "detail": "Add species, life stage, sex, or broader applicability metadata for this key event.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ke_applicability_coverage"
+              ]
+            },
+            {
+              "id": "missing_essentiality",
+              "severity": "warning",
+              "category": "essentiality",
+              "title": "Key event is missing explicit essentiality metadata",
+              "detail": "Provide a governed essentiality object even when the current call is `not_assessed` or `not_reported`.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ke_essentiality_coverage"
+              ]
+            },
+            {
+              "id": "no_assay_candidates",
+              "severity": "warning",
+              "category": "assay_mapping",
+              "title": "No candidate assays were found for this key event",
+              "detail": "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping.",
+              "source": "assay_search",
+              "related_check_ids": []
+            }
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "id": "KER:1",
+          "source": "KE:1",
+          "target": "KE:2",
+          "type": "KeyEventRelationship",
+          "plausibility": "Mechanistic support remains bounded and contextual.",
+          "status": null,
+          "assay_cutoff_ordering_call": "not_reported",
+          "assay_cutoff_supporting_chemical_count": 0,
+          "gap_count": 3,
+          "gaps": [
+            {
+              "id": "missing_empirical_support",
+              "severity": "warning",
+              "category": "evidence",
+              "title": "KER is missing empirical support evidence",
+              "detail": "Add empirical evidence or observations supporting this key event relationship.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ker_empirical_support_coverage"
+              ]
+            },
+            {
+              "id": "missing_quantitative_understanding",
+              "severity": "warning",
+              "category": "quantitative",
+              "title": "KER is missing quantitative understanding",
+              "detail": "Add response-response or other quantitative understanding details for this relationship where known.",
+              "source": "draft_record",
+              "related_check_ids": [
+                "ker_quantitative_support_coverage"
+              ]
+            },
+            {
+              "id": "assay_cutoff_not_assessable",
+              "severity": "warning",
+              "category": "quantitative",
+              "title": "Assay cutoff ordering is not assessable for this KER",
+              "detail": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+              "source": "quantitative_review",
+              "related_check_ids": [
+                "ker_assay_cutoff_ordering_assessable"
+              ]
+            }
+          ]
+        }
+      ],
+      "stressors": [],
+      "recommendations": [
+        "Bring every key event up to the governed review baseline with measurement guidance, applicability metadata, and explicit essentiality status.",
+        "Tighten KE assay routing by enriching key-event titles, structured gene identifiers, and measurement metadata so assay mapping is more specific and complete.",
+        "Fill the missing KER evidence fields explicitly: biological plausibility, empirical support, and quantitative understanding.",
+        "Normalize linked stressors to CAS RN or DTXSID where possible so quantitative ordering review can resolve chemicals deterministically.",
+        "Add explicit KE directionality and KER effect metadata so directional concordance can be reviewed deterministically."
+      ],
+      "limitations": [
+        "Use the form 'MIE leading to AO' or 'MIE leading to AO via distinctive KE' where possible.",
+        "Add species / life stage / sex applicability metadata on the draft root.",
+        "Add at least one reference supporting the AOP summary.",
+        "Store a diagram or reference to a graphical AOP representation on the root entity.",
+        "Add corresponding author / point-of-contact metadata for review workflows.",
+        "Link one or more stressors where known; this is especially useful for MIE-centric review.",
+        "1/2 key events include applicability metadata.",
+        "0/2 key events include governed essentiality metadata; explicit 'not_assessed' or 'not_reported' counts as coverage.",
+        "0/1 KERs include empirical support content.",
+        "0/1 KERs include quantitative understanding content.",
+        "No MIE-to-AO KER steps exposed enough polarity metadata to assess directional concordance. Add KE directionality (for example attributes.direction_of_change) and explicit KER effect metadata (for example attributes.relationship_effect).",
+        "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+        "Draft does not currently contain any linked stressors for quantitative review.",
+        "Registry handoff bundles for AOP context preserve supporting evidence, provenance, and bounded-use caveats but do not establish KE or KER truth automatically.",
+        "Imported Registry evidence must remain reviewable support and should not silently replace direct AOP-Wiki, AOP-DB, or empirical assay evidence.",
+        "Chemical trace was not included because no chemical identifier was supplied.",
+        "Assays are ranked by key-event-derived gene and phrase matches in the CompTox assay catalog; this is not a curated KE-to-assay ontology mapping."
+      ]
+    }
+  }
+}

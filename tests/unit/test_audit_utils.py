@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from src.instrumentation.audit import verify_audit_chain
+from src.instrumentation.audit import (
+    verify_audit_chain,
+    verify_draft_integrity,
+    verify_provenance_integrity,
+)
 from src.services.draft_store import (
     Draft,
     DraftVersion,
@@ -9,6 +13,7 @@ from src.services.draft_store import (
     VersionMetadata,
     diff_graphs,
     compute_graph_checksum,
+    compute_provenance_checksum,
 )
 
 
@@ -25,6 +30,10 @@ def make_draft() -> Draft:
     version.metadata.checksum = compute_graph_checksum(snapshot)
     version.metadata.previous_checksum = ""
     version.metadata.checksum_algorithm = "sha256-v1"
+    version.metadata.provenance_checksum = compute_provenance_checksum(
+        version.metadata.provenance
+    )
+    version.metadata.provenance_checksum_algorithm = "sha256-v1"
     draft.add_version(version)
     return draft
 
@@ -60,6 +69,10 @@ def test_verify_audit_chain_detects_broken_chain() -> None:
     version.metadata.checksum = checksum
     version.metadata.previous_checksum = "wrong-previous"
     version.metadata.checksum_algorithm = "sha256-v1"
+    version.metadata.provenance_checksum = compute_provenance_checksum(
+        version.metadata.provenance
+    )
+    version.metadata.provenance_checksum_algorithm = "sha256-v1"
     draft.add_version(version)
     assert verify_audit_chain(draft) is False
 
@@ -79,8 +92,34 @@ def test_verify_audit_chain_validates_multi_version_chain() -> None:
     version.metadata.checksum = checksum
     version.metadata.previous_checksum = first_checksum
     version.metadata.checksum_algorithm = "sha256-v1"
+    version.metadata.provenance_checksum = compute_provenance_checksum(
+        version.metadata.provenance
+    )
+    version.metadata.provenance_checksum_algorithm = "sha256-v1"
     draft.add_version(version)
     assert verify_audit_chain(draft) is True
+
+
+def test_verify_provenance_integrity_returns_true_on_valid_metadata() -> None:
+    draft = make_draft()
+    assert verify_provenance_integrity(draft) is True
+
+
+def test_verify_provenance_integrity_detects_metadata_mutation() -> None:
+    draft = make_draft()
+    draft.versions[0].metadata.provenance = {
+        "imported_registry_bundles": [{"id": "changed"}]
+    }
+    assert verify_provenance_integrity(draft) is False
+
+
+def test_verify_draft_integrity_summarizes_graph_and_provenance_checks() -> None:
+    draft = make_draft()
+    assert verify_draft_integrity(draft) == {
+        "audit_chain": True,
+        "provenance": True,
+        "overall": True,
+    }
 
 
 def test_version_metadata_add_signature() -> None:

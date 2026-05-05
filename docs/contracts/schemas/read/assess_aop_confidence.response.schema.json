@@ -62,6 +62,16 @@
     "heuristic_overall_call": {"type": "string"},
     "rationale": {"type": "array", "items": {"type": "string"}},
     "limitations": {"type": "array", "items": {"type": "string"}},
+    "mechanism_role_summary": {
+      "type": "object",
+      "required": ["roleCounts", "artifactRiskKeyEventCount", "interpretationBoundary"],
+      "properties": {
+        "roleCounts": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "artifactRiskKeyEventCount": {"type": "integer"},
+        "interpretationBoundary": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
     "key_events": {"type": "array", "items": {"type": "object"}},
     "ker_assessments": {"type": "array", "items": {"type": "object"}},
     "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenanceRecord"}}

@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "export_draft_replay_package.response",
+  "type": "object",
+  "required": [
+    "package_schema_version",
+    "generated_at",
+    "draft_id",
+    "version_id",
+    "draft_snapshot",
+    "draft_integrity",
+    "external_support",
+    "saved_artifact",
+    "audit_records",
+    "limitations",
+    "package_sha256"
+  ],
+  "properties": {
+    "package_schema_version": {"type": "string", "const": "draft-replay-package.v1"},
+    "generated_at": {"type": "string"},
+    "draft_id": {"type": "string"},
+    "version_id": {"type": "string"},
+    "draft_snapshot": {
+      "type": "object",
+      "required": ["draft", "version", "graph", "diff_summary"],
+      "properties": {
+        "draft": {
+          "type": "object",
+          "required": [
+            "draft_id",
+            "title",
+            "status",
+            "created_at",
+            "updated_at",
+            "tags",
+            "version_count"
+          ],
+          "properties": {
+            "draft_id": {"type": "string"},
+            "title": {"type": "string"},
+            "status": {"type": "string"},
+            "created_at": {"type": "string"},
+            "updated_at": {"type": "string"},
+            "tags": {"type": "array", "items": {"type": "string"}},
+            "version_count": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "version": {
+          "type": "object",
+          "required": [
+            "version_id",
+            "author",
+            "summary",
+            "created_at",
+            "provenance",
+            "checksum",
+            "previous_checksum",
+            "checksum_algorithm",
+            "provenance_checksum",
+            "provenance_checksum_algorithm",
+            "signatures"
+          ],
+          "properties": {
+            "version_id": {"type": "string"},
+            "author": {"type": "string"},
+            "summary": {"type": "string"},
+            "created_at": {"type": "string"},
+            "provenance": {"type": "object", "additionalProperties": true},
+            "checksum": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "previous_checksum": {"type": "string", "pattern": "^(|[a-f0-9]{64})$"},
+            "checksum_algorithm": {"type": "string", "const": "sha256-v1"},
+            "provenance_checksum": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "provenance_checksum_algorithm": {"type": "string", "const": "sha256-v1"},
+            "signatures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "signer_user_id",
+                  "signature_meaning",
+                  "timestamp_utc",
+                  "content_hash",
+                  "signature_value",
+                  "cert_chain"
+                ],
+                "properties": {
+                  "signer_user_id": {"type": "string"},
+                  "signature_meaning": {
+                    "type": "string",
+                    "enum": ["authored", "reviewed", "approved", "rejected"]
+                  },
+                  "timestamp_utc": {"type": "string"},
+                  "content_hash": {"type": "string"},
+                  "signature_value": {"type": "string"},
+                  "cert_chain": {"type": "array", "items": {"type": "string"}}
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "graph": {
+          "type": "object",
+          "required": ["entity_count", "relationship_count", "entities", "relationships"],
+          "properties": {
+            "entity_count": {"type": "integer", "minimum": 0},
+            "relationship_count": {"type": "integer", "minimum": 0},
+            "entities": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/graph_entity"}
+            },
+            "relationships": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/graph_relationship"}
+            }
+          },
+          "additionalProperties": false
+        },
+        "diff_summary": {
+          "type": "object",
+          "required": [
+            "added_entity_count",
+            "removed_entity_count",
+            "updated_entity_count",
+            "added_relationship_count",
+            "removed_relationship_count",
+            "updated_relationship_count"
+          ],
+          "properties": {
+            "added_entity_count": {"type": "integer", "minimum": 0},
+            "removed_entity_count": {"type": "integer", "minimum": 0},
+            "updated_entity_count": {"type": "integer", "minimum": 0},
+            "added_relationship_count": {"type": "integer", "minimum": 0},
+            "removed_relationship_count": {"type": "integer", "minimum": 0},
+            "updated_relationship_count": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "draft_integrity": {
+      "type": "object",
+      "required": ["audit_chain", "provenance", "overall", "selected_version"],
+      "properties": {
+        "audit_chain": {"type": "boolean"},
+        "provenance": {"type": "boolean"},
+        "overall": {"type": "boolean"},
+        "selected_version": {"$ref": "#/$defs/draft_version_integrity"}
+      },
+      "additionalProperties": false
+    },
+    "external_support": {"type": "object", "additionalProperties": true},
+    "saved_artifact": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": [
+            "filename",
+            "path",
+            "relative_path",
+            "format",
+            "artifact_profile",
+            "sha256",
+            "artifact_integrity",
+            "draft_version_integrity",
+            "integrity_check",
+            "metadata_available"
+          ],
+          "properties": {
+            "filename": {"type": "string"},
+            "path": {"type": "string"},
+            "relative_path": {"type": "string"},
+            "format": {"type": "string", "enum": ["markdown", "json"]},
+            "artifact_profile": {"type": "string", "enum": ["review", "publication"]},
+            "draft_id": {"type": ["string", "null"]},
+            "version_id": {"type": ["string", "null"]},
+            "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "artifact_integrity": {"type": "object", "additionalProperties": true},
+            "draft_version_integrity": {
+              "anyOf": [
+                {"type": "null"},
+                {"$ref": "#/$defs/draft_version_integrity"}
+              ]
+            },
+            "integrity_check": {"type": "object", "additionalProperties": true},
+            "metadata_available": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "audit_records": {
+      "type": "object",
+      "required": ["scope", "included", "limit", "included_record_count", "records"],
+      "properties": {
+        "scope": {"type": "string", "const": "process_local_recent_records"},
+        "included": {"type": "boolean"},
+        "limit": {"type": "integer", "minimum": 0, "maximum": 100},
+        "included_record_count": {"type": "integer", "minimum": 0},
+        "records": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/tool_call_audit_record"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "package_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "graph_entity": {
+      "type": "object",
+      "required": ["identifier", "type", "attributes"],
+      "properties": {
+        "identifier": {"type": "string"},
+        "type": {"type": "string"},
+        "attributes": {"type": "object", "additionalProperties": true}
+      },
+      "additionalProperties": false
+    },
+    "graph_relationship": {
+      "type": "object",
+      "required": ["identifier", "source", "target", "type", "attributes"],
+      "properties": {
+        "identifier": {"type": "string"},
+        "source": {"type": "string"},
+        "target": {"type": "string"},
+        "type": {"type": "string"},
+        "attributes": {"type": "object", "additionalProperties": true}
+      },
+      "additionalProperties": false
+    },
+    "draft_version_integrity": {
+      "type": "object",
+      "required": [
+        "checksum_algorithm",
+        "graph_sha256",
+        "previous_graph_sha256",
+        "provenance_checksum_algorithm",
+        "provenance_sha256"
+      ],
+      "properties": {
+        "checksum_algorithm": {"type": "string", "const": "sha256-v1"},
+        "graph_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "previous_graph_sha256": {"type": "string", "pattern": "^(|[a-f0-9]{64})$"},
+        "provenance_checksum_algorithm": {"type": "string", "const": "sha256-v1"},
+        "provenance_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "tool_call_audit_record": {
+      "type": "object",
+      "required": [
+        "call_id",
+        "tool_name",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "argument_keys",
+        "request_hash",
+        "response_hash",
+        "output_schema_title",
+        "output_schema_hash",
+        "output_validation_status",
+        "risk_class",
+        "required_scopes",
+        "granted_scopes",
+        "requires_confirmation",
+        "confirmation_provided",
+        "policy_status",
+        "error_type",
+        "error_message"
+      ],
+      "properties": {
+        "call_id": {"type": "string"},
+        "tool_name": {"type": "string"},
+        "started_at": {"type": "string"},
+        "finished_at": {"type": "string"},
+        "duration_ms": {"type": "number"},
+        "status": {"type": "string"},
+        "argument_keys": {"type": "array", "items": {"type": "string"}},
+        "request_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "response_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "output_schema_title": {"type": ["string", "null"]},
+        "output_schema_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "output_validation_status": {"type": "string"},
+        "risk_class": {"type": ["string", "null"]},
+        "required_scopes": {"type": "array", "items": {"type": "string"}},
+        "granted_scopes": {"type": "array", "items": {"type": "string"}},
+        "requires_confirmation": {"type": ["boolean", "null"]},
+        "confirmation_provided": {"type": "boolean"},
+        "policy_status": {"type": "string"},
+        "error_type": {"type": ["string", "null"]},
+        "error_message": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
