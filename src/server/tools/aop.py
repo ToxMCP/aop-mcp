@@ -3535,6 +3535,30 @@ class ListToolCallAuditRecordsInput(BaseModel):
         return normalized
 
 
+class ExportToolCallAuditLogEvidenceInput(BaseModel):
+    audit_log_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("audit_log_path", "path"),
+        description=(
+            "Optional durable MCP audit JSONL path to export from. "
+            "Defaults to AOP_MCP_AUDIT_LOG_PATH when configured."
+        ),
+    )
+    limit: int = Field(default=25, ge=0, le=100)
+    tool_name: Optional[str] = None
+    status: Optional[Literal["success", "error"]] = None
+
+    @field_validator("audit_log_path", "tool_name")
+    @classmethod
+    def _validate_optional_nonblank(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("value cannot be blank")
+        return normalized
+
+
 async def export_draft_replay_package(
     params: ExportDraftReplayPackageInput,
 ) -> dict[str, Any]:
@@ -3610,6 +3634,87 @@ async def export_draft_replay_package(
         payload,
         namespace="read",
         name="export_draft_replay_package.response.schema",
+    )
+    return payload
+
+
+async def export_tool_call_audit_log_evidence(
+    params: ExportToolCallAuditLogEvidenceInput,
+) -> dict[str, Any]:
+    configured_path = get_settings().audit_log_path
+    selected_path = params.audit_log_path or configured_path
+    using_configured_path = params.audit_log_path is None and configured_path is not None
+    generated_at = _current_utc_timestamp()
+    warnings: list[str] = []
+    limitations = [
+        "Audit evidence is exported from the durable JSONL log and includes hashed request/response digests, not raw request or response bodies.",
+        "Exported envelopes are bounded by the requested limit and ordered oldest_to_newest within the selected window.",
+        "If the durable audit chain is invalid, export is limited to the verified prefix before the first verification failure.",
+        "The audit log hash chain does not provide third-party timestamping or immutable external retention.",
+    ]
+
+    if selected_path is None:
+        warnings.append(
+            "No audit log path was provided and AOP_MCP_AUDIT_LOG_PATH is not configured."
+        )
+        chain = {
+            "algorithm": AUDIT_CHAIN_ALGORITHM,
+            "record_count": 0,
+            "head_record_hash": None,
+            "verified": None,
+            "verification_error": None,
+        }
+        audit_path: Path | None = None
+        exists = False
+        verified_envelopes: list[dict[str, Any]] = []
+        configured = False
+    else:
+        audit_path = Path(selected_path).expanduser().resolve()
+        exists = audit_path.exists()
+        scan = JsonlToolCallAuditSink(audit_path).read_verified_envelopes()
+        chain = scan["chain"]
+        verified_envelopes = list(scan["envelopes"])
+        configured = configured_path is not None
+        if not exists:
+            warnings.append(
+                "Audit log file does not exist yet; an empty chain is valid but contains no durable evidence."
+            )
+        if chain["verified"] is False and chain["verification_error"]:
+            warnings.append(str(chain["verification_error"]))
+
+    matched_envelopes = [
+        envelope
+        for envelope in verified_envelopes
+        if (params.tool_name is None or envelope["record"]["tool_name"] == params.tool_name)
+        and (params.status is None or envelope["record"]["status"] == params.status)
+    ]
+    exported_envelopes = matched_envelopes[-params.limit:] if params.limit else []
+    payload = {
+        "evidence_schema_version": "tool-call-audit-log-evidence.v1",
+        "generated_at": generated_at,
+        "configured": configured,
+        "using_configured_path": using_configured_path,
+        "path": str(audit_path) if audit_path is not None else None,
+        "exists": exists,
+        "selection": {
+            "limit": params.limit,
+            "tool_name": params.tool_name,
+            "status": params.status,
+        },
+        "chain": chain,
+        "verified_prefix_envelope_count": len(verified_envelopes),
+        "matched_envelope_count": len(matched_envelopes),
+        "exported_envelope_count": len(exported_envelopes),
+        "exported_order": "oldest_to_newest",
+        "envelopes": exported_envelopes,
+        "warnings": warnings,
+        "limitations": limitations,
+    }
+    payload["evidence_sha256"] = _metadata_payload_sha256(payload)
+    validate_payload(
+        payload,
+        namespace="read",
+        name="export_tool_call_audit_log_evidence.response.schema",
     )
     return payload
 

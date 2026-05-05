@@ -264,6 +264,119 @@ async def test_list_tool_call_audit_records_filters_recent_records_and_persisten
 
 
 @pytest.mark.asyncio
+async def test_export_tool_call_audit_log_evidence_filters_verified_durable_log(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    audit_path = tmp_path / "tool-calls.jsonl"
+    tool_call_audit_log.configure_jsonl_sink(audit_path)
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"ok": True}))
+    await router_module.dispatch_request(
+        JSONRPCRequest(
+            jsonrpc="2.0",
+            id=1,
+            method="tools/call",
+            params={"name": "fake_tool", "arguments": {"alpha": 1}},
+        )
+    )
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"wrong": True}))
+    with pytest.raises(JSONRPCError):
+        await router_module.dispatch_request(
+            JSONRPCRequest(
+                jsonrpc="2.0",
+                id=2,
+                method="tools/call",
+                params={"name": "fake_tool", "arguments": {"beta": 2}},
+            )
+        )
+    monkeypatch.setattr(
+        aop_tools,
+        "get_settings",
+        lambda: SimpleNamespace(audit_log_path=str(audit_path)),
+    )
+
+    result = await aop_tools.export_tool_call_audit_log_evidence(
+        aop_tools.ExportToolCallAuditLogEvidenceInput(
+            limit=1,
+            status="error",
+        )
+    )
+
+    assert result["evidence_schema_version"] == "tool-call-audit-log-evidence.v1"
+    assert result["configured"] is True
+    assert result["using_configured_path"] is True
+    assert result["path"] == str(audit_path.resolve())
+    assert result["exists"] is True
+    assert result["selection"] == {
+        "limit": 1,
+        "tool_name": None,
+        "status": "error",
+    }
+    assert result["chain"]["verified"] is True
+    assert result["chain"]["record_count"] == 2
+    assert result["verified_prefix_envelope_count"] == 2
+    assert result["matched_envelope_count"] == 1
+    assert result["exported_envelope_count"] == 1
+    assert result["exported_order"] == "oldest_to_newest"
+    assert len(result["evidence_sha256"]) == 64
+    envelope = result["envelopes"][0]
+    assert envelope["line_number"] == 2
+    assert envelope["sequence"] == 2
+    assert envelope["previous_record_hash"]
+    assert envelope["record_hash"] == result["chain"]["head_record_hash"]
+    assert envelope["record"]["status"] == "error"
+    assert envelope["record"]["output_validation_status"] == "failed"
+    assert result["warnings"] == []
+    assert result["limitations"]
+
+
+@pytest.mark.asyncio
+async def test_export_tool_call_audit_log_evidence_reports_verified_prefix_on_tamper(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    audit_path = tmp_path / "tool-calls.jsonl"
+    tool_call_audit_log.configure_jsonl_sink(audit_path)
+    monkeypatch.setattr(router_module, "tool_registry", FakeToolRegistry({"ok": True}))
+    for request_id, key in [(1, "alpha"), (2, "beta")]:
+        await router_module.dispatch_request(
+            JSONRPCRequest(
+                jsonrpc="2.0",
+                id=request_id,
+                method="tools/call",
+                params={"name": "fake_tool", "arguments": {key: request_id}},
+            )
+        )
+
+    lines = audit_path.read_text(encoding="utf-8").splitlines()
+    tampered_second = json.loads(lines[1])
+    tampered_second["record"]["status"] = "tampered"
+    audit_path.write_text(
+        lines[0] + "\n" + json.dumps(tampered_second, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    result = await aop_tools.export_tool_call_audit_log_evidence(
+        aop_tools.ExportToolCallAuditLogEvidenceInput(
+            audit_log_path=str(audit_path),
+            limit=10,
+        )
+    )
+
+    assert result["configured"] is False
+    assert result["using_configured_path"] is False
+    assert result["exists"] is True
+    assert result["chain"]["verified"] is False
+    assert result["chain"]["record_count"] == 1
+    assert "record_hash does not match" in result["warnings"][0]
+    assert result["verified_prefix_envelope_count"] == 1
+    assert result["matched_envelope_count"] == 1
+    assert result["exported_envelope_count"] == 1
+    assert result["envelopes"][0]["sequence"] == 1
+    assert result["envelopes"][0]["record"]["status"] == "success"
+
+
+@pytest.mark.asyncio
 async def test_verify_tool_call_audit_log_reports_missing_unconfigured_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
