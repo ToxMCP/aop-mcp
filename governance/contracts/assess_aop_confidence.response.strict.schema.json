@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.ngra.ai/aop-mcp/contracts/assess_aop_confidence.response.strict.schema.json",
+  "title": "assess_aop_confidence.response (STRICT emission contract)",
+  "description": "Strict, additionalProperties:false-at-every-enforced-level tightening of the released docs/contracts/schemas/read/assess_aop_confidence.response.schema.json, used by the Track-B source-contract guard. Verified: every field is populated by the real producer (src/server/tools/aop.py::assess_aop_confidence) across both a rich (StubWikiAdapter, AOP:232) and a fixture-fallback (Aop:123) emission; the two producer-optional fields (applicability_summary, mechanism_role_summary) are kept OPTIONAL so omitting them does not falsely reject a faithful emission (the released schema declares them optional). The objectType discriminator is the gate's corpus envelope tag (mirrors the ivive-ber pattern), not a producer field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "objectType",
+    "aop",
+    "coverage",
+    "overall_applicability",
+    "biological_plausibility",
+    "empirical_support",
+    "quantitative_understanding",
+    "essentiality_of_key_events",
+    "confidence_dimensions",
+    "supplemental_signals",
+    "oecd_alignment",
+    "overall_call",
+    "heuristic_overall_call",
+    "rationale",
+    "limitations",
+    "key_events",
+    "ker_assessments",
+    "provenance"
+  ],
+  "properties": {
+    "objectType": {"const": "assess_aop_confidence.response"},
+    "aop": {"type": "object"},
+    "coverage": {"type": "object"},
+    "overall_applicability": {"type": "object"},
+    "applicability_summary": {"type": "object"},
+    "mechanism_role_summary": {"type": "object"},
+    "biological_plausibility": {"type": "object"},
+    "empirical_support": {"type": "object"},
+    "quantitative_understanding": {"type": "object"},
+    "essentiality_of_key_events": {"type": "object"},
+    "confidence_dimensions": {"type": "object"},
+    "supplemental_signals": {"type": "object"},
+    "oecd_alignment": {"type": "object"},
+    "overall_call": {"type": "string", "enum": ["sparse_evidence", "low", "moderate", "high"]},
+    "heuristic_overall_call": {"type": "string", "enum": ["sparse_evidence", "low", "moderate", "high"]},
+    "rationale": {"type": "array", "items": {"type": "string"}},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "key_events": {"type": "array", "items": {"type": "object"}},
+    "ker_assessments": {"type": "array", "items": {"type": "object"}},
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "field", "transformation", "confidence"],
+        "properties": {
+          "source": {"type": "string"},
+          "field": {"type": "string"},
+          "transformation": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+          "confidence": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+        }
+      }
+    }
+  }
+}

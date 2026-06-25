@@ -1,0 +1,802 @@
+{
+  "aop": {
+    "abstract": "Example abstract",
+    "adverse_outcomes": [
+      {
+        "id": "KE:3",
+        "iri": "https://identifiers.org/aop.events/3",
+        "title": "Adverse outcome"
+      }
+    ],
+    "evidence_summary": "Overall Moderate support.",
+    "graph": null,
+    "id": "AOP:232",
+    "iri": "https://identifiers.org/aop/232",
+    "ker_count": 3,
+    "key_event_count": 3,
+    "molecular_initiating_events": [
+      {
+        "id": "KE:1",
+        "iri": "https://identifiers.org/aop.events/1",
+        "title": "MIE"
+      }
+    ],
+    "overall_applicability": {
+      "basis": "Not yet exposed as a dedicated AOP-level field in the current RDF export. Placeholder retained for the OECD-aligned contract.",
+      "cell_types": [],
+      "levels_of_biological_organization": [],
+      "life_stages": [],
+      "organs": [],
+      "provenance": [
+        {
+          "confidence": "low",
+          "field": "overall_applicability",
+          "source": "aop_wiki_rdf",
+          "transformation": "placeholder_pending_aop_level_normalization"
+        }
+      ],
+      "sexes": [],
+      "summary_rationale": null,
+      "taxa": []
+    },
+    "provenance": [
+      {
+        "confidence": "moderate",
+        "field": "get_aop",
+        "source": "aop_wiki_rdf",
+        "transformation": "phase1_oecd_alignment_normalization"
+      },
+      {
+        "confidence": "low",
+        "field": "stressor_chemicals",
+        "source": "aop_db_sparql",
+        "transformation": "phase2_stressor_enrichment"
+      }
+    ],
+    "references": [
+      {
+        "identifier": "PMID:123456",
+        "label": "Assessment reference",
+        "source": "pmid"
+      }
+    ],
+    "stressors": [],
+    "title": "Example AOP"
+  },
+  "applicability_summary": {
+    "basis": "Aggregated from key event metadata because AOP-level applicability is not consistently exposed in the current RDF export.",
+    "cell_type_context": [
+      "CL:0000182"
+    ],
+    "level_of_biological_organization": [
+      "molecular",
+      "cellular",
+      "organ"
+    ],
+    "life_stage_applicability": [
+      "adult"
+    ],
+    "organ_context": [
+      "UBERON:0002107"
+    ],
+    "sex_applicability": [
+      "female"
+    ],
+    "taxonomic_applicability": [
+      "NCBITaxon:9606"
+    ]
+  },
+  "biological_plausibility": {
+    "basis": "Aggregated from KER biological plausibility text.",
+    "coverage": {
+      "present": 3,
+      "total": 3
+    },
+    "heuristic_call": "strong",
+    "oecd_dimension": true
+  },
+  "confidence_dimensions": {
+    "biological_plausibility": {
+      "basis": "Aggregated from KER biological plausibility text.",
+      "coverage": {
+        "present": 3,
+        "total": 3
+      },
+      "heuristic_call": "strong",
+      "oecd_dimension": true
+    },
+    "empirical_support": {
+      "basis": "Aggregated from KER empirical support text.",
+      "coverage": {
+        "present": 3,
+        "total": 3
+      },
+      "heuristic_call": "moderate",
+      "oecd_dimension": true
+    },
+    "essentiality_of_key_events": {
+      "basis": "Key-event essentiality is not directly surfaced in the current RDF export, and no bounded combination of text evidence plus path support was available to score it.",
+      "coverage": {
+        "present": 0,
+        "total": 3
+      },
+      "heuristic_call": "not_assessed",
+      "heuristic_inputs": {
+        "ao_count": 1,
+        "cue_count": 0,
+        "mie_count": 1,
+        "path_count": 2,
+        "shared_internal_key_events": [],
+        "text_signal": "not_reported"
+      },
+      "oecd_dimension": true,
+      "provenance": [
+        {
+          "confidence": "low",
+          "field": "essentiality_of_key_events",
+          "source": "derived_from_aop_structure",
+          "transformation": "phase3_essentiality_text_and_path_heuristic"
+        }
+      ]
+    },
+    "quantitative_understanding": {
+      "basis": "Aggregated from KER quantitative understanding text.",
+      "coverage": {
+        "present": 2,
+        "total": 3
+      },
+      "heuristic_call": "low",
+      "oecd_dimension": true
+    }
+  },
+  "coverage": {
+    "assay_cutoff_ordering_supporting_chemicals": 0,
+    "ker_count": 3,
+    "kers_with_assay_cutoff_ordering": 0,
+    "kers_with_biological_plausibility": 3,
+    "kers_with_empirical_support": 3,
+    "kers_with_quantitative_understanding": 2,
+    "key_event_count": 3,
+    "key_events_with_life_stage_applicability": 2,
+    "key_events_with_measurement_methods": 2,
+    "key_events_with_sex_applicability": 1,
+    "key_events_with_taxonomic_applicability": 2
+  },
+  "empirical_support": {
+    "basis": "Aggregated from KER empirical support text.",
+    "coverage": {
+      "present": 3,
+      "total": 3
+    },
+    "heuristic_call": "moderate",
+    "oecd_dimension": true
+  },
+  "essentiality_of_key_events": {
+    "basis": "Key-event essentiality is not directly surfaced in the current RDF export, and no bounded combination of text evidence plus path support was available to score it.",
+    "coverage": {
+      "present": 0,
+      "total": 3
+    },
+    "heuristic_call": "not_assessed",
+    "heuristic_inputs": {
+      "ao_count": 1,
+      "cue_count": 0,
+      "mie_count": 1,
+      "path_count": 2,
+      "shared_internal_key_events": [],
+      "text_signal": "not_reported"
+    },
+    "oecd_dimension": true,
+    "provenance": [
+      {
+        "confidence": "low",
+        "field": "essentiality_of_key_events",
+        "source": "derived_from_aop_structure",
+        "transformation": "phase3_essentiality_text_and_path_heuristic"
+      }
+    ]
+  },
+  "heuristic_overall_call": "moderate",
+  "ker_assessments": [
+    {
+      "assay_cutoff_ordering": {
+        "basis": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+        "concordant_chemical_count": 0,
+        "discordant_chemical_count": 0,
+        "downstream_candidate_assay_count": 0,
+        "heuristic_call": "not_reported",
+        "provenance": [
+          {
+            "confidence": "low",
+            "field": "assay_cutoff_ordering",
+            "source": "derived_from_ke_assays_and_comptox_bioactivity",
+            "transformation": "phase4_assay_cutoff_ordering_missing_comptox"
+          }
+        ],
+        "supporting_chemical_count": 0,
+        "supporting_chemicals": [],
+        "upstream_candidate_assay_count": 0
+      },
+      "assay_cutoff_ordering_call": "not_reported",
+      "assay_cutoff_supporting_chemical_count": 0,
+      "biological_plausibility": "Strong mechanistic rationale.",
+      "biological_plausibility_call": "strong",
+      "citation_concordance": {
+        "basis": "Only one linked key event exposed supporting references, so shared-citation concordance could not be demonstrated. This is a weak supplemental heuristic and not evidence against the KER.",
+        "downstream_reference_count": 0,
+        "heuristic_call": "low",
+        "provenance": [
+          {
+            "confidence": "low",
+            "field": "citation_concordance",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_reference_overlap_partial"
+          }
+        ],
+        "shared_reference_count": 0,
+        "shared_references": [],
+        "upstream_reference_count": 1
+      },
+      "citation_concordance_call": "low",
+      "downstream": {
+        "id": "KE:2",
+        "iri": "https://identifiers.org/aop.events/2",
+        "title": "Intermediate event"
+      },
+      "empirical_support": "Moderate support from dose-response studies.",
+      "empirical_support_call": "moderate",
+      "id": "KER:10",
+      "quantitative_understanding": "Moderate quantitative support.",
+      "quantitative_understanding_call": "moderate",
+      "shared_reference_count": 0,
+      "title": "MIE leads to intermediate event",
+      "upstream": {
+        "id": "KE:1",
+        "iri": "https://identifiers.org/aop.events/1",
+        "title": "MIE"
+      }
+    },
+    {
+      "assay_cutoff_ordering": {
+        "basis": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+        "concordant_chemical_count": 0,
+        "discordant_chemical_count": 0,
+        "downstream_candidate_assay_count": 0,
+        "heuristic_call": "not_reported",
+        "provenance": [
+          {
+            "confidence": "low",
+            "field": "assay_cutoff_ordering",
+            "source": "derived_from_ke_assays_and_comptox_bioactivity",
+            "transformation": "phase4_assay_cutoff_ordering_missing_comptox"
+          }
+        ],
+        "supporting_chemical_count": 0,
+        "supporting_chemicals": [],
+        "upstream_candidate_assay_count": 0
+      },
+      "assay_cutoff_ordering_call": "not_reported",
+      "assay_cutoff_supporting_chemical_count": 0,
+      "biological_plausibility": "Strong support.",
+      "biological_plausibility_call": "strong",
+      "citation_concordance": {
+        "basis": "Neither linked key event exposed supporting references, so citation concordance could not be evaluated.",
+        "downstream_reference_count": 0,
+        "heuristic_call": "not_reported",
+        "provenance": [
+          {
+            "confidence": "low",
+            "field": "citation_concordance",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_reference_overlap_absent"
+          }
+        ],
+        "shared_reference_count": 0,
+        "shared_references": [],
+        "upstream_reference_count": 0
+      },
+      "citation_concordance_call": "not_reported",
+      "downstream": {
+        "id": "KE:3",
+        "iri": "https://identifiers.org/aop.events/3",
+        "title": "Adverse outcome"
+      },
+      "empirical_support": "Strong support.",
+      "empirical_support_call": "strong",
+      "id": "KER:11",
+      "quantitative_understanding": null,
+      "quantitative_understanding_call": "not_reported",
+      "shared_reference_count": 0,
+      "title": "Intermediate event leads to adverse outcome",
+      "upstream": {
+        "id": "KE:2",
+        "iri": "https://identifiers.org/aop.events/2",
+        "title": "Intermediate event"
+      }
+    },
+    {
+      "assay_cutoff_ordering": {
+        "basis": "CompTox access was unavailable, so supplemental assay-cutoff ordering could not be derived.",
+        "concordant_chemical_count": 0,
+        "discordant_chemical_count": 0,
+        "downstream_candidate_assay_count": 0,
+        "heuristic_call": "not_reported",
+        "provenance": [
+          {
+            "confidence": "low",
+            "field": "assay_cutoff_ordering",
+            "source": "derived_from_ke_assays_and_comptox_bioactivity",
+            "transformation": "phase4_assay_cutoff_ordering_missing_comptox"
+          }
+        ],
+        "supporting_chemical_count": 0,
+        "supporting_chemicals": [],
+        "upstream_candidate_assay_count": 0
+      },
+      "assay_cutoff_ordering_call": "not_reported",
+      "assay_cutoff_supporting_chemical_count": 0,
+      "biological_plausibility": "Moderate support.",
+      "biological_plausibility_call": "moderate",
+      "citation_concordance": {
+        "basis": "Only one linked key event exposed supporting references, so shared-citation concordance could not be demonstrated. This is a weak supplemental heuristic and not evidence against the KER.",
+        "downstream_reference_count": 0,
+        "heuristic_call": "low",
+        "provenance": [
+          {
+            "confidence": "low",
+            "field": "citation_concordance",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_reference_overlap_partial"
+          }
+        ],
+        "shared_reference_count": 0,
+        "shared_references": [],
+        "upstream_reference_count": 1
+      },
+      "citation_concordance_call": "low",
+      "downstream": {
+        "id": "KE:3",
+        "iri": "https://identifiers.org/aop.events/3",
+        "title": "Adverse outcome"
+      },
+      "empirical_support": "Moderate support.",
+      "empirical_support_call": "moderate",
+      "id": "KER:12",
+      "quantitative_understanding": "Low support.",
+      "quantitative_understanding_call": "low",
+      "shared_reference_count": 0,
+      "title": "MIE leads to adverse outcome",
+      "upstream": {
+        "id": "KE:1",
+        "iri": "https://identifiers.org/aop.events/1",
+        "title": "MIE"
+      }
+    }
+  ],
+  "key_events": [
+    {
+      "assay_artifact_risk": false,
+      "cell_type_context": [],
+      "id": "KE:1",
+      "level_of_biological_organization": "molecular",
+      "life_stage_applicability": "adult",
+      "measurement_method_count": 1,
+      "mechanism_role": "downstream_consequence",
+      "mechanism_role_rationale": "Role is not explicit; defaulting to downstream consequence for conservative review.",
+      "organ_context": [
+        "UBERON:0002107"
+      ],
+      "sex_applicability": "female",
+      "taxonomic_applicability": [
+        "NCBITaxon:9606"
+      ],
+      "title": "MIE"
+    },
+    {
+      "assay_artifact_risk": false,
+      "cell_type_context": [
+        "CL:0000182"
+      ],
+      "id": "KE:2",
+      "level_of_biological_organization": "cellular",
+      "life_stage_applicability": "adult",
+      "measurement_method_count": 1,
+      "mechanism_role": "downstream_consequence",
+      "mechanism_role_rationale": "Role is not explicit; defaulting to downstream consequence for conservative review.",
+      "organ_context": [
+        "UBERON:0002107"
+      ],
+      "sex_applicability": null,
+      "taxonomic_applicability": [
+        "NCBITaxon:9606"
+      ],
+      "title": "Intermediate event"
+    },
+    {
+      "assay_artifact_risk": false,
+      "cell_type_context": [],
+      "id": "KE:3",
+      "level_of_biological_organization": "organ",
+      "life_stage_applicability": null,
+      "measurement_method_count": 0,
+      "mechanism_role": "adverse_outcome",
+      "mechanism_role_rationale": "Event text indicates an adverse outcome rather than a primary mechanism.",
+      "organ_context": [
+        "UBERON:0002107"
+      ],
+      "sex_applicability": null,
+      "taxonomic_applicability": [],
+      "title": "Adverse outcome"
+    }
+  ],
+  "limitations": [
+    "Key-event essentiality is not directly surfaced in the current RDF export, and no bounded heuristic cue was available to score it.",
+    "AOP-level evidence text is reported separately as a supplemental signal and is not used as an OECD core confidence dimension.",
+    "Quantitative understanding text is missing for one or more KERs.",
+    "Supplemental assay-cutoff ordering could not be derived because linked stressor chemicals, KE assay candidates, or CompTox cutoff data were too sparse."
+  ],
+  "mechanism_role_summary": {
+    "artifactRiskKeyEventCount": 0,
+    "interpretationBoundary": "AOP key events are pathway context. Downstream oxidative stress, apoptosis, mitochondrial dysfunction, or fibrosis terms must not be promoted to a primary therapeutic-exposure mechanism without exposure-plausible KER and assay support.",
+    "roleCounts": {
+      "adverse_outcome": 1,
+      "downstream_consequence": 2
+    }
+  },
+  "objectType": "assess_aop_confidence.response",
+  "oecd_alignment": {
+    "core_dimensions": [
+      "biological_plausibility",
+      "empirical_support",
+      "quantitative_understanding",
+      "essentiality_of_key_events"
+    ],
+    "missing_dimensions": [
+      "essentiality_of_key_events"
+    ],
+    "notes": [
+      "Overall OECD confidence is defined by biological plausibility, empirical support, quantitative understanding, and KE essentiality.",
+      "This tool approximates biological plausibility, empirical support, and quantitative understanding from KER text.",
+      "KE essentiality is only reported directly when bounded textual or pathway heuristics are available; the current RDF export does not expose a dedicated structured essentiality field."
+    ],
+    "status": "partial"
+  },
+  "overall_applicability": {
+    "basis": "Aggregated from key event metadata because AOP-level applicability is not consistently exposed in the current RDF export.",
+    "cell_types": [
+      {
+        "evidence_call": "low",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "cell_type_context",
+            "source": "derived_from_ke_metadata",
+            "transformation": "normalized_for_oecd_phase1"
+          },
+          {
+            "confidence": "moderate",
+            "field": "cell_type_context",
+            "source": "derived_from_ke_metadata",
+            "transformation": "applicability_term_wrapper"
+          },
+          {
+            "confidence": "low",
+            "field": "cell_type_context",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_summary_applicability_consistency_heuristic"
+          }
+        ],
+        "rationale": "Derived from 1/3 key events; 0 supporting key events expose references. This is a consistency-based heuristic because the current RDF export does not expose a dedicated applicability strength field.",
+        "references": [],
+        "term": {
+          "id": "CL:0000182",
+          "label": null,
+          "provenance": [
+            {
+              "confidence": "moderate",
+              "field": "cell_type_context",
+              "source": "derived_from_ke_metadata",
+              "transformation": "normalized_for_oecd_phase1"
+            }
+          ],
+          "source_field": "cell_type_context"
+        }
+      }
+    ],
+    "levels_of_biological_organization": [
+      {
+        "id": null,
+        "label": "molecular",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "level_of_biological_organization",
+            "source": "aop_wiki_rdf",
+            "transformation": "normalized_for_oecd_phase1"
+          }
+        ],
+        "source_field": "level_of_biological_organization"
+      },
+      {
+        "id": null,
+        "label": "cellular",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "level_of_biological_organization",
+            "source": "aop_wiki_rdf",
+            "transformation": "normalized_for_oecd_phase1"
+          }
+        ],
+        "source_field": "level_of_biological_organization"
+      },
+      {
+        "id": null,
+        "label": "organ",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "level_of_biological_organization",
+            "source": "aop_wiki_rdf",
+            "transformation": "normalized_for_oecd_phase1"
+          }
+        ],
+        "source_field": "level_of_biological_organization"
+      }
+    ],
+    "life_stages": [
+      {
+        "evidence_call": "moderate",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "life_stage_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "normalized_for_oecd_phase1"
+          },
+          {
+            "confidence": "moderate",
+            "field": "life_stage_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "applicability_term_wrapper"
+          },
+          {
+            "confidence": "moderate",
+            "field": "life_stage_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_summary_applicability_consistency_heuristic"
+          }
+        ],
+        "rationale": "Derived from 2/3 key events; 1 supporting key events expose references. This is a consistency-based heuristic because the current RDF export does not expose a dedicated applicability strength field.",
+        "references": [
+          {
+            "identifier": "10.1000/ke-1",
+            "label": "KE ref",
+            "source": "doi"
+          }
+        ],
+        "term": {
+          "id": null,
+          "label": "adult",
+          "provenance": [
+            {
+              "confidence": "moderate",
+              "field": "life_stage_applicability",
+              "source": "derived_from_ke_metadata",
+              "transformation": "normalized_for_oecd_phase1"
+            }
+          ],
+          "source_field": "life_stage_applicability"
+        }
+      }
+    ],
+    "organs": [
+      {
+        "evidence_call": "moderate",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "organ_context",
+            "source": "derived_from_ke_metadata",
+            "transformation": "normalized_for_oecd_phase1"
+          },
+          {
+            "confidence": "moderate",
+            "field": "organ_context",
+            "source": "derived_from_ke_metadata",
+            "transformation": "applicability_term_wrapper"
+          },
+          {
+            "confidence": "moderate",
+            "field": "organ_context",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_summary_applicability_consistency_heuristic"
+          }
+        ],
+        "rationale": "Derived from 3/3 key events; 1 supporting key events expose references. This is a consistency-based heuristic because the current RDF export does not expose a dedicated applicability strength field.",
+        "references": [
+          {
+            "identifier": "10.1000/ke-1",
+            "label": "KE ref",
+            "source": "doi"
+          }
+        ],
+        "term": {
+          "id": "UBERON:0002107",
+          "label": null,
+          "provenance": [
+            {
+              "confidence": "moderate",
+              "field": "organ_context",
+              "source": "derived_from_ke_metadata",
+              "transformation": "normalized_for_oecd_phase1"
+            }
+          ],
+          "source_field": "organ_context"
+        }
+      }
+    ],
+    "provenance": [
+      {
+        "confidence": "moderate",
+        "field": "applicability_summary",
+        "source": "derived_from_ke_metadata",
+        "transformation": "phase3_oecd_applicability_summary"
+      }
+    ],
+    "sexes": [
+      {
+        "evidence_call": "moderate",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "sex_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "normalized_for_oecd_phase1"
+          },
+          {
+            "confidence": "moderate",
+            "field": "sex_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "applicability_term_wrapper"
+          },
+          {
+            "confidence": "moderate",
+            "field": "sex_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_summary_applicability_consistency_heuristic"
+          }
+        ],
+        "rationale": "Derived from 1/3 key events; 1 supporting key events expose references. This is a consistency-based heuristic because the current RDF export does not expose a dedicated applicability strength field.",
+        "references": [
+          {
+            "identifier": "10.1000/ke-1",
+            "label": "KE ref",
+            "source": "doi"
+          }
+        ],
+        "term": {
+          "id": null,
+          "label": "female",
+          "provenance": [
+            {
+              "confidence": "moderate",
+              "field": "sex_applicability",
+              "source": "derived_from_ke_metadata",
+              "transformation": "normalized_for_oecd_phase1"
+            }
+          ],
+          "source_field": "sex_applicability"
+        }
+      }
+    ],
+    "summary_rationale": "Aggregated from 3 key events because dedicated AOP-level applicability is not consistently exposed in the current RDF export. Evidence calls reflect cross-KE consistency and supporting references rather than a direct AOP-level applicability strength field.",
+    "taxa": [
+      {
+        "evidence_call": "moderate",
+        "provenance": [
+          {
+            "confidence": "moderate",
+            "field": "taxonomic_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "normalized_for_oecd_phase1"
+          },
+          {
+            "confidence": "moderate",
+            "field": "taxonomic_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "applicability_term_wrapper"
+          },
+          {
+            "confidence": "moderate",
+            "field": "taxonomic_applicability",
+            "source": "derived_from_ke_metadata",
+            "transformation": "phase3_summary_applicability_consistency_heuristic"
+          }
+        ],
+        "rationale": "Derived from 2/3 key events; 1 supporting key events expose references. This is a consistency-based heuristic because the current RDF export does not expose a dedicated applicability strength field.",
+        "references": [
+          {
+            "identifier": "10.1000/ke-1",
+            "label": "KE ref",
+            "source": "doi"
+          }
+        ],
+        "term": {
+          "id": "NCBITaxon:9606",
+          "label": null,
+          "provenance": [
+            {
+              "confidence": "moderate",
+              "field": "taxonomic_applicability",
+              "source": "derived_from_ke_metadata",
+              "transformation": "normalized_for_oecd_phase1"
+            }
+          ],
+          "source_field": "taxonomic_applicability"
+        }
+      }
+    ]
+  },
+  "overall_call": "moderate",
+  "provenance": [
+    {
+      "confidence": "moderate",
+      "field": "assessment_aggregation",
+      "source": "aop_wiki_rdf",
+      "transformation": "phase1_oecd_alignment_normalization"
+    }
+  ],
+  "quantitative_understanding": {
+    "basis": "Aggregated from KER quantitative understanding text.",
+    "coverage": {
+      "present": 2,
+      "total": 3
+    },
+    "heuristic_call": "low",
+    "oecd_dimension": true
+  },
+  "rationale": [
+    "AOP contains 3 key events and 3 KERs.",
+    "3/3 KERs include biological plausibility text.",
+    "3/3 KERs include empirical support text.",
+    "2/3 KERs include quantitative understanding text.",
+    "2/3 key events include measurement guidance.",
+    "Supplemental AOP-level evidence text suggests moderate support.",
+    "Supplemental citation concordance heuristic found shared or evaluable KE reference overlap for 2/3 KERs."
+  ],
+  "supplemental_signals": {
+    "aop_level_evidence_signal": {
+      "basis": "Derived from AOP-level free-text evidence when present. This is supplemental context and not an OECD core confidence dimension.",
+      "coverage": {
+        "present": 1,
+        "total": 1
+      },
+      "heuristic_call": "moderate",
+      "oecd_dimension": false
+    },
+    "assay_cutoff_ordering_signal": {
+      "basis": "Linked AOP stressors, KE assay candidates, or CompTox activity cutoffs were insufficient to derive shared upstream/downstream assay-cutoff comparisons. This is a supplemental quantitative-ordering heuristic and remains not reported when the assay layer is too sparse.",
+      "concordant_kers": 0,
+      "coverage": {
+        "present": 0,
+        "total": 3
+      },
+      "discordant_kers": 0,
+      "heuristic_call": "not_reported",
+      "oecd_dimension": false,
+      "supporting_chemical_count": 0
+    },
+    "citation_concordance_signal": {
+      "basis": "Derived from reference-list overlap across linked upstream/downstream key events. No shared references were found; this is a weak supplemental heuristic and not evidence against empirical support.",
+      "coverage": {
+        "present": 2,
+        "total": 3
+      },
+      "heuristic_call": "low",
+      "oecd_dimension": false,
+      "shared_reference_kers": 0,
+      "total_shared_references": 0
+    }
+  }
+}

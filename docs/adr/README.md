@@ -9,6 +9,10 @@ for each architectural choice.
   components, and open questions grounding the Phase A decisions.
 - `0001-initial-architecture.md` — accepted system context, layering, and reuse
   stance for the FastAPI-based MCP.
+- `0002-trackb-scientific-invariants-gate.md` — Track-B anti-overclaim gate
+  projecting `assess_aop_confidence.response` onto the vendored, digest-pinned
+  schema-spine; advertised codes, the source-contract guard, and the
+  deterministic AI-arm honest-drop.
 - `threat-model-write-path.md` — STRIDE analysis covering new draft/publish
   surfaces and mitigations.
 - `draft-store-data-model.md` — data structures and services backing the write-path.
