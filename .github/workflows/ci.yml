@@ -77,6 +77,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # The Track-B governance tests (tests/governance/) shell out to the vendored
+      # spine policy engine via a fail-closed Node bridge, so the test job needs Node.
+      - name: Setup Node (spine-engine bridge)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -90,3 +97,59 @@ jobs:
 
       - name: Verify package imports
         run: python -c "import src.server.api.server"
+
+  # ---------------------------------------------------------------------------
+  # Track-B scientific-invariants gate (advisory)
+  #
+  # Projects the RELEASED aop-mcp assess_aop_confidence.response (an AOP confidence
+  # assessment) onto its canonical ToxMCP schema-spine shapes (ClaimRecord +
+  # EvidenceAnchor) and runs the vendored, digest-pinned spine policy engine over the
+  # projection via a fail-closed Node bridge. It BLOCKS (exit non-zero) on any
+  # release-blocking code: scientific anti-overclaim (FREE_TEXT_OVERCLAIM,
+  # ABSOLUTE_OR_REGULATORY_OVERCLAIM, CONTEXT_ONLY_OVERCLAIM, AOP_CONTEXT_NOT_KER_EVIDENCE)
+  # or meta fail-closed (SOURCE_CONTRACT_VIOLATION, ENGINE_UNAVAILABLE,
+  # UNRECOGNIZED_SPINE_SCHEMA_ID, VENDOR_DIGEST_MISMATCH, PROJECTION_INCOMPLETE).
+  #
+  # aop-mcp's confidence assessment is deterministic + zero-LLM and natively issues an
+  # interpretive, non-causal, non-regulatory conclusion, so the gate is GREEN on the
+  # pristine corpus — it is a regression tripwire. This job sets up Node (the bridge
+  # shells to the vendored engine) and runs vendor:verify FIRST (digest tamper-check).
+  #
+  # Advisory: no required-status-check on the free-plan repo. PROMOTE-TO-BLOCKING: when
+  # the repo gains branch protection / rulesets, mark this job a required check — the
+  # gate already exits non-zero on any blocking code.
+  # ---------------------------------------------------------------------------
+  scientific-invariants:
+    name: Scientific Invariants (Track-B)
+    runs-on: ubuntu-latest
+
+    env:
+      AOP_MCP_ENABLE_FIXTURE_FALLBACK: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node (bridge shells to the vendored spine engine)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Verify vendored spine-engine digests (vendor:verify)
+        run: python scripts/vendor_verify.py
+
+      - name: Run Track-B governance test suite (per-code bites + guard + fail-closed)
+        run: pytest tests/governance -q
+
+      - name: Run scientific-invariants gate on the released corpus
+        run: python scripts/scientific_invariants_gate.py
