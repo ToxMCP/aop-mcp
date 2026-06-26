@@ -194,6 +194,33 @@ Once the server is running:
 - Health check: `http://localhost:8003/health`
 - Task walkthroughs: `docs/quickstarts/find-aop.md`, `docs/quickstarts/live-scientific-examples.md`, `docs/quickstarts/oecd-draft-authoring.md`, and `docs/quickstarts/publish.md`
 
+## Docker quick start
+
+Build and run the hosted runtime image from the repository root:
+
+```bash
+docker build -t aop-mcp:local .
+docker run --rm -p 8003:8000 aop-mcp:local
+curl -s http://localhost:8003/health | jq .
+```
+
+The container listens on port `8000`; the example maps it to the existing local
+development port `8003`. The image intentionally includes `docs/contracts/schemas`,
+`tests/golden`, and `vendor/schema-spine` because schema validation, fixture
+fallback, and the scientific-invariants bridge depend on those review assets.
+
+For production deployments, configure bearer auth and origin controls rather
+than exposing the development defaults:
+
+```bash
+docker run --rm -p 8003:8000 \
+  -e AOP_MCP_ENVIRONMENT=production \
+  -e AOP_MCP_AUTH_MODE=bearer \
+  -e AOP_MCP_AUTH_BEARER_TOKEN="$AOP_MCP_AUTH_BEARER_TOKEN" \
+  -e AOP_MCP_ALLOWED_ORIGINS="https://example.org" \
+  aop-mcp:local
+```
+
 ## Verification (smoke test)
 
 Once the server is running, use the scripted smoke run first:
