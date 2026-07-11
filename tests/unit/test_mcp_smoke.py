@@ -35,6 +35,12 @@ def test_initialize_success() -> None:
     assert set(data["result"]["capabilities"]) == {"tools", "prompts"}
 
 
+def test_ping_returns_empty_object() -> None:
+    response = _call_rpc("ping", request_id=99)
+    assert response.status_code == 200
+    assert response.json() == {"jsonrpc": "2.0", "result": {}, "id": 99}
+
+
 def test_initialized_returns_empty_object_response() -> None:
     response = client.post(
         "/mcp",

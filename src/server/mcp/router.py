@@ -179,6 +179,11 @@ async def dispatch_request(
             instructions=SERVER_INSTRUCTIONS,
         ).model_dump(by_alias=True)
 
+    if request.method == "ping":
+        # MCP peers use ping to verify that the connection is still alive.
+        # The protocol requires a prompt empty-object response.
+        return {}
+
     if request.method in {"initialized", "notifications/initialized"}:
         # Return empty object for initialized notification
         return {}
