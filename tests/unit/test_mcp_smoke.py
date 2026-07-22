@@ -28,6 +28,8 @@ def test_initialize_success() -> None:
     data = response.json()
     assert data["result"]["serverInfo"]["name"] == "AOP MCP Server"
     assert data["result"]["serverInfo"]["version"] == get_app_version()
+    assert "Preserve the visible Sources section" in data["result"]["instructions"]
+    assert "web search" in data["result"]["instructions"]
 
 
 def test_initialized_returns_empty_object_response() -> None:
@@ -149,6 +151,25 @@ def test_tools_list_includes_registered_tools() -> None:
         "not_assessed",
     ]
     assert by_name["validate_draft_oecd"]["outputSchema"]["title"] == "validate_draft_oecd.response"
+    assert all(tool["annotations"]["sources"] for tool in tools)
+    assert [source["name"] for source in by_name["search_aops"]["annotations"]["sources"]] == [
+        "AOP-Wiki"
+    ]
+    assert [source["name"] for source in by_name["get_aop"]["annotations"]["sources"]] == [
+        "AOP-Wiki",
+        "EPA AOP-DB",
+    ]
+    assert [
+        source["name"] for source in by_name["list_assays_for_aop"]["annotations"]["sources"]
+    ] == ["EPA AOP-DB", "EPA CompTox Chemicals Dashboard"]
+    assert [
+        source["name"]
+        for source in by_name["list_tool_call_audit_records"]["annotations"]["sources"]
+    ] == ["AOP MCP tool-call audit records"]
+    assert [
+        source["name"]
+        for source in by_name["attach_registry_handoff_to_draft"]["annotations"]["sources"]
+    ] == ["AOP MCP local draft workspace", "ToxMCP Registry handoff bundle"]
 
 
 @pytest.mark.skip(reason="Requires live SPARQL endpoints; enable in environments with network access")
@@ -195,8 +216,17 @@ def test_tools_call_search_aops_with_golden_fixture(monkeypatch) -> None:
     payload = response.json()["result"]
     content = payload["content"][0]
     assert content["type"] == "text"
+    assert "Sources:\n- AOP-Wiki: https://aopwiki.org/" in content["text"]
     structured = payload["structuredContent"]
     assert structured["results"][0]["id"] == "AOP:123"
+    assert "sources" not in structured
+    assert payload["_meta"]["sources"] == [
+        {
+            "name": "AOP-Wiki",
+            "url": "https://aopwiki.org/",
+            "description": "Curated adverse outcome pathway records and evidence.",
+        }
+    ]
 
 
 def test_tools_call_returns_error_for_unknown_tool() -> None:

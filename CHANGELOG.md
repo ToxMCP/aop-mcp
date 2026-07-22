@@ -2,10 +2,16 @@
 
 ## Unreleased
 
+## v0.9.1 - 2026-07-22
+
 ### Added
 
 - Machine-readable trust evaluation Q/A pack for auditability, verifiability, Registry handoff trust, replay reproducibility, scientific value, and regulatory-boundary checks.
 - Tighter MCP tool annotations for write-scope enforcement, live/open-world draft review helpers, and read-only export hints.
+- Source descriptors on every registered tool for AOP-Wiki, AOP-DB, CompTox, local drafts, Registry handoffs, and audit records.
+- Visible `Sources:` lines and matching `_meta.sources` on every successful tool result without changing scientific `structuredContent` schemas.
+- MCP initialization guidance requiring assistants to preserve source labels and distinguish MCP evidence from separate web-search content.
+- A post-install AOP search demo and safer local-only server examples.
 
 ## v0.9.0 - 2026-05-05
 
