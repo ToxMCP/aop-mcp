@@ -77,6 +77,12 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
+## What's new in v0.9.1
+
+- **Automatic source labels** - every tool result now includes a visible `Sources:` section plus machine-readable `_meta.sources`, while scientific `structuredContent` remains schema-compatible.
+- **Source-aware initialization** - the MCP handshake instructs assistants to preserve MCP source labels and distinguish them from separate web-search results.
+- **Safer local setup** - normal quickstarts bind to `127.0.0.1`, avoid development auto-reload, and include an immediate AOP search demo.
+
 ## What's new in v0.9.0
 
 - **Research-grade trust layer** - added a documented trust and auditability model for draft replay, durable MCP tool-call audit logs, bounded audit evidence export, and explicit regulatory limits.
@@ -98,7 +104,7 @@ For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `do
 - Added a coherent draft review workflow: `review_draft_bundle`, `review_draft_evidence_gaps`, `export_draft_review_artifact`, `save_draft_review_artifact`, `list_saved_draft_review_artifacts`, and `plan_linear_draft_review_document`.
 - Added mechanistic discovery tooling for orphan stressor discovery across one AOP, multiple AOPs, and phenotype or mechanism queries, plus chemical trace overlays on draft graphs.
 - Hardened live operations with a refreshed MCP smoke script, stronger CompTox caching and bounded concurrency, and real-server validation for KE assay search, orphan discovery, confidence review, and draft review/export flows.
-- Added release-facing documentation for validated scientific examples in [docs/quickstarts/live-scientific-examples.md](/Volumes/Storage/topotox_space_relief_20260220/AOP_MCP/docs/quickstarts/live-scientific-examples.md).
+- Added release-facing documentation for validated scientific examples in [docs/quickstarts/live-scientific-examples.md](docs/quickstarts/live-scientific-examples.md).
 
 ## Previous highlights from v0.8.0
 
@@ -167,11 +173,14 @@ pip install -e .[dev]
 cp .env.example .env
 
 # 3) run
-uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
+uvicorn src.server.api.server:app --host 127.0.0.1 --port 8003
 
 # 4) verify
-curl -s http://localhost:8003/health | jq .
-BASE_URL=http://localhost:8003 ./scripts/test_mcp_endpoints.sh
+curl -s http://127.0.0.1:8003/health | jq .
+curl -s http://127.0.0.1:8003/mcp \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_aops","arguments":{"text":"liver","limit":3}}}' \
+  | jq -r '.result.content[0].text'
 ```
 
 ## Quick start
@@ -183,15 +192,15 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 cp .env.example .env
-uvicorn src.server.api.server:app --reload --host 0.0.0.0 --port 8003
+uvicorn src.server.api.server:app --host 127.0.0.1 --port 8003
 ```
 
 > **Heads-up:** Federated SPARQL queries benefit from internet access. When offline, enable fixture fallbacks in `.env` (see [Configuration](#configuration)).
 
 Once the server is running:
 
-- HTTP MCP endpoint: `http://localhost:8003/mcp`
-- Health check: `http://localhost:8003/health`
+- HTTP MCP endpoint: `http://127.0.0.1:8003/mcp`
+- Health check: `http://127.0.0.1:8003/health`
 - Task walkthroughs: `docs/quickstarts/find-aop.md`, `docs/quickstarts/live-scientific-examples.md`, `docs/quickstarts/oecd-draft-authoring.md`, and `docs/quickstarts/publish.md`
 
 ## Docker quick start
@@ -201,7 +210,7 @@ Build and run the hosted runtime image from the repository root:
 ```bash
 docker build -t aop-mcp:local .
 docker run --rm -p 8003:8000 aop-mcp:local
-curl -s http://localhost:8003/health | jq .
+curl -s http://127.0.0.1:8003/health | jq .
 ```
 
 The container listens on port `8000`; the example maps it to the existing local
@@ -226,7 +235,7 @@ docker run --rm -p 8003:8000 \
 Once the server is running, use the scripted smoke run first:
 
 ```bash
-BASE_URL=http://localhost:8003 ./scripts/test_mcp_endpoints.sh
+BASE_URL=http://127.0.0.1:8003 ./scripts/test_mcp_endpoints.sh
 ```
 
 That smoke script validates the modern draft-review workflow end to end, including:
@@ -242,8 +251,8 @@ That smoke script validates the modern draft-review workflow end to end, includi
 If you only want a lightweight manual probe, the basic health and tool-list checks still work:
 
 ```bash
-curl -s http://localhost:8003/health | jq .
-curl -s http://localhost:8003/mcp \
+curl -s http://127.0.0.1:8003/health | jq .
+curl -s http://127.0.0.1:8003/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq .
 ```
@@ -557,7 +566,7 @@ Example `tools/call` payloads:
 The FastAPI app lives at `src/server/api/server.py`. All transports share the same JSON-RPC handlers defined in `src/server/mcp/router.py`.
 
 ```bash
-uvicorn src.server.api.server:app --host 0.0.0.0 --port 8003
+uvicorn src.server.api.server:app --host 127.0.0.1 --port 8003
 ```
 
 - `GET /health` – environment banner, dependency status.
@@ -574,17 +583,21 @@ Add the server to your agent’s MCP configuration. Example Codex CLI entry:
 ```json
 {
   "name": "aop-mcp",
-  "endpoint": "http://localhost:8003/mcp"
+  "endpoint": "http://127.0.0.1:8003/mcp"
 }
 ```
 
 Tested surfaces:
 
-- **Codex CLI** – `codex mcp connect http://localhost:8003/mcp`
+- **Codex CLI** – `codex mcp connect http://127.0.0.1:8003/mcp`
 - **Gemini CLI** – add the endpoint under `mcp_servers` to auto-negotiate the tool catalog.
 - **Claude Code** – configure a custom MCP server with the base URL above.
 
 Because the server supports `initialize`, `tools/list`, `tools/call`, and `shutdown`, agents immediately gain discovery plus structured responses (`content` + `structuredContent`).
+
+Tool annotations accurately identify read-only operations where applicable. Whether a permission grant is remembered is controlled by Claude, Codex, or the other host client; the MCP server cannot grant or persist client permissions itself.
+
+Every successful result includes a human-visible `Sources:` section and the same descriptors in `_meta.sources`. Assistants should retain those labels and clearly identify any information obtained through a separate web search.
 
 ---
 
