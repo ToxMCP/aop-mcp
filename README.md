@@ -77,6 +77,11 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
+## What's new in v0.9.2
+
+- Ship the installed-wheel schema, template and fixture repairs, strict local-origin validation, and complete locked dependency auditing.
+- Preserve the existing scientific contracts and research qualification boundaries.
+
 ## What's new in v0.9.1
 
 - **Automatic source labels** - every tool result now includes a visible `Sources:` section plus machine-readable `_meta.sources`, while scientific `structuredContent` remains schema-compatible.

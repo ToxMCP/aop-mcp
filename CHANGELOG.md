@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+## v0.9.2 - 2026-10-01
 
 ### Fixed
 
@@ -10,7 +12,7 @@
 ### Added
 
 - A committed `uv.lock`, locked CI environments, and a clean installed-wheel MCP smoke on Python 3.11/3.12.
-- Weekly and pull-request runtime dependency auditing and Bandit SAST; governance CI uses supported Node 22.
+- Weekly and pull-request complete locked runtime, development and security-tool dependency auditing and Bandit SAST; governance CI uses supported Node 22.
 
 ## v0.9.1 - 2026-07-22
 
