@@ -102,7 +102,8 @@ class Settings(BaseSettings):
             raise ValueError("AOP_MCP_MAX_REQUEST_BYTES must be positive")
         if not self.is_production:
             return self
-        if self.host.strip() in {"0.0.0.0", "::", "[::]"}:
+        # This is a rejection of wildcard binds, not a listener binding.
+        if self.host.strip() in {"0.0.0.0", "::", "[::]"}:  # nosec B104
             raise ValueError("AOP_MCP_HOST must not be 0.0.0.0/:: in production")
         if self.auth_mode == "disabled" and not self.allow_unauthenticated_production:
             raise ValueError("AOP_MCP_AUTH_MODE=bearer is required in production")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hmac
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -14,7 +15,27 @@ from src.server.version import get_app_version
 
 
 def _is_allowed_local_origin(origin: str) -> bool:
-    return origin.startswith(("http://127.0.0.1", "http://localhost", "http://[::1]"))
+    """Accept serialized HTTP origins for the exact development loopback hosts."""
+    if any(character.isspace() for character in origin):
+        return False
+    try:
+        parsed = urlsplit(origin)
+        port = parsed.port  # Reject malformed or out-of-range ports.
+        hostname = parsed.hostname
+    except ValueError:
+        return False
+    if (
+        parsed.scheme != "http"
+        or hostname not in {"localhost", "127.0.0.1", "::1"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or origin != f"{parsed.scheme}://{parsed.netloc}"
+        or (port is not None and port < 1)
+    ):
+        return False
+    host = "[::1]" if hostname == "::1" else hostname
+    authority = f"{host}:{port}" if port is not None else host
+    return parsed.netloc.lower() == authority
 
 
 def create_app() -> FastAPI:

@@ -629,6 +629,16 @@ Every successful result includes a human-visible `Sources:` section and the same
 
 ## Development notes
 
+For the reproducible development environment, run `uv sync --locked --extra dev`
+and `uv run --no-sync pytest`. CI uses the same committed lockfile. The weekly
+security workflow audits its runtime dependency export and runs Bandit; update
+the lock and rerun the existing regression checks when remediating advisories.
+
+Wheels retain the documented `src.server.api.server:app` entrypoint and bundle
+schemas, SPARQL templates, and offline fixtures. CI builds through the source
+distribution and runs `scripts/verify_installed_wheel.py` with `python -I` in a
+clean wheel environment outside the checkout, including an offline MCP tool call.
+
 - `pytest` – run unit and schema validation tests.
 - `scripts/test_mcp_endpoints.sh` – exercise the MCP catalog end-to-end.
 - `make contract` – regenerate/validate JSON Schema docs (if available in your tooling setup).

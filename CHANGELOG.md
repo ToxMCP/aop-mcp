@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixed
+
+- Parse development origins and accept only exact HTTP loopback hosts, rejecting hostname suffixes, credentials, and malformed origins.
+- Preserve the documented `src.*` namespace in standalone wheels and bundle response schemas, SPARQL templates, and offline fixture data. Replay manifests now read the same installed schema resources as tool validation.
+
+### Added
+
+- A committed `uv.lock`, locked CI environments, and a clean installed-wheel MCP smoke on Python 3.11/3.12.
+- Weekly and pull-request runtime dependency auditing and Bandit SAST; governance CI uses supported Node 22.
+
 ## v0.9.1 - 2026-07-22
 
 ### Added

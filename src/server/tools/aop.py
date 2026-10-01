@@ -2160,14 +2160,15 @@ def _resolve_git_commit() -> dict[str, Any]:
 
 
 def _schema_contract_manifest() -> dict[str, Any]:
-    schema_root = _repo_root() / "docs" / "contracts" / "schemas"
-    schema_files = sorted(schema_root.rglob("*.json"))
+    from src.resources import iter_json_resources
+    from src.tools import SCHEMA_ROOT
+
     schema_hashes = [
         {
-            "path": str(path.relative_to(schema_root)),
-            "sha256": _file_sha256(path),
+            "path": relative,
+            "sha256": hashlib.sha256(resource.read_bytes()).hexdigest(),
         }
-        for path in schema_files
+        for relative, resource in iter_json_resources(SCHEMA_ROOT)
     ]
     tracked_response_schemas = [
         "read/export_draft_replay_package.response.schema.json",

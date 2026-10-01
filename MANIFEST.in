@@ -1,0 +1,4 @@
+include setup.py
+recursive-include docs/contracts/schemas *.json
+recursive-include tests/golden/read *.json
+recursive-include src/adapters/templates *.sparql

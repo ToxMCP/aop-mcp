@@ -4,13 +4,74 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from src.server.api.server import create_app
+from src.server.api.server import _is_allowed_local_origin, create_app
 from src.server.config.settings import get_settings
 from src.server.mcp.protocol import FORBIDDEN
 
 
 def _clear_settings() -> None:
     get_settings.cache_clear()
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://localhost",
+        "http://localhost:8003",
+        "http://127.0.0.1:3000",
+        "http://[::1]",
+        "http://[::1]:8003",
+    ],
+)
+def test_development_origin_accepts_exact_loopback_hosts(origin: str) -> None:
+    assert _is_allowed_local_origin(origin)
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://localhost.evil.example",
+        "http://127.0.0.1.evil.example",
+        "http://127.0.0.10:9000",
+        "http://localhost@evil.example",
+        "http://evil.example@localhost",
+        "http://[::1]evil.example",
+        "http://localhost:70000",
+        "http://localhost:invalid",
+        "http://localhost:0",
+        "http://localhost:",
+        "http://localhost/path",
+        "http://localhost?",
+        "http://localhost#fragment",
+        "http://local\nhost",
+        " http://localhost",
+        "https://localhost",
+        "null",
+    ],
+)
+def test_development_origin_rejects_lookalike_and_malformed_origins(origin: str) -> None:
+    assert not _is_allowed_local_origin(origin)
+
+
+@pytest.mark.parametrize("origin", ["http://localhost.evil.example", "http://127.0.0.1.evil.example"])
+def test_mcp_rejects_remote_origin_before_processing_simple_post(
+    origin: str, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AOP_MCP_ENVIRONMENT", "development")
+    monkeypatch.setenv("AOP_MCP_AUTH_MODE", "disabled")
+    monkeypatch.setenv("AOP_MCP_ALLOWED_ORIGINS", "")
+    _clear_settings()
+    try:
+        with TestClient(create_app()) as client:
+            response = client.post(
+                "/mcp",
+                headers={"origin": origin, "content-type": "text/plain"},
+                content='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}',
+            )
+        assert response.status_code == 403
+        assert response.json()["error"]["message"] == "Origin not allowed"
+    finally:
+        _clear_settings()
 
 
 def test_production_requires_auth(monkeypatch: pytest.MonkeyPatch) -> None:
