@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
+from src.resources import resource_root
 
-FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "tests" / "golden"
+FIXTURE_ROOT = resource_root("fixtures", "tests/golden")
 
 
 class FixtureNotFoundError(FileNotFoundError):
@@ -15,10 +15,9 @@ class FixtureNotFoundError(FileNotFoundError):
 
 
 def load_fixture(namespace: str, name: str, *, category: str = "read") -> dict[str, Any]:
-    """Load a JSON fixture from the tests/golden directory."""
+    """Load a bundled offline fixture, or its canonical source-checkout copy."""
 
-    path = FIXTURE_ROOT / category / namespace / f"{name}.json"
-    if not path.exists():
+    path = FIXTURE_ROOT.joinpath(category, namespace, f"{name}.json")
+    if not path.is_file():
         raise FixtureNotFoundError(f"Fixture '{category}/{namespace}/{name}.json' not found")
     return json.loads(path.read_text(encoding="utf-8"))
-

@@ -12,7 +12,7 @@ WORKDIR /app
 RUN addgroup --system aopmcp \
     && adduser --system --ingroup aopmcp --home /app aopmcp
 
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml setup.py MANIFEST.in README.md LICENSE ./
 COPY docs ./docs
 COPY governance ./governance
 COPY src ./src

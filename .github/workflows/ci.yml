@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -22,16 +25,17 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev
 
       - name: Check tracked files for secrets
-        run: python scripts/check_no_secrets.py
+        run: uv run --no-sync python scripts/check_no_secrets.py
 
       - name: Verify source tree compiles
-        run: python -m compileall src tests scripts
+        run: uv run --no-sync python -m compileall src tests scripts
 
   runtime-contract:
     name: Runtime Contract
@@ -49,14 +53,40 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev
 
       - name: Validate schema-heavy regression surface
         run: |
-          pytest tests/unit/test_schema_validation.py tests/unit/test_mcp_smoke.py -q
+          uv run --no-sync pytest tests/unit/test_schema_validation.py tests/unit/test_mcp_smoke.py -q
+
+  installed-wheel:
+    name: Installed Wheel
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v7
+      - name: Build wheel from the source distribution
+        run: uv build
+      - name: Install locked runtime and wheel outside the checkout
+        run: |
+          uv export --locked --no-dev --no-emit-project --no-hashes --output-file "$RUNNER_TEMP/aop-runtime.txt"
+          uv venv "$RUNNER_TEMP/aop-wheel"
+          uv pip install --python "$RUNNER_TEMP/aop-wheel/bin/python" --requirement "$RUNNER_TEMP/aop-runtime.txt" dist/*.whl
+      - name: Verify installed MCP, schemas, templates and offline fixtures
+        run: |
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/aop-wheel/bin/python" -I "$GITHUB_WORKSPACE/scripts/verify_installed_wheel.py"
 
   docker-build:
     name: Docker Build
@@ -114,21 +144,22 @@ jobs:
       - name: Setup Node (spine-engine bridge)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev
 
       - name: Check tracked files for secrets
-        run: python scripts/check_no_secrets.py
+        run: uv run --no-sync python scripts/check_no_secrets.py
 
       - name: Run unit tests
-        run: pytest -q
+        run: uv run --no-sync pytest -q
 
       - name: Verify package imports
-        run: python -c "import src.server.api.server"
+        run: uv run --no-sync python -c "import src.server.api.server"
 
   # ---------------------------------------------------------------------------
   # Track-B scientific-invariants gate (advisory)
@@ -170,18 +201,19 @@ jobs:
       - name: Setup Node (bridge shells to the vendored spine engine)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev
 
       - name: Verify vendored spine-engine digests (vendor:verify)
-        run: python scripts/vendor_verify.py
+        run: uv run --no-sync python scripts/vendor_verify.py
 
       - name: Run Track-B governance test suite (per-code bites + guard + fail-closed)
-        run: pytest tests/governance -q
+        run: uv run --no-sync pytest tests/governance -q
 
       - name: Run scientific-invariants gate on the released corpus
-        run: python scripts/scientific_invariants_gate.py
+        run: uv run --no-sync python scripts/scientific_invariants_gate.py

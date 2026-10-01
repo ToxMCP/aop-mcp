@@ -1,0 +1,43 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    name: Runtime dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v7
+      - name: Install locked security tools
+        run: uv sync --locked --group security
+      - name: Export the locked runtime dependency graph
+        run: uv export --locked --no-dev --no-emit-project --no-hashes --output-file runtime-requirements.txt
+      - name: Audit runtime dependencies
+        run: uv run --no-sync pip-audit --disable-pip --no-deps --requirement runtime-requirements.txt
+
+  sast:
+    name: Bandit SAST
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v7
+      - name: Install locked security tools
+        run: uv sync --locked --group security
+      - name: Check medium/high severity and confidence findings
+        run: uv run --no-sync bandit --recursive src --severity-level medium --confidence-level medium

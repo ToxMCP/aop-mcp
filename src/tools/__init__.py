@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from importlib.resources.abc import Traversable
 from typing import Any
 
 from jsonschema import Draft202012Validator
 
+from src.resources import resource_root
 
 
-SCHEMA_ROOT = Path(__file__).resolve().parents[2] / "docs" / "contracts" / "schemas"
+SCHEMA_ROOT = resource_root("schemas", "docs/contracts/schemas")
 
 
 class SchemaValidationError(Exception):
@@ -17,13 +18,13 @@ class SchemaValidationError(Exception):
 
 
 def load_schema(namespace: str, name: str) -> dict[str, Any]:
-    schema_path = SCHEMA_ROOT / namespace / f"{name}.json"
-    if not schema_path.exists():
+    schema_path = SCHEMA_ROOT.joinpath(namespace, f"{name}.json")
+    if not schema_path.is_file():
         raise FileNotFoundError(f"Schema '{namespace}/{name}' not found")
     return json_load(schema_path)
 
 
-def json_load(path: Path) -> dict[str, Any]:
+def json_load(path: Traversable) -> dict[str, Any]:
     import json
 
     with path.open("r", encoding="utf-8") as handle:
