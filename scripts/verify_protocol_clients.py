@@ -104,8 +104,11 @@ def main():
                             server.terminate()
                             server.wait(timeout=10)
                 report = json.loads((output / (label + '.json')).read_text())
-                assert len(report['catalog']) == expected['tools']
-                assert catalog_fingerprint(report['catalog']) == expected['sha256'], label
+                # Preserve the complete released catalog while allowing this additive tool.
+                original = [item for item in report['catalog'] if item['name'] != 'compare_aops']
+                assert len(report['catalog']) == expected['tools'] + 1
+                assert len(original) == expected['tools']
+                assert catalog_fingerprint(original) == expected['sha256'], label
                 reports.append(report)
                 print(label, report['protocol'], len(report['results']), 'workflows passed', flush=True)
     results = application_results(reports[0])

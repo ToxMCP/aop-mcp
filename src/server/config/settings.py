@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator, model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     enable_fixture_fallback: bool = False
     auth_mode: str = "disabled"
     auth_bearer_token: str | None = None
+    request_state_key: SecretStr | None = None
     auth_bearer_scopes: Annotated[list[str], NoDecode] = [
         "toxmcp:read",
         "toxmcp:live",
@@ -60,6 +61,13 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.strip().lower() not in {"development", "local", "test"}
+
+    @field_validator("request_state_key")
+    @classmethod
+    def _validate_request_state_key(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None and len(value.get_secret_value().encode()) < 32:
+            raise ValueError("AOP_MCP_REQUEST_STATE_KEY must contain at least 32 bytes")
+        return value
 
     @field_validator("aop_wiki_sparql_endpoints", "aop_db_sparql_endpoints", mode="before")
     @classmethod
