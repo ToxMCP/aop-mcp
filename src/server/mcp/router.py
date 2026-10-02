@@ -105,6 +105,11 @@ async def mcp_endpoint(request: Request, response: Response):
             request_id=None,
         )
 
+    from src.server.mcp.sdk2 import SDKResponse, is_modern_request
+
+    if is_modern_request(request, payload):
+        return SDKResponse(request.app.state.sdk2_app, await request.body())
+
     try:
         rpc_request = JSONRPCRequest.model_validate(payload)
         log.debug("Received MCP request: method=%s, id=%s", rpc_request.method, rpc_request.id)

@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] — 0.10.0 candidate
+
+- Add the stable MCP SDK 2.2.0 protocol (2026-07-28) over the existing HTTP endpoint, retaining the released custom legacy handler and its aliases.
+- Add optional `aop-mcp-stdio` with legacy and modern protocol negotiation.
+- Retain the 42 scientific tool contracts, source attribution, scopes, explicit confirmations, draft state, output validation and tool-call audits. SDK2 tool-policy extensions use `org.toxmcp/toolPolicy` metadata.
+- Add an explicit SDK2 HTTP Host allowlist and bound actual request bodies before either protocol parser, including streamed bodies.
+- Add real SDK1/SDK2 client checks over both transports and installed-wheel CI. See [migration notes](docs/mcp-sdk2-migration.md).
+
 
 ## v0.9.2 - 2026-10-01
 
