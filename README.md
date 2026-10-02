@@ -77,6 +77,12 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
+## SDK2 migration candidate (0.10.0)
+
+The released version remains 0.9.2. This review branch adds MCP SDK 2.2.0 and protocol 2026-07-28 while keeping the existing custom legacy HTTP handler, tool schemas and scientific workflows. It also adds optional `aop-mcp-stdio`. See [migration and hosting instructions](docs/mcp-sdk2-migration.md).
+
+For modern HTTP clients behind a gateway, set `AOP_MCP_ALLOWED_HOSTS` to the authority clients send (for example `aop.example.org`). Its default is the loopback allowlist. `AOP_MCP_ALLOWED_ORIGINS` remains the existing browser Origin boundary; configure both for hosted use.
+
 ## What's new in v0.9.2
 
 - Ship the installed-wheel schema, template and fixture repairs, strict local-origin validation, and complete locked dependency auditing.
@@ -279,6 +285,8 @@ Settings are loaded through [`pydantic-settings`](https://docs.pydantic.dev/late
 | `AOP_MCP_COMPTOX_BIOACTIVITY_URL` | Optional | `https://comptox.epa.gov/ctx-api/` | Base URL for CompTox Bioactivity API (required for assay mapping). |
 | `AOP_MCP_COMPTOX_API_KEY` | Optional | – | API key for CompTox (required for assay mapping and higher quota). |
 | `AOP_MCP_ENABLE_FIXTURE_FALLBACK` | Optional | `0` | Set to `1` to serve fixture data when remote SPARQL endpoints are unavailable. |
+| `AOP_MCP_ALLOWED_HOSTS` | Optional | Loopback hosts with any port | Comma-separated SDK2 HTTP Host allowlist, e.g. `aop.example.org`. |
+| `AOP_MCP_ALLOWED_ORIGINS` | Required in production | Empty | Exact comma-separated browser origins; development permits exact HTTP loopback origins. |
 | `AOP_MCP_AUDIT_LOG_PATH` | Optional | – | When set, appends hash-chained MCP tool-call audit records as JSONL while preserving the in-memory audit buffer used by replay packages. |
 
 See `docs/contracts/endpoint-matrix.md` and `src/server/config/settings.py` for the extended configuration surface (auth, retries, cache sizing, job service knobs).

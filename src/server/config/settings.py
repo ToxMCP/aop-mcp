@@ -31,6 +31,7 @@ class Settings(BaseSettings):
         "toxmcp:admin",
     ]
     allowed_origins: Annotated[list[str], NoDecode] = []
+    allowed_hosts: Annotated[list[str], NoDecode] = []
     max_request_bytes: int = 1_000_000
     allow_unauthenticated_production: bool = False
 
@@ -67,7 +68,7 @@ class Settings(BaseSettings):
             return [part.strip() for part in value.split(",") if part.strip()]
         return value
 
-    @field_validator("allowed_origins", mode="before")
+    @field_validator("allowed_origins", "allowed_hosts", mode="before")
     @classmethod
     def _split_csv_origins(cls, value: object) -> object:
         if isinstance(value, str):

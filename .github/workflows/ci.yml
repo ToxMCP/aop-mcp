@@ -83,10 +83,16 @@ jobs:
           uv export --locked --no-dev --no-emit-project --no-hashes --output-file "$RUNNER_TEMP/aop-runtime.txt"
           uv venv "$RUNNER_TEMP/aop-wheel"
           uv pip install --python "$RUNNER_TEMP/aop-wheel/bin/python" --requirement "$RUNNER_TEMP/aop-runtime.txt" dist/*.whl
+      - name: Install isolated locked legacy client
+        run: uv sync --locked --project tests/compatibility/legacy-client
       - name: Verify installed MCP, schemas, templates and offline fixtures
         run: |
           cd "$RUNNER_TEMP"
           "$RUNNER_TEMP/aop-wheel/bin/python" -I "$GITHUB_WORKSPACE/scripts/verify_installed_wheel.py"
+          "$RUNNER_TEMP/aop-wheel/bin/python" -I "$GITHUB_WORKSPACE/scripts/verify_protocol_clients.py" \
+            --server-python "$RUNNER_TEMP/aop-wheel/bin/python" \
+            --legacy-python "$GITHUB_WORKSPACE/tests/compatibility/legacy-client/.venv/bin/python" \
+            --output-dir "$RUNNER_TEMP/aop-client-results"
 
   docker-build:
     name: Docker Build
