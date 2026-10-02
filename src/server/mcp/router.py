@@ -35,7 +35,8 @@ from src.server.mcp.protocol import (
     PARSE_ERROR,
     FORBIDDEN,
 )
-from src.server.tools.registry import tool_registry
+from src.server.tools.registry import RegisteredTool, tool_registry
+from src.server.tools.comparison import ComparisonError
 from src.server.version import get_app_version
 from src.tools import SchemaValidationError, validate_payload_against_schema
 
@@ -232,12 +233,25 @@ def _tool_call_confirmed(params: dict[str, Any]) -> bool:
     return isinstance(confirmation, dict) and confirmation.get("confirmed") is True
 
 
+def _check_tool_policy(tool_def: RegisteredTool, execution_context: ToolExecutionContext, confirmed: bool) -> None:
+    """Use the same scope boundary before guided questions and scientific execution."""
+    missing_scopes = sorted(set(tool_def.required_scopes) - set(execution_context.scopes))
+    if missing_scopes:
+        raise JSONRPCError(FORBIDDEN, "Missing required tool scope(s): " + ", ".join(missing_scopes),
+            data={"requiredScopes": list(tool_def.required_scopes),
+                  "grantedScopes": sorted(execution_context.scopes), "missingScopes": missing_scopes})
+    if tool_def.requires_confirmation and execution_context.enforce_confirmations and not confirmed:
+        raise JSONRPCError(FORBIDDEN, "Tool requires explicit confirmation",
+            data={"requiresConfirmation": True, "riskClass": tool_def.risk_class})
+
+
 async def _dispatch_tool_call(
     name: str,
     arguments: dict[str, Any],
     *,
     execution_context: ToolExecutionContext,
     confirmed: bool,
+    prepared_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     call_id = str(uuid4())
     started_at = utc_timestamp()
@@ -252,36 +266,13 @@ async def _dispatch_tool_call(
 
     try:
         tool_def = tool_registry.get_tool(name)
-        missing_scopes = sorted(
-            set(tool_def.required_scopes) - set(execution_context.scopes)
-        )
-        if missing_scopes:
+        try:
+            _check_tool_policy(tool_def, execution_context, confirmed)
+        except JSONRPCError:
             policy_status = "failed"
-            raise JSONRPCError(
-                FORBIDDEN,
-                "Missing required tool scope(s): " + ", ".join(missing_scopes),
-                data={
-                    "requiredScopes": list(tool_def.required_scopes),
-                    "grantedScopes": sorted(execution_context.scopes),
-                    "missingScopes": missing_scopes,
-                },
-            )
-        if (
-            tool_def.requires_confirmation
-            and execution_context.enforce_confirmations
-            and not confirmed
-        ):
-            policy_status = "failed"
-            raise JSONRPCError(
-                FORBIDDEN,
-                "Tool requires explicit confirmation",
-                data={
-                    "requiresConfirmation": True,
-                    "riskClass": tool_def.risk_class,
-                },
-            )
+            raise
         policy_status = "passed"
-        result = await tool_registry.call_tool(name, arguments)
+        result = prepared_result if prepared_result is not None else await tool_registry.call_tool(name, arguments)
         if tool_def.output_schema:
             validate_payload_against_schema(result, tool_def.output_schema)
             output_validation_status = "passed"
@@ -299,6 +290,11 @@ async def _dispatch_tool_call(
             response["structuredContent"] = result
         status_value = "success"
         return response
+    except ComparisonError as exc:
+        error_type = "ComparisonError"
+        error_message = str(exc)
+        return {"isError": True, "content": [{"type": "text", "text": str(exc) + _render_sources(tool_def.sources)}],
+                "_meta": {"sources": tool_def.sources}}
     except KeyError:
         error_type = "KeyError"
         error_message = f"Tool not found: {name}"

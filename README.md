@@ -12,6 +12,24 @@
 **Public MCP endpoint for Adverse Outcome Pathway (AOP) discovery, scientific review, and draft-to-publication workflows.**  
 Expose AOP-Wiki, AOP-DB, CompTox, semantic tooling, quantitative review helpers, and draft review/export flows to any MCP-aware agent (Codex CLI, Gemini CLI, Claude Code, etc.).
 
+## Guided AOP comparison (development candidate)
+
+`compare_aops` compares two to four AOPs by shared KE/KER identifiers, initiating
+events, adverse outcomes, and evidence fields not reported in the AOP-Wiki RDF.
+It asks for missing species and life-stage context on modern clients that advertise
+form elicitation. Existing clients can provide the same context directly:
+
+```json
+{"aop_ids": ["AOP:345", "AOP:477"], "species": "human", "life_stage": "adult", "sex": "male"}
+```
+
+Missing context produces an actionable `input_required` structured result on
+clients without interactive support. Explicit `unspecified` is accepted; no
+human/adult default is assumed. Overlap and exact context matches do not establish
+whole-pathway applicability, confidence, or chemical toxicity. See
+[the guided comparison contract](docs/guided-aop-comparison.md) for client examples,
+cancellation behavior, evidence limitations, and resume-key configuration.
+
 ## Architecture
 
 ```mermaid
