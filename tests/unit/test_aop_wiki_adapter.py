@@ -13,6 +13,44 @@ def make_client(handler: httpx.MockTransport) -> SparqlClient:
 
 
 @pytest.mark.asyncio
+async def test_get_key_event_preserves_independent_annotations_and_reference_pairs() -> None:
+    """Sparse rows retain each value without needing their Cartesian product."""
+    from itertools import product
+
+    groups = [
+        [{"title": {"value": "Synthetic event"}, "description": {"value": "Detailed annotation"}}],
+        [{"gene": {"value": "HGNC:1"}}, {"gene": {"value": "HGNC:2"}}],
+        [{"taxon": {"value": "http://purl.obolibrary.org/obo/NCBITaxon_9606"}},
+         {"taxon": {"value": "http://purl.obolibrary.org/obo/NCBITaxon_10090"}}],
+        [{"aop": {"value": "https://identifiers.org/aop/34"}, "aopTitle": {"value": "Pathway 34"}},
+         {"aop": {"value": "https://identifiers.org/aop/35"}, "aopTitle": {"value": "Pathway 35"}}],
+        [{"reference": {"value": "https://doi.org/10.1000/one"}, "referenceLabel": {"value": "First study"}},
+         {"reference": {"value": "https://doi.org/10.1000/two"}, "referenceLabel": {"value": "Second study"}}],
+    ]
+    sparse = [row for group in groups for row in group]
+    multiplied = [{key: value for row in rows for key, value in row.items()} for rows in product(*groups)]
+    records = []
+    for bindings in [multiplied, sparse]:
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"results": {"bindings": bindings}})
+
+        async with make_client(httpx.MockTransport(handler)) as client:
+            records.append(await AOPWikiAdapter(client, enable_fixture_fallback=False).get_key_event("KE:177"))
+
+    assert records[0] == records[1]
+    record = records[1]
+    assert record["gene_identifiers"] == ["HGNC:1", "HGNC:2"]
+    assert record["taxonomic_applicability"] == ["NCBITaxon:9606", "NCBITaxon:10090"]
+    assert record["part_of_aops"] == [
+        {"id": "AOP:34", "iri": "https://identifiers.org/aop/34", "title": "Pathway 34"},
+        {"id": "AOP:35", "iri": "https://identifiers.org/aop/35", "title": "Pathway 35"},
+    ]
+    assert [(reference["identifier"], reference["label"]) for reference in record["references"]] == [
+        ("10.1000/one", "First study"), ("10.1000/two", "Second study"),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_search_aops_filters_and_normalizes_results() -> None:
     captured_queries: list[str] = []
 

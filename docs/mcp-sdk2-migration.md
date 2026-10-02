@@ -32,6 +32,8 @@ Run `aop-mcp-stdio` after installation, or `python -m src.server.mcp.sdk2`. Both
 
 ## Verification
 
+Live pre-merge testing uncovered an existing slow key-event query, independent of the MCP protocol. KE 177 combines 18 genes, five raw taxon values, two sex values and 43 linked AOPs; the old query repeats its long descriptions across that product. The candidate reads independent annotations in separate query branches, keeping AOP/title and reference/citation fields together for the existing normalizers. No result limit or scientific schema change is used. A sparse-row regression test verifies annotation and reference pairing, and live checks compare normalized records and exercise confidence assessment through both client generations.
+
 The real-client matrix uses isolated MCP 1.30.0 and 2.2.0 clients over HTTP and stdio. It compares all tool schemas and 16 fixture workflows, including confidence assessment, draft creation/edits, OECD validation, source attribution and tool audits. Test-only launchers fix application clocks/identities and force bundled offline fixtures; production entry points never import them. Comparison validates and excludes only additive protocol envelope fields, retaining application values, hashes, timestamps and source labels.
 
 ```bash
