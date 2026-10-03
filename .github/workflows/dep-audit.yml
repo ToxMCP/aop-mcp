@@ -1,0 +1,53 @@
+name: Dependency Audit
+
+# Advisory dependency-vulnerability gate (pip-audit, fail-on-any).
+#
+# Why a weekly schedule: pip-audit queries a LIVE advisory database (PyPI
+# Advisory DB / OSV), so a green main can go stale when a NEW CVE lands on an
+# already-pinned dependency. The cron run re-audits the pinned dependency set
+# on a fixed cadence so we learn about newly-disclosed advisories even when no
+# code changes.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly, off-peak (Mon 07:17 UTC). Catches new CVEs on already-pinned deps.
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: pip-audit (fail-on-any)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Resolve full dependency set
+        # Resolve the complete, pinned transitive dependency tree from
+        # pyproject.toml (runtime + dev extra). This deliberately audits the
+        # third-party dependency closure rather than the editable first-party
+        # package, so --strict stays meaningful (pip-audit otherwise treats the
+        # local 'aop-mcp-server' editable package as an un-auditable skip and,
+        # under --strict, fails on that expected skip rather than on real
+        # advisories).
+        run: |
+          uv pip compile --extra dev pyproject.toml -o /tmp/dep-audit-requirements.txt
+          echo "----- resolved dependency set -----"
+          cat /tmp/dep-audit-requirements.txt
+
+      - name: Audit dependencies (fail on ANY advisory)
+        # --strict  : also fail if pip-audit itself hits an audit error.
+        # --desc    : print the advisory description for each finding.
+        # pip-audit exits non-zero on ANY advisory regardless of severity.
+        # No severity filter and no '|| true': the whole point is fail-on-any.
+        run: |
+          uvx pip-audit -r /tmp/dep-audit-requirements.txt --strict --desc
