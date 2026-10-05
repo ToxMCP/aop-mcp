@@ -1,0 +1,1648 @@
+{
+  "capturedAt": "2026-10-02T11:18:23.596414+00:00",
+  "purpose": "Frozen public AOP-Wiki result snapshot for reproducible comparison evaluations, not a substitute for live validation.",
+  "fixtureFallback": false,
+  "results": {
+    "androgen_pair": {
+      "status": "completed",
+      "requested_context": {
+        "species": "NCBITaxon:9606",
+        "life_stage": "adult",
+        "sex": null
+      },
+      "missing_inputs": [],
+      "aops": [
+        {
+          "id": "AOP:345",
+          "title": "Androgen receptor (AR) antagonism leading to decreased fertility in females",
+          "url": "https://identifiers.org/aop/345",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:1800",
+              "title": "Granulosa cell proliferation of gonadotropin-independent follicles, Reduced",
+              "url": "https://identifiers.org/aop.events/1800"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            },
+            {
+              "id": "KE:405",
+              "title": "disrupted, ovarian cycle",
+              "url": "https://identifiers.org/aop.events/405"
+            },
+            {
+              "id": "KE:406",
+              "title": "decreased, Fertility",
+              "url": "https://identifiers.org/aop.events/406"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2273",
+            "KER:3142",
+            "KER:394"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:405",
+              "title": "disrupted, ovarian cycle",
+              "url": "https://identifiers.org/aop.events/405"
+            },
+            {
+              "id": "KE:406",
+              "title": "decreased, Fertility",
+              "url": "https://identifiers.org/aop.events/406"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 6,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10095",
+              "NCBITaxon:10116",
+              "NCBITaxon:9913"
+            ],
+            "reported_life_stages": [
+              "Adult, reproductively mature",
+              "During development and at adulthood"
+            ],
+            "reported_sexes": [
+              "Female",
+              "Mixed"
+            ]
+          }
+        },
+        {
+          "id": "AOP:477",
+          "title": "Androgen receptor (AR) antagonism leading to hypospadias in male (mammalian) offspring",
+          "url": "https://identifiers.org/aop/477",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2828"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 4,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10116"
+            ],
+            "reported_life_stages": [
+              "During development and at adulthood",
+              "Perinatal"
+            ],
+            "reported_sexes": [
+              "Male",
+              "Mixed"
+            ]
+          }
+        }
+      ],
+      "pairs": [
+        {
+          "aop_ids": [
+            "AOP:345",
+            "AOP:477"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:345": [
+              "KE:1800",
+              "KE:405",
+              "KE:406"
+            ],
+            "AOP:477": [
+              "KE:2082"
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "Shared KE/KER identifiers show recorded pathway overlap, not causal equivalence or chemical read-across validity.",
+        "Not-reported fields describe the returned AOP-Wiki RDF; they do not prove evidence is absent from the literature.",
+        "Context counts use exact recorded identifiers or labels; taxonomic ancestry and life-stage equivalence are not inferred.",
+        "KE context annotations and their union do not establish whole-pathway applicability; expert review is required.",
+        "This comparison does not rank confidence, establish dose-response relationships, or predict chemical toxicity."
+      ]
+    },
+    "androgen_triple": {
+      "status": "completed",
+      "requested_context": {
+        "species": "NCBITaxon:9606",
+        "life_stage": "unspecified",
+        "sex": null
+      },
+      "missing_inputs": [],
+      "aops": [
+        {
+          "id": "AOP:344",
+          "title": "Androgen receptor (AR) antagonism leading to nipple retention (NR) in male (mammalian) offspring",
+          "url": "https://identifiers.org/aop/344",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:1786",
+              "title": "Nipple retention (NR), increased",
+              "url": "https://identifiers.org/aop.events/1786"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2133",
+            "KER:3348"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:1786",
+              "title": "Nipple retention (NR), increased",
+              "url": "https://identifiers.org/aop.events/1786"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 4,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10116"
+            ],
+            "reported_life_stages": [
+              "Birth to < 1 month",
+              "During development and at adulthood"
+            ],
+            "reported_sexes": [
+              "Male",
+              "Mixed"
+            ]
+          }
+        },
+        {
+          "id": "AOP:345",
+          "title": "Androgen receptor (AR) antagonism leading to decreased fertility in females",
+          "url": "https://identifiers.org/aop/345",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:1800",
+              "title": "Granulosa cell proliferation of gonadotropin-independent follicles, Reduced",
+              "url": "https://identifiers.org/aop.events/1800"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            },
+            {
+              "id": "KE:405",
+              "title": "disrupted, ovarian cycle",
+              "url": "https://identifiers.org/aop.events/405"
+            },
+            {
+              "id": "KE:406",
+              "title": "decreased, Fertility",
+              "url": "https://identifiers.org/aop.events/406"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2273",
+            "KER:3142",
+            "KER:394"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:405",
+              "title": "disrupted, ovarian cycle",
+              "url": "https://identifiers.org/aop.events/405"
+            },
+            {
+              "id": "KE:406",
+              "title": "decreased, Fertility",
+              "url": "https://identifiers.org/aop.events/406"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 6,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10095",
+              "NCBITaxon:10116",
+              "NCBITaxon:9913"
+            ],
+            "reported_life_stages": [
+              "Adult, reproductively mature",
+              "During development and at adulthood"
+            ],
+            "reported_sexes": [
+              "Female",
+              "Mixed"
+            ]
+          }
+        },
+        {
+          "id": "AOP:477",
+          "title": "Androgen receptor (AR) antagonism leading to hypospadias in male (mammalian) offspring",
+          "url": "https://identifiers.org/aop/477",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2828"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 4,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10116"
+            ],
+            "reported_life_stages": [
+              "During development and at adulthood",
+              "Perinatal"
+            ],
+            "reported_sexes": [
+              "Male",
+              "Mixed"
+            ]
+          }
+        }
+      ],
+      "pairs": [
+        {
+          "aop_ids": [
+            "AOP:344",
+            "AOP:345"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:344": [
+              "KE:1786"
+            ],
+            "AOP:345": [
+              "KE:1800",
+              "KE:405",
+              "KE:406"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:344",
+            "AOP:477"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:344": [
+              "KE:1786"
+            ],
+            "AOP:477": [
+              "KE:2082"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:345",
+            "AOP:477"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:345": [
+              "KE:1800",
+              "KE:405",
+              "KE:406"
+            ],
+            "AOP:477": [
+              "KE:2082"
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "Shared KE/KER identifiers show recorded pathway overlap, not causal equivalence or chemical read-across validity.",
+        "Not-reported fields describe the returned AOP-Wiki RDF; they do not prove evidence is absent from the literature.",
+        "Context counts use exact recorded identifiers or labels; taxonomic ancestry and life-stage equivalence are not inferred.",
+        "KE context annotations and their union do not establish whole-pathway applicability; expert review is required.",
+        "This comparison does not rank confidence, establish dose-response relationships, or predict chemical toxicity."
+      ]
+    },
+    "different_outcomes": {
+      "status": "completed",
+      "requested_context": {
+        "species": "unspecified",
+        "life_stage": "unspecified",
+        "sex": null
+      },
+      "missing_inputs": [],
+      "aops": [
+        {
+          "id": "AOP:40",
+          "title": "Covalent Protein binding leading to Skin Sensitisation",
+          "url": "https://identifiers.org/aop/40",
+          "key_events": [
+            {
+              "id": "KE:272",
+              "title": "Activation/Proliferation, T-cells",
+              "url": "https://identifiers.org/aop.events/272"
+            },
+            {
+              "id": "KE:396",
+              "title": "Covalent Binding, Protein",
+              "url": "https://identifiers.org/aop.events/396"
+            },
+            {
+              "id": "KE:398",
+              "title": "Activation, Dendritic Cells",
+              "url": "https://identifiers.org/aop.events/398"
+            },
+            {
+              "id": "KE:826",
+              "title": "Activation, Keratinocytes",
+              "url": "https://identifiers.org/aop.events/826"
+            },
+            {
+              "id": "KE:827",
+              "title": "sensitisation, skin",
+              "url": "https://identifiers.org/aop.events/827"
+            }
+          ],
+          "ker_ids": [
+            "KER:377",
+            "KER:379",
+            "KER:833",
+            "KER:834",
+            "KER:835"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:396",
+              "title": "Covalent Binding, Protein",
+              "url": "https://identifiers.org/aop.events/396"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:827",
+              "title": "sensitisation, skin",
+              "url": "https://identifiers.org/aop.events/827"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:272",
+              "url": "https://identifiers.org/aop.events/272",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KE:398",
+              "url": "https://identifiers.org/aop.events/398",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KE:826",
+              "url": "https://identifiers.org/aop.events/826",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KE:827",
+              "url": "https://identifiers.org/aop.events/827",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KER:379",
+              "url": "https://identifiers.org/aop.relationships/379",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            },
+            {
+              "id": "KER:833",
+              "url": "https://identifiers.org/aop.relationships/833",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            },
+            {
+              "id": "KER:834",
+              "url": "https://identifiers.org/aop.relationships/834",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            },
+            {
+              "id": "KER:835",
+              "url": "https://identifiers.org/aop.relationships/835",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 5,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 0,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 4,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 4,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10141"
+            ],
+            "reported_life_stages": [
+              "All life stages"
+            ],
+            "reported_sexes": [
+              "Unspecific"
+            ]
+          }
+        },
+        {
+          "id": "AOP:477",
+          "title": "Androgen receptor (AR) antagonism leading to hypospadias in male (mammalian) offspring",
+          "url": "https://identifiers.org/aop/477",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2828"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 4,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10116"
+            ],
+            "reported_life_stages": [
+              "During development and at adulthood",
+              "Perinatal"
+            ],
+            "reported_sexes": [
+              "Male",
+              "Mixed"
+            ]
+          }
+        }
+      ],
+      "pairs": [
+        {
+          "aop_ids": [
+            "AOP:40",
+            "AOP:477"
+          ],
+          "shared_key_events": [],
+          "shared_ker_ids": [],
+          "shared_molecular_initiating_events": [],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:40": [
+              "KE:272",
+              "KE:396",
+              "KE:398",
+              "KE:826",
+              "KE:827"
+            ],
+            "AOP:477": [
+              "KE:1614",
+              "KE:2082",
+              "KE:26",
+              "KE:286"
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "Shared KE/KER identifiers show recorded pathway overlap, not causal equivalence or chemical read-across validity.",
+        "Not-reported fields describe the returned AOP-Wiki RDF; they do not prove evidence is absent from the literature.",
+        "Context counts use exact recorded identifiers or labels; taxonomic ancestry and life-stage equivalence are not inferred.",
+        "KE context annotations and their union do not establish whole-pathway applicability; expert review is required.",
+        "This comparison does not rank confidence, establish dose-response relationships, or predict chemical toxicity."
+      ]
+    },
+    "four_aops": {
+      "status": "completed",
+      "requested_context": {
+        "species": "NCBITaxon:9606",
+        "life_stage": "unspecified",
+        "sex": null
+      },
+      "missing_inputs": [],
+      "aops": [
+        {
+          "id": "AOP:40",
+          "title": "Covalent Protein binding leading to Skin Sensitisation",
+          "url": "https://identifiers.org/aop/40",
+          "key_events": [
+            {
+              "id": "KE:272",
+              "title": "Activation/Proliferation, T-cells",
+              "url": "https://identifiers.org/aop.events/272"
+            },
+            {
+              "id": "KE:396",
+              "title": "Covalent Binding, Protein",
+              "url": "https://identifiers.org/aop.events/396"
+            },
+            {
+              "id": "KE:398",
+              "title": "Activation, Dendritic Cells",
+              "url": "https://identifiers.org/aop.events/398"
+            },
+            {
+              "id": "KE:826",
+              "title": "Activation, Keratinocytes",
+              "url": "https://identifiers.org/aop.events/826"
+            },
+            {
+              "id": "KE:827",
+              "title": "sensitisation, skin",
+              "url": "https://identifiers.org/aop.events/827"
+            }
+          ],
+          "ker_ids": [
+            "KER:377",
+            "KER:379",
+            "KER:833",
+            "KER:834",
+            "KER:835"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:396",
+              "title": "Covalent Binding, Protein",
+              "url": "https://identifiers.org/aop.events/396"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:827",
+              "title": "sensitisation, skin",
+              "url": "https://identifiers.org/aop.events/827"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:272",
+              "url": "https://identifiers.org/aop.events/272",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KE:398",
+              "url": "https://identifiers.org/aop.events/398",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KE:826",
+              "url": "https://identifiers.org/aop.events/826",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KE:827",
+              "url": "https://identifiers.org/aop.events/827",
+              "not_reported_fields": [
+                "life_stage_applicability",
+                "sex_applicability"
+              ]
+            },
+            {
+              "id": "KER:379",
+              "url": "https://identifiers.org/aop.relationships/379",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            },
+            {
+              "id": "KER:833",
+              "url": "https://identifiers.org/aop.relationships/833",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            },
+            {
+              "id": "KER:834",
+              "url": "https://identifiers.org/aop.relationships/834",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            },
+            {
+              "id": "KER:835",
+              "url": "https://identifiers.org/aop.relationships/835",
+              "not_reported_fields": [
+                "quantitative_understanding"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 5,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 0,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 4,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 4,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10141"
+            ],
+            "reported_life_stages": [
+              "All life stages"
+            ],
+            "reported_sexes": [
+              "Unspecific"
+            ]
+          }
+        },
+        {
+          "id": "AOP:344",
+          "title": "Androgen receptor (AR) antagonism leading to nipple retention (NR) in male (mammalian) offspring",
+          "url": "https://identifiers.org/aop/344",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:1786",
+              "title": "Nipple retention (NR), increased",
+              "url": "https://identifiers.org/aop.events/1786"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2133",
+            "KER:3348"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:1786",
+              "title": "Nipple retention (NR), increased",
+              "url": "https://identifiers.org/aop.events/1786"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 4,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10116"
+            ],
+            "reported_life_stages": [
+              "Birth to < 1 month",
+              "During development and at adulthood"
+            ],
+            "reported_sexes": [
+              "Male",
+              "Mixed"
+            ]
+          }
+        },
+        {
+          "id": "AOP:345",
+          "title": "Androgen receptor (AR) antagonism leading to decreased fertility in females",
+          "url": "https://identifiers.org/aop/345",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:1800",
+              "title": "Granulosa cell proliferation of gonadotropin-independent follicles, Reduced",
+              "url": "https://identifiers.org/aop.events/1800"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            },
+            {
+              "id": "KE:405",
+              "title": "disrupted, ovarian cycle",
+              "url": "https://identifiers.org/aop.events/405"
+            },
+            {
+              "id": "KE:406",
+              "title": "decreased, Fertility",
+              "url": "https://identifiers.org/aop.events/406"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2273",
+            "KER:3142",
+            "KER:394"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:405",
+              "title": "disrupted, ovarian cycle",
+              "url": "https://identifiers.org/aop.events/405"
+            },
+            {
+              "id": "KE:406",
+              "title": "decreased, Fertility",
+              "url": "https://identifiers.org/aop.events/406"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 6,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10095",
+              "NCBITaxon:10116",
+              "NCBITaxon:9913"
+            ],
+            "reported_life_stages": [
+              "Adult, reproductively mature",
+              "During development and at adulthood"
+            ],
+            "reported_sexes": [
+              "Female",
+              "Mixed"
+            ]
+          }
+        },
+        {
+          "id": "AOP:477",
+          "title": "Androgen receptor (AR) antagonism leading to hypospadias in male (mammalian) offspring",
+          "url": "https://identifiers.org/aop/477",
+          "key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "ker_ids": [
+            "KER:2124",
+            "KER:2130",
+            "KER:2828"
+          ],
+          "molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "adverse_outcomes": [
+            {
+              "id": "KE:2082",
+              "title": "Hypospadias, increased",
+              "url": "https://identifiers.org/aop.events/2082"
+            }
+          ],
+          "evidence_gaps": [
+            {
+              "id": "KE:1614",
+              "url": "https://identifiers.org/aop.events/1614",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:26",
+              "url": "https://identifiers.org/aop.events/26",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            },
+            {
+              "id": "KE:286",
+              "url": "https://identifiers.org/aop.events/286",
+              "not_reported_fields": [
+                "taxonomic_applicability"
+              ]
+            }
+          ],
+          "context_evidence": {
+            "assessment": "requires_expert_review",
+            "key_event_count": 4,
+            "species_exact_match_count": 0,
+            "species_unreported_count": 3,
+            "life_stage_exact_match_count": 0,
+            "life_stage_unreported_count": 0,
+            "sex_exact_match_count": 0,
+            "sex_unreported_count": 0,
+            "reported_taxa": [
+              "NCBITaxon:10090",
+              "NCBITaxon:10116"
+            ],
+            "reported_life_stages": [
+              "During development and at adulthood",
+              "Perinatal"
+            ],
+            "reported_sexes": [
+              "Male",
+              "Mixed"
+            ]
+          }
+        }
+      ],
+      "pairs": [
+        {
+          "aop_ids": [
+            "AOP:40",
+            "AOP:344"
+          ],
+          "shared_key_events": [],
+          "shared_ker_ids": [],
+          "shared_molecular_initiating_events": [],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:40": [
+              "KE:272",
+              "KE:396",
+              "KE:398",
+              "KE:826",
+              "KE:827"
+            ],
+            "AOP:344": [
+              "KE:1614",
+              "KE:1786",
+              "KE:26",
+              "KE:286"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:40",
+            "AOP:345"
+          ],
+          "shared_key_events": [],
+          "shared_ker_ids": [],
+          "shared_molecular_initiating_events": [],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:40": [
+              "KE:272",
+              "KE:396",
+              "KE:398",
+              "KE:826",
+              "KE:827"
+            ],
+            "AOP:345": [
+              "KE:1614",
+              "KE:1800",
+              "KE:26",
+              "KE:286",
+              "KE:405",
+              "KE:406"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:40",
+            "AOP:477"
+          ],
+          "shared_key_events": [],
+          "shared_ker_ids": [],
+          "shared_molecular_initiating_events": [],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:40": [
+              "KE:272",
+              "KE:396",
+              "KE:398",
+              "KE:826",
+              "KE:827"
+            ],
+            "AOP:477": [
+              "KE:1614",
+              "KE:2082",
+              "KE:26",
+              "KE:286"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:344",
+            "AOP:345"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:344": [
+              "KE:1786"
+            ],
+            "AOP:345": [
+              "KE:1800",
+              "KE:405",
+              "KE:406"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:344",
+            "AOP:477"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:344": [
+              "KE:1786"
+            ],
+            "AOP:477": [
+              "KE:2082"
+            ]
+          }
+        },
+        {
+          "aop_ids": [
+            "AOP:345",
+            "AOP:477"
+          ],
+          "shared_key_events": [
+            {
+              "id": "KE:1614",
+              "title": "Decrease, androgen receptor activation",
+              "url": "https://identifiers.org/aop.events/1614"
+            },
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            },
+            {
+              "id": "KE:286",
+              "title": "Altered, Transcription of genes by the androgen receptor",
+              "url": "https://identifiers.org/aop.events/286"
+            }
+          ],
+          "shared_ker_ids": [
+            "KER:2124",
+            "KER:2130"
+          ],
+          "shared_molecular_initiating_events": [
+            {
+              "id": "KE:26",
+              "title": "Antagonism, Androgen receptor",
+              "url": "https://identifiers.org/aop.events/26"
+            }
+          ],
+          "shared_adverse_outcomes": [],
+          "unique_key_event_ids": {
+            "AOP:345": [
+              "KE:1800",
+              "KE:405",
+              "KE:406"
+            ],
+            "AOP:477": [
+              "KE:2082"
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "Shared KE/KER identifiers show recorded pathway overlap, not causal equivalence or chemical read-across validity.",
+        "Not-reported fields describe the returned AOP-Wiki RDF; they do not prove evidence is absent from the literature.",
+        "Context counts use exact recorded identifiers or labels; taxonomic ancestry and life-stage equivalence are not inferred.",
+        "KE context annotations and their union do not establish whole-pathway applicability; expert review is required.",
+        "This comparison does not rank confidence, establish dose-response relationships, or predict chemical toxicity."
+      ]
+    }
+  }
+}

@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<evaluation source="guided-comparison-live-snapshot.json" note="Reference answers verified against the captured live result; no LLM-scored benchmark was run.">
+  <qa_pair>
+    <question>Using the frozen snapshot, compare AOPs 345 and 477, inspect their initiating events, then confirm the same initiating event across AOPs 344, 345, and 477. Which initiating-event ID is common?</question>
+    <answer>KE:26</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare the androgen pair and the skin/androgen pair in the frozen snapshot. What are their respective counts of shared key events?</question>
+    <answer>3,0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Check shared KER identifiers for all three androgen pairs in the frozen snapshot. Which KER IDs recur in every pair?</question>
+    <answer>KER:2124,KER:2130</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare initiating events and outcomes for AOPs 345 and 477. Despite the shared initiating event, what outcome ID belongs to AOP 477?</question>
+    <answer>KE:2082</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>In the frozen three-androgen-AOP comparison, identify the nipple-retention pathway and check its adverse outcome. Return AOP ID and outcome ID.</question>
+    <answer>AOP:344,KE:1786</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare AOPs 40 and 477 in the frozen snapshot, checking both shared key events and shared KERs. Return the two overlap counts.</question>
+    <answer>0,0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare all four pathways in the frozen snapshot. Check the complete set of pairwise results and return the total number of pairs.</question>
+    <answer>6</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For the human/adult androgen pair, inspect exact species support and the context conclusion for both pathways. Which applicability assessment remains required?</question>
+    <answer>requires_expert_review</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For the unspecified skin/androgen context, check requested species and life stage. Return both values; do not substitute default human/adult context.</question>
+    <answer>unspecified,unspecified</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Inspect the androgen-pair shared key events and the distinct skin-sensitisation initiating event in the frozen snapshot. Return the shared androgen KE IDs followed by the skin MIE ID.</question>
+    <answer>KE:1614,KE:26,KE:286;KE:396</answer>
+  </qa_pair>
+</evaluation>

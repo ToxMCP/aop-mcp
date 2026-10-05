@@ -55,7 +55,8 @@ def test_modern_catalog_preserves_schema_and_policy(client):
         item = dict(item)
         policy = item.pop('_meta')[POLICY_META_KEY]
         item['annotations'].update(policy)
-        normalized.append(item)
+        if item['name'] != 'compare_aops':
+            normalized.append(item)
     baseline = json.loads((Path(__file__).parents[1] / 'compatibility/v0.9.2-catalog-sha256.json').read_text())
     assert len(normalized) == baseline['tools']
     assert hashlib.sha256(json.dumps(normalized, sort_keys=True, separators=(',', ':')).encode()).hexdigest() == baseline['sha256']
@@ -103,7 +104,7 @@ def test_released_legacy_handshake_and_aliases_remain(client, revision):
     assert init.json()['result']['protocolVersion'] == '2025-03-26'
     alias = client.post('/mcp', headers=headers, json={'jsonrpc': '2.0', 'id': 2, 'method': 'mcp/tool/list', 'params': {}})
     assert alias.status_code == 200
-    assert len(alias.json()['result']['tools']) == 42
+    assert len(alias.json()['result']['tools']) == 43
 
 
 def test_modern_header_and_authority_rejections(client):

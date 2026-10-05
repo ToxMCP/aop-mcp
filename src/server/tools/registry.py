@@ -97,6 +97,8 @@ _CALLER_INPUT_TOOLS = {"get_applicability", "get_evidence_matrix"}
 
 def source_descriptors_for_tool(name: str) -> tuple[SourceDescriptor, ...]:
     """Return the registered evidence inputs a tool can read."""
+    if name == "compare_aops":
+        return (AOP_WIKI_SOURCE, CALLER_INPUT_SOURCE)
     if name in _WIKI_TOOLS:
         return (AOP_WIKI_SOURCE,)
     if name == "get_aop":
@@ -268,6 +270,20 @@ def classify_tool_policy(
 
 # Register AOP tools
 from src.server.tools import aop  # noqa: E402  pylint: disable=wrong-import-position
+from src.server.tools import comparison  # noqa: E402
+
+tool_registry.register(
+    name="compare_aops",
+    description=("Compare two to four AOPs by shared KE/KER identifiers, molecular initiating events, "
+                 "adverse outcomes, and evidence fields not reported in AOP-Wiki RDF. "
+                 "Provide species and life_stage (or unspecified); compatible modern clients are asked "
+                 "for missing context. Overlap does not establish whole-pathway applicability or toxicity."),
+    handler=comparison.compare_aops,
+    input_model=comparison.CompareAopsInput,
+    output_schema=comparison.ComparisonResult.model_json_schema(),
+    risk_class="live", required_scopes=("toxmcp:read", "toxmcp:live"),
+    requires_confirmation=False,
+)
 
 
 tool_registry.register(

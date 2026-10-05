@@ -89,3 +89,12 @@ Current MCP tool surface exposed by `POST /mcp`.
 - `get_ker.citation_concordance` and `assess_aop_confidence.supplemental_signals.citation_concordance_signal` are reference-overlap heuristics only. Shared citations can be useful review context, but they are not treated as proof that the same experiment measured both events together.
 - `get_ker.assay_cutoff_ordering` and `assess_aop_confidence.supplemental_signals.assay_cutoff_ordering_signal` are supplemental quantitative-ordering heuristics. They compare best observed CompTox activity cutoffs across upstream/downstream KE assay candidate sets for shared linked stressor chemicals, but they are not treated as curated qAOP models or OECD core dimensions.
 - `get_ker.applicability.taxa` still prefers exact upstream/downstream taxon overlap. Lowest-common-ancestor inference is only used as a fallback for known taxon lineages and is intentionally blocked from collapsing all the way to very broad ancestors such as `Metazoa` or `Eukaryota`.
+
+## Guided comparison (development candidate)
+
+`compare_aops` is an additive read-only AOP-Wiki workflow. It requires `toxmcp:read`
+and `toxmcp:live`, accepts two to four distinct AOP IDs, asks compatible modern
+clients for missing species/life-stage context, and supports explicit context
+arguments on existing clients. It reports pairwise KE/KER overlap and RDF evidence
+fields not reported without making whole-pathway applicability or toxicity claims.
+See [the comparison contract](../guided-aop-comparison.md).
