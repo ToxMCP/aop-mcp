@@ -46,6 +46,11 @@ router = APIRouter()
 
 SERVER_INFO = ServerInfo(name="AOP MCP Server", version=get_app_version())
 MCP_VERSION = "2025-03-26"
+SERVER_INSTRUCTIONS = (
+    "Preserve the visible Sources section from every AOP MCP tool result. "
+    "Clearly distinguish evidence returned by this MCP server from content found "
+    "through a separate web search, and never attribute web-search content to an MCP tool."
+)
 
 SERVER_CAPABILITIES: dict[str, FeatureSupport] = {
     "tools": FeatureSupport(enabled=True),
@@ -99,6 +104,11 @@ async def mcp_endpoint(request: Request, response: Response):
             error={"code": INVALID_REQUEST, "message": "Request body must be a JSON object"},
             request_id=None,
         )
+
+    from src.server.mcp.sdk2 import SDKResponse, is_modern_request
+
+    if is_modern_request(request, payload):
+        return SDKResponse(request.app.state.sdk2_app, await request.body())
 
     try:
         rpc_request = JSONRPCRequest.model_validate(payload)
@@ -162,6 +172,7 @@ async def dispatch_request(
             protocolVersion=MCP_VERSION,
             serverInfo=SERVER_INFO,
             capabilities=SERVER_CAPABILITIES,
+            instructions=SERVER_INSTRUCTIONS,
         ).model_dump(by_alias=True)
 
     if request.method in {"initialized", "notifications/initialized"}:
@@ -276,7 +287,13 @@ async def _dispatch_tool_call(
             output_validation_status = "passed"
 
         response = {
-            "content": [{"type": "text", "text": json.dumps(result, indent=2)}]
+            "content": [
+                {
+                    "type": "text",
+                    "text": json.dumps(result, indent=2) + _render_sources(tool_def.sources),
+                }
+            ],
+            "_meta": {"sources": tool_def.sources},
         }
         if tool_def.output_schema:
             response["structuredContent"] = result
@@ -341,3 +358,12 @@ async def _dispatch_tool_call(
             error_message=error_message,
         )
         tool_call_audit_log.append(audit_record)
+
+
+def _render_sources(sources: list[dict[str, str]]) -> str:
+    lines = ["", "", "Sources:"]
+    for source in sources:
+        name = source["name"]
+        url = source.get("url")
+        lines.append(f"- {name}: {url}" if url else f"- {name}")
+    return "\n".join(lines)

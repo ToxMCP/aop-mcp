@@ -1,0 +1,165 @@
+{
+  "calls": [
+    {
+      "label": "search_aops",
+      "name": "search_aops",
+      "arguments": {
+        "text": "liver",
+        "limit": 2
+      }
+    },
+    {
+      "label": "get_aop",
+      "name": "get_aop",
+      "arguments": {
+        "aop_id": "AOP:34"
+      }
+    },
+    {
+      "label": "get_key_event",
+      "name": "get_key_event",
+      "arguments": {
+        "key_event_id": "KE:12"
+      }
+    },
+    {
+      "label": "list_key_events",
+      "name": "list_key_events",
+      "arguments": {
+        "aop_id": "AOP:34"
+      }
+    },
+    {
+      "label": "list_kers",
+      "name": "list_kers",
+      "arguments": {
+        "aop_id": "AOP:34"
+      }
+    },
+    {
+      "label": "get_related_aops",
+      "name": "get_related_aops",
+      "arguments": {
+        "aop_id": "AOP:34",
+        "limit": 2
+      }
+    },
+    {
+      "label": "assess_aop_confidence",
+      "name": "assess_aop_confidence",
+      "arguments": {
+        "aop_id": "AOP:34"
+      }
+    },
+    {
+      "label": "get_applicability",
+      "name": "get_applicability",
+      "arguments": {
+        "species": "human",
+        "sex": "female",
+        "life_stage": "adult"
+      }
+    },
+    {
+      "label": "get_evidence_matrix",
+      "name": "get_evidence_matrix",
+      "arguments": {
+        "entries": [
+          {
+            "species": "human",
+            "sex": "female",
+            "life_stage": "adult"
+          }
+        ]
+      }
+    },
+    {
+      "label": "create_draft_aop",
+      "name": "create_draft_aop",
+      "arguments": {
+        "draft_id": "sdk2-compatibility-draft",
+        "author": "protocol fixture",
+        "summary": "fixture edit",
+        "title": "PXR activation leading to liver steatosis",
+        "description": "Offline compatibility fixture",
+        "adverse_outcome": "Liver steatosis",
+        "applicability": {
+          "species": "human",
+          "sex": "female",
+          "life_stage": "adult"
+        }
+      }
+    },
+    {
+      "label": "add_mie",
+      "name": "add_or_update_ke",
+      "arguments": {
+        "draft_id": "sdk2-compatibility-draft",
+        "author": "protocol fixture",
+        "summary": "fixture edit",
+        "version_id": "v2",
+        "identifier": "KE:1",
+        "title": "PXR activation",
+        "event_role": "mie",
+        "attributes": {
+          "measurement_methods": [
+            "Reporter assay"
+          ]
+        }
+      }
+    },
+    {
+      "label": "add_ao",
+      "name": "add_or_update_ke",
+      "arguments": {
+        "draft_id": "sdk2-compatibility-draft",
+        "author": "protocol fixture",
+        "summary": "fixture edit",
+        "version_id": "v3",
+        "identifier": "KE:2",
+        "title": "Liver steatosis",
+        "event_role": "ao",
+        "attributes": {
+          "measurement_methods": [
+            "Histology"
+          ]
+        }
+      }
+    },
+    {
+      "label": "add_or_update_ker",
+      "name": "add_or_update_ker",
+      "arguments": {
+        "draft_id": "sdk2-compatibility-draft",
+        "author": "protocol fixture",
+        "summary": "fixture edit",
+        "version_id": "v4",
+        "identifier": "KER:1",
+        "upstream": "KE:1",
+        "downstream": "KE:2",
+        "plausibility": "moderate",
+        "status": "draft"
+      }
+    },
+    {
+      "label": "validate_draft_oecd",
+      "name": "validate_draft_oecd",
+      "arguments": {
+        "draft_id": "sdk2-compatibility-draft",
+        "version_id": "v4"
+      }
+    },
+    {
+      "label": "verify_tool_call_audit_log",
+      "name": "verify_tool_call_audit_log",
+      "arguments": {}
+    },
+    {
+      "label": "list_tool_call_audit_records",
+      "name": "list_tool_call_audit_records",
+      "arguments": {
+        "limit": 100
+      }
+    }
+  ]
+}

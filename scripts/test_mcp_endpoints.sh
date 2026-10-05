@@ -3,7 +3,7 @@
 
 set -uo pipefail
 
-BASE_URL="${BASE_URL:-http://localhost:8003}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:8003}"
 RUN_LIVE_READS="${AOP_MCP_SMOKE_INCLUDE_LIVE_READS:-0}"
 DRAFT_ID="${AOP_MCP_SMOKE_DRAFT_ID:-smoke-draft-$(date +%s)}"
 ARTIFACT_SUBDIR="${AOP_MCP_SMOKE_SUBDIR:-smoke/$(date -u +%Y%m%d_%H%M%S)}"

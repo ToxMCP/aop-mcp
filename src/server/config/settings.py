@@ -31,6 +31,7 @@ class Settings(BaseSettings):
         "toxmcp:admin",
     ]
     allowed_origins: Annotated[list[str], NoDecode] = []
+    allowed_hosts: Annotated[list[str], NoDecode] = []
     max_request_bytes: int = 1_000_000
     allow_unauthenticated_production: bool = False
 
@@ -67,7 +68,7 @@ class Settings(BaseSettings):
             return [part.strip() for part in value.split(",") if part.strip()]
         return value
 
-    @field_validator("allowed_origins", mode="before")
+    @field_validator("allowed_origins", "allowed_hosts", mode="before")
     @classmethod
     def _split_csv_origins(cls, value: object) -> object:
         if isinstance(value, str):
@@ -102,7 +103,8 @@ class Settings(BaseSettings):
             raise ValueError("AOP_MCP_MAX_REQUEST_BYTES must be positive")
         if not self.is_production:
             return self
-        if self.host.strip() in {"0.0.0.0", "::", "[::]"}:
+        # This is a rejection of wildcard binds, not a listener binding.
+        if self.host.strip() in {"0.0.0.0", "::", "[::]"}:  # nosec B104
             raise ValueError("AOP_MCP_HOST must not be 0.0.0.0/:: in production")
         if self.auth_mode == "disabled" and not self.allow_unauthenticated_production:
             raise ValueError("AOP_MCP_AUTH_MODE=bearer is required in production")

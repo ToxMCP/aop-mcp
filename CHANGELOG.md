@@ -1,11 +1,37 @@
 # Changelog
 
-## Unreleased
+## [Unreleased] — 0.10.0 candidate
+
+- Add the stable MCP SDK 2.2.0 protocol (2026-07-28) over the existing HTTP endpoint, retaining the released custom legacy handler and its aliases.
+- Add optional `aop-mcp-stdio` with legacy and modern protocol negotiation.
+- Retain the 42 scientific tool contracts, source attribution, scopes, explicit confirmations, draft state, output validation and tool-call audits. SDK2 tool-policy extensions use `org.toxmcp/toolPolicy` metadata.
+- Add an explicit SDK2 HTTP Host allowlist and bound actual request bodies before either protocol parser, including streamed bodies.
+- Add real SDK1/SDK2 client checks over both transports and installed-wheel CI. See [migration notes](docs/mcp-sdk2-migration.md).
+- Retrieve independent key-event annotations separately, avoiding the large Cartesian result that stalled live confidence assessments involving KE 177. Preserve the response schema, annotation normalization, and AOP-title/reference pairings.
+
+
+## v0.9.2 - 2026-10-01
+
+### Fixed
+
+- Parse development origins and accept only exact HTTP loopback hosts, rejecting hostname suffixes, credentials, and malformed origins.
+- Preserve the documented `src.*` namespace in standalone wheels and bundle response schemas, SPARQL templates, and offline fixture data. Replay manifests now read the same installed schema resources as tool validation.
+
+### Added
+
+- A committed `uv.lock`, locked CI environments, and a clean installed-wheel MCP smoke on Python 3.11/3.12.
+- Weekly and pull-request complete locked runtime, development and security-tool dependency auditing and Bandit SAST; governance CI uses supported Node 22.
+
+## v0.9.1 - 2026-07-22
 
 ### Added
 
 - Machine-readable trust evaluation Q/A pack for auditability, verifiability, Registry handoff trust, replay reproducibility, scientific value, and regulatory-boundary checks.
 - Tighter MCP tool annotations for write-scope enforcement, live/open-world draft review helpers, and read-only export hints.
+- Source descriptors on every registered tool for AOP-Wiki, AOP-DB, CompTox, local drafts, Registry handoffs, and audit records.
+- Visible `Sources:` lines and matching `_meta.sources` on every successful tool result without changing scientific `structuredContent` schemas.
+- MCP initialization guidance requiring assistants to preserve source labels and distinguish MCP evidence from separate web-search content.
+- A post-install AOP search demo and safer local-only server examples.
 
 ## v0.9.0 - 2026-05-05
 

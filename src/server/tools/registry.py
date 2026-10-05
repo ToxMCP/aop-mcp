@@ -11,6 +11,119 @@ from src.server.mcp.protocol import ToolDescription
 from src.tools import load_schema
 
 
+SourceDescriptor = dict[str, str]
+
+AOP_WIKI_SOURCE: SourceDescriptor = {
+    "name": "AOP-Wiki",
+    "url": "https://aopwiki.org/",
+    "description": "Curated adverse outcome pathway records and evidence.",
+}
+AOP_DB_SOURCE: SourceDescriptor = {
+    "name": "EPA AOP-DB",
+    "url": "https://www.epa.gov/healthresearch/adverse-outcome-pathway-database-aop-db",
+    "description": "EPA-linked AOP, chemical, gene, pathway, and assay data.",
+}
+COMPTOX_SOURCE: SourceDescriptor = {
+    "name": "EPA CompTox Chemicals Dashboard",
+    "url": "https://comptox.epa.gov/dashboard/",
+    "description": "EPA chemical identity and ToxCast bioactivity data.",
+}
+LOCAL_DRAFT_SOURCE: SourceDescriptor = {
+    "name": "AOP MCP local draft workspace",
+    "url": "https://github.com/ToxMCP/aop-mcp",
+    "description": "User-authored local draft records and derived review artifacts.",
+}
+AUDIT_SOURCE: SourceDescriptor = {
+    "name": "AOP MCP tool-call audit records",
+    "url": "https://github.com/ToxMCP/aop-mcp",
+    "description": "Process-local, hash-chained MCP tool-call audit records.",
+}
+REGISTRY_SOURCE: SourceDescriptor = {
+    "name": "ToxMCP Registry handoff bundle",
+    "url": "https://github.com/ToxMCP",
+    "description": "Registry evidence supplied directly in the tool call.",
+}
+CALLER_INPUT_SOURCE: SourceDescriptor = {
+    "name": "Caller-provided scientific inputs",
+    "url": "https://github.com/ToxMCP/aop-mcp",
+    "description": "Values or evidence records supplied directly in the tool call.",
+}
+
+
+_WIKI_TOOLS = {
+    "search_aops",
+    "get_key_event",
+    "list_key_events",
+    "list_kers",
+    "get_ker",
+    "get_related_aops",
+    "assess_aop_confidence",
+    "find_paths_between_events",
+}
+_AOP_DB_TOOLS = {"map_chemical_to_aops"}
+_ASSAY_TOOLS = {
+    "list_assays_for_aop",
+    "get_assays_for_aop",
+    "discover_orphan_stressors_for_aop",
+    "discover_orphan_stressors_for_aops",
+    "list_assays_for_aops",
+    "get_assays_for_aops",
+}
+_QUERY_ASSAY_TOOLS = {
+    "search_assays_for_key_event",
+    "list_assays_for_query",
+    "discover_orphan_stressors_for_query",
+    "export_assays_table",
+}
+_AUDIT_TOOLS = {
+    "export_tool_call_audit_log_evidence",
+    "list_tool_call_audit_records",
+    "verify_tool_call_audit_log",
+}
+_DRAFT_AUDIT_TOOLS = {"export_draft_replay_package"}
+_REGISTRY_TOOLS = {"review_registry_handoff_bundle"}
+_DRAFT_REGISTRY_TOOLS = {"attach_registry_handoff_to_draft"}
+_DRAFT_EXTERNAL_TOOLS = {
+    "trace_chemical_on_draft",
+    "review_draft_assay_cutoff_ordering",
+    "review_draft_bundle",
+    "review_draft_evidence_gaps",
+    "export_draft_review_artifact",
+    "save_draft_review_artifact",
+    "plan_linear_draft_review_document",
+}
+_CALLER_INPUT_TOOLS = {"get_applicability", "get_evidence_matrix"}
+
+
+def source_descriptors_for_tool(name: str) -> tuple[SourceDescriptor, ...]:
+    """Return the registered evidence inputs a tool can read."""
+    if name in _WIKI_TOOLS:
+        return (AOP_WIKI_SOURCE,)
+    if name == "get_aop":
+        return (AOP_WIKI_SOURCE, AOP_DB_SOURCE)
+    if name in _AOP_DB_TOOLS:
+        return (AOP_DB_SOURCE,)
+    if name == "map_assay_to_aops":
+        return (AOP_DB_SOURCE, COMPTOX_SOURCE)
+    if name in _ASSAY_TOOLS:
+        return (AOP_DB_SOURCE, COMPTOX_SOURCE)
+    if name in _QUERY_ASSAY_TOOLS:
+        return (AOP_WIKI_SOURCE, AOP_DB_SOURCE, COMPTOX_SOURCE)
+    if name in _AUDIT_TOOLS:
+        return (AUDIT_SOURCE,)
+    if name in _DRAFT_AUDIT_TOOLS:
+        return (LOCAL_DRAFT_SOURCE, AUDIT_SOURCE)
+    if name in _REGISTRY_TOOLS:
+        return (REGISTRY_SOURCE,)
+    if name in _DRAFT_REGISTRY_TOOLS:
+        return (LOCAL_DRAFT_SOURCE, REGISTRY_SOURCE)
+    if name in _DRAFT_EXTERNAL_TOOLS:
+        return (LOCAL_DRAFT_SOURCE, AOP_DB_SOURCE, COMPTOX_SOURCE)
+    if name in _CALLER_INPUT_TOOLS:
+        return (CALLER_INPUT_SOURCE,)
+    return (LOCAL_DRAFT_SOURCE,)
+
+
 class RegisteredTool:
     def __init__(
         self,
@@ -24,6 +137,7 @@ class RegisteredTool:
         required_scopes: tuple[str, ...] | None = None,
         requires_confirmation: bool | None = None,
         open_world_hint: bool | None = None,
+        sources: tuple[SourceDescriptor, ...] | None = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -41,6 +155,7 @@ class RegisteredTool:
             if open_world_hint is not None
             else self.risk_class == "live"
         )
+        self.sources = [dict(source) for source in (sources or source_descriptors_for_tool(name))]
         self.annotations = {
             "readOnlyHint": self.risk_class in {"read", "live", "export"},
             "destructiveHint": self.risk_class in {"execute", "admin"},
@@ -49,6 +164,7 @@ class RegisteredTool:
             "riskClass": self.risk_class,
             "requiredScopes": list(self.required_scopes),
             "requiresConfirmation": self.requires_confirmation,
+            "sources": self.sources,
         }
 
 
@@ -68,6 +184,7 @@ class ToolRegistry:
         required_scopes: tuple[str, ...] | None = None,
         requires_confirmation: bool | None = None,
         open_world_hint: bool | None = None,
+        sources: tuple[SourceDescriptor, ...] | None = None,
     ) -> None:
         if name in self._tools:
             raise ValueError(f"Tool '{name}' already registered")
@@ -81,6 +198,7 @@ class ToolRegistry:
             required_scopes=required_scopes,
             requires_confirmation=requires_confirmation,
             open_world_hint=open_world_hint,
+            sources=sources,
         )
 
     def list_tools(self) -> list[ToolDescription]:

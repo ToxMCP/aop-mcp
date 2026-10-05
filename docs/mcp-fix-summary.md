@@ -81,14 +81,14 @@ The smoke script validates the active draft-review workflow, including
 
 ### Running the Server
 ```bash
-uvicorn src.server.api.server:app --host 0.0.0.0 --port 8003
+uvicorn src.server.api.server:app --host 127.0.0.1 --port 8003
 ```
 
 ### Codex Configuration
 The server is configured in `~/.codex/config.toml`:
 ```toml
 [mcp_servers.aop-mcp]
-url = "http://localhost:8003/mcp"
+url = "http://127.0.0.1:8003/mcp"
 timeout = 60000  # 60 seconds for SPARQL queries and fixture fallback
 ```
 
@@ -98,7 +98,7 @@ Add to your Gemini CLI config:
 {
   "mcp_servers": {
     "aop-mcp": {
-      "url": "http://localhost:8003/mcp",
+      "url": "http://127.0.0.1:8003/mcp",
       "timeout": 60000
     }
   }
@@ -137,7 +137,7 @@ The MCP server exposes 12 tools:
 
 ### Test Initialize Handshake
 ```bash
-curl -X POST http://localhost:8003/mcp \
+curl -X POST http://127.0.0.1:8003/mcp \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -158,7 +158,7 @@ Expected response includes:
 
 ### Test Initialized Notification
 ```bash
-curl -X POST http://localhost:8003/mcp \
+curl -X POST http://127.0.0.1:8003/mcp \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -173,7 +173,7 @@ Expected response:
 
 ### Test Tools List
 ```bash
-curl -X POST http://localhost:8003/mcp \
+curl -X POST http://127.0.0.1:8003/mcp \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",

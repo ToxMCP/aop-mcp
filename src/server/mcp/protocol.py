@@ -42,6 +42,7 @@ class InitializeResult(BaseModel):
     protocolVersion: str
     serverInfo: ServerInfo
     capabilities: Dict[str, FeatureSupport]
+    instructions: Optional[str] = None
 
 
 class ToolInputProperty(BaseModel):

@@ -23,6 +23,13 @@ class FakeRegisteredTool:
     risk_class = "read"
     required_scopes = ("toxmcp:read",)
     requires_confirmation = False
+    sources = [
+        {
+            "name": "Test fixture",
+            "url": "https://github.com/ToxMCP/aop-mcp",
+            "description": "Synthetic evidence used by the unit-test tool.",
+        }
+    ]
 
 
 class FakeToolRegistry:
@@ -73,6 +80,8 @@ async def test_tool_call_audit_records_success_and_schema_validation(
     )
 
     assert response["structuredContent"] == {"ok": True}
+    assert response["_meta"]["sources"] == FakeRegisteredTool.sources
+    assert "Sources:\n- Test fixture:" in response["content"][0]["text"]
     records = tool_call_audit_log.list_records()
     assert len(records) == 1
     record = records[0]
