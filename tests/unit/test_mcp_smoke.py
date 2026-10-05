@@ -30,6 +30,9 @@ def test_initialize_success() -> None:
     assert data["result"]["serverInfo"]["version"] == get_app_version()
     assert "Preserve the visible Sources section" in data["result"]["instructions"]
     assert "web search" in data["result"]["instructions"]
+    # MCP clients use capability presence, rather than an `enabled` extension,
+    # to decide which discovery methods to request.
+    assert set(data["result"]["capabilities"]) == {"tools", "prompts"}
 
 
 def test_initialized_returns_empty_object_response() -> None:
