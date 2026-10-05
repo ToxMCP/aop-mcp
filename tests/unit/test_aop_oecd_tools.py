@@ -434,6 +434,47 @@ async def test_get_key_event_infers_action_and_title_object_terms(monkeypatch) -
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("key_event_count", [0, 1])
+async def test_assess_aop_confidence_without_relationships_preserves_missing_evidence(
+    monkeypatch, key_event_count: int,
+) -> None:
+    class SparseWikiAdapter(StubWikiAdapter):
+        async def get_aop_assessment(self, aop_id: str):
+            result = await super().get_aop_assessment(aop_id)
+            return {
+                **result,
+                "evidence_summary": None,
+                "molecular_initiating_events": [],
+                "adverse_outcomes": [],
+            }
+
+        async def list_key_events(self, aop_id: str):
+            return (await super().list_key_events(aop_id))[:key_event_count]
+
+        async def list_kers(self, aop_id: str):
+            assert aop_id == "AOP:232"
+            return []
+
+    monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: SparseWikiAdapter())
+    result = await aop_tools.assess_aop_confidence(
+        aop_tools.AssessAopConfidenceInput(aop_id="AOP:232")
+    )
+
+    validate_payload(result, namespace="read", name="assess_aop_confidence.response.schema")
+    assert result["coverage"]["key_event_count"] == key_event_count
+    assert result["coverage"]["ker_count"] == 0
+    assert result["ker_assessments"] == []
+    assert result["overall_call"] == "sparse_evidence"
+    assert result["heuristic_overall_call"] == "sparse_evidence"
+    assert result["confidence_dimensions"]["essentiality_of_key_events"]["heuristic_call"] == "not_assessed"
+    assert "citation_concordance_signal" not in result["supplemental_signals"]
+    assert "assay_cutoff_ordering_signal" not in result["supplemental_signals"]
+    assert not any("Supplemental citation" in item or "Supplemental assay-cutoff" in item
+                   for item in result["rationale"])
+    assert result["limitations"]
+
+
+@pytest.mark.asyncio
 async def test_assess_aop_confidence_returns_conservative_heuristic_summary(monkeypatch) -> None:
     monkeypatch.setattr(aop_tools, "get_aop_wiki_adapter", lambda: StubWikiAdapter())
 

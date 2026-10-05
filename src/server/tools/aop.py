@@ -253,7 +253,7 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
             f"{supplemental_signals['aop_level_evidence_signal']['heuristic_call'].replace('_', ' ')} support."
         )
     if (
-        supplemental_signals.get("citation_concordance_signal", {}).get("heuristic_call")
+        supplemental_signals.get("citation_concordance_signal", {}).get("heuristic_call", "not_reported")
         != "not_reported"
     ):
         rationale.append(
@@ -261,7 +261,7 @@ async def assess_aop_confidence(params: AssessAopConfidenceInput) -> dict[str, A
             f"{supplemental_signals['citation_concordance_signal']['coverage']['present']}/{coverage['ker_count']} KERs."
         )
     if (
-        supplemental_signals.get("assay_cutoff_ordering_signal", {}).get("heuristic_call")
+        supplemental_signals.get("assay_cutoff_ordering_signal", {}).get("heuristic_call", "not_reported")
         != "not_reported"
     ):
         rationale.append(
