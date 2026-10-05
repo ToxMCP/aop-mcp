@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased] — 0.10.0 candidate
+## [Unreleased] — 0.10.1
+
+- Return the existing `sparse_evidence` confidence assessment for pathways with no KERs when optional supplemental signals are absent, instead of raising `KeyError`. Unassessed dimensions and limitations remain explicit; no evidence ratings are invented.
+- Advertise only enabled MCP capabilities to legacy clients, matching the already merged discovery correction.
+- Preserve all 42 tool contracts, source attribution, scientific schemas and legacy/modern transports.
+
+## v0.10.0 — 2026-10-02
 
 - Add the stable MCP SDK 2.2.0 protocol (2026-07-28) over the existing HTTP endpoint, retaining the released custom legacy handler and its aliases.
 - Add optional `aop-mcp-stdio` with legacy and modern protocol negotiation.
