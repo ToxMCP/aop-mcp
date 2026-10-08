@@ -1,6 +1,6 @@
-# SDK2 migration candidate
+# SDK2 migration
 
-0.10.0 adopts stable Python MCP SDK 2.2.0 (protocol 2026-07-28). Python 3.11 remains supported. The last published version is 0.9.2; this branch is for review.
+Version 0.10.0 introduced stable Python MCP SDK 2.2.0 (protocol 2026-07-28). Python 3.11 remains supported. Release assets are distributed through [GitHub Releases](https://github.com/ToxMCP/aop-mcp/releases). The 0.10.1 patch candidate preserves the protocol and scientific contracts.
 
 ## Existing HTTP clients
 

@@ -77,9 +77,11 @@ The current implementation follows a layered model:
 See `docs/architecture.md` for the fuller narrative and `docs/contracts/oecd-aligned-schema.md` for the OECD read-contract targets that now shape `get_aop`, `get_key_event`, `get_ker`, and `assess_aop_confidence`.
 For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `docs/quickstarts/oecd-draft-authoring.md` for the governed draft essentiality flow.
 
-## SDK2 migration candidate (0.10.0)
+## MCP SDK2 support
 
-The released version remains 0.9.2. This review branch adds MCP SDK 2.2.0 and protocol 2026-07-28 while keeping the existing custom legacy HTTP handler, tool schemas and scientific workflows. It also adds optional `aop-mcp-stdio`. See [migration and hosting instructions](docs/mcp-sdk2-migration.md).
+Version 0.10.0 introduced MCP SDK 2.2.0 and protocol 2026-07-28, preserving the existing legacy HTTP handler, tool schemas and scientific workflows. It also provides optional `aop-mcp-stdio`. See [migration and hosting instructions](docs/mcp-sdk2-migration.md).
+
+The 0.10.1 patch candidate fixes confidence assessment for pathways with no KERs and includes the merged legacy capability-discovery correction. It retains all 42 tools and represents missing evidence as explicit gaps.
 
 For modern HTTP clients behind a gateway, set `AOP_MCP_ALLOWED_HOSTS` to the authority clients send (for example `aop.example.org`). Its default is the loopback allowlist. `AOP_MCP_ALLOWED_ORIGINS` remains the existing browser Origin boundary; configure both for hosted use.
 
