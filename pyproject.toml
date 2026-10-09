@@ -21,7 +21,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Bio-Informatics"
 ]
 dependencies = [
-  "mcp==2.2.0",
+  "mcp==2.3.0",
   "fastapi>=0.110,<1.0",
   "uvicorn[standard]>=0.24,<1.0",
   "pydantic>=2.6,<3.0",
