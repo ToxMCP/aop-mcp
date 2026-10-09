@@ -148,7 +148,7 @@ jobs:
       # The Track-B governance tests (tests/governance/) shell out to the vendored
       # spine policy engine via a fail-closed Node bridge, so the test job needs Node.
       - name: Setup Node (spine-engine bridge)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
@@ -205,7 +205,7 @@ jobs:
           python-version: "3.11"
 
       - name: Setup Node (bridge shells to the vendored spine engine)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
