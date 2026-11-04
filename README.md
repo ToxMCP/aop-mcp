@@ -79,9 +79,9 @@ For task-oriented walkthroughs, see `docs/quickstarts/README.md`, especially `do
 
 ## MCP SDK2 support
 
-Version 0.10.0 introduced MCP SDK 2.2.0 and protocol 2026-07-28, preserving the existing legacy HTTP handler, tool schemas and scientific workflows. It also provides optional `aop-mcp-stdio`. See [migration and hosting instructions](docs/mcp-sdk2-migration.md).
+Version 0.10.0 introduced MCP SDK 2.2.0 and protocol 2026-07-28, preserving the existing legacy HTTP handler, tool schemas and scientific workflows. It also provides optional `aop-mcp-stdio`, which desktop and coding agents use; see [Local stdio install](#local-stdio-install-desktop-and-coding-agents) and the [migration and hosting instructions](docs/mcp-sdk2-migration.md).
 
-The 0.10.1 patch candidate fixes confidence assessment for pathways with no KERs and includes the merged legacy capability-discovery correction. It retains all 42 tools and represents missing evidence as explicit gaps.
+The 0.10.1 patch release fixes confidence assessment for pathways with no KERs and includes the merged legacy capability-discovery correction. It retains all 42 tools and represents missing evidence as explicit gaps.
 
 For modern HTTP clients behind a gateway, set `AOP_MCP_ALLOWED_HOSTS` to the authority clients send (for example `aop.example.org`). Its default is the loopback allowlist. `AOP_MCP_ALLOWED_ORIGINS` remains the existing browser Origin boundary; configure both for hosted use.
 
@@ -195,6 +195,32 @@ curl -s http://127.0.0.1:8003/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_aops","arguments":{"text":"liver","limit":3}}}' \
   | jq -r '.result.content[0].text'
 ```
+
+## Local stdio install (desktop and coding agents)
+
+To use AOP MCP inside an MCP client such as Claude Desktop, Claude Code, Codex CLI or Gemini CLI, install the pinned release wheel with [uv](https://docs.astral.sh/uv/). There is nothing to clone and no server to keep running: the client starts the server itself over stdio.
+
+```json
+{
+  "mcpServers": {
+    "aop": {
+      "command": "/full/path/to/uvx",
+      "args": [
+        "--python", "3.12",
+        "--from", "https://github.com/ToxMCP/aop-mcp/releases/download/v0.10.1/aop_mcp_server-0.10.1-py3-none-any.whl",
+        "aop-mcp-stdio"
+      ],
+      "env": { "AOP_MCP_COMPTOX_API_KEY": "<optional: your EPA CTX API key>" }
+    }
+  }
+}
+```
+
+- Use the **full path** to `uvx` (`which uvx`, or `where uvx` on Windows). Some clients do not inherit your shell `PATH`.
+- No key is needed for AOP-Wiki and AOP-DB queries. `AOP_MCP_COMPTOX_API_KEY` is optional and only enables CompTox assay mapping; leave the `env` block out if you have no key.
+- Restart the client fully after editing its config so it loads the server.
+
+The quick start below runs the HTTP service from a clone instead.
 
 ## Quick start
 
